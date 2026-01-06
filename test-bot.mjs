@@ -1046,6 +1046,7 @@ async function handleAddressCallback(callback, formal) {
 
     user.formal_address = formal;
     user.onboarding_completed = true;
+    saveDataToFile(); // Persist settings change
 
     console.log(`\n=== Processing address selection ===`);
     console.log(`User: ${user.first_name} selected ${formal ? 'formal (вы)' : 'informal (ты)'}`);
@@ -1172,6 +1173,7 @@ async function handleSettingsCallback(callback, action) {
             break;
         case "settings_notifications":
             user.notifications_enabled = !user.notifications_enabled;
+            saveDataToFile(); // Persist settings change
             console.log(`✅ Notifications toggled to: ${user.notifications_enabled}`);
             // Show updated settings
             await showSettings(chatId, messageId, user);
@@ -1189,6 +1191,7 @@ async function handleSettingsCallback(callback, action) {
             user.active_hours_end = "21:00";
             user.notification_interval_hours = 3;
             user.notifications_enabled = true;
+            saveDataToFile(); // Persist settings change
             console.log("✅ Settings reset to defaults");
             await showSettings(chatId, messageId, user);
             break;
@@ -1253,6 +1256,7 @@ async function handleHoursEndCallback(callback, action) {
 
     const hour = action.replace("hours_end_", "");
     user.active_hours_end = `${hour}:00`;
+    saveDataToFile(); // Persist settings change
     console.log(`✅ Active hours end set to: ${user.active_hours_end}`);
     console.log(`✅ Active hours saved: ${user.active_hours_start} - ${user.active_hours_end}`);
 
@@ -1271,6 +1275,7 @@ async function handleIntervalCallback(callback, action) {
 
     const interval = parseInt(action.replace("interval_", ""));
     user.notification_interval_hours = interval;
+    saveDataToFile(); // Persist settings change
     console.log(`✅ Notification interval set to: ${interval} hours`);
 
     // Show updated settings
@@ -1288,6 +1293,7 @@ async function handleLanguageCallback(callback, action) {
 
     const lang = action.replace("lang_", "");
     user.language_code = lang;
+    saveDataToFile(); // Persist settings change
     console.log(`✅ Language set to: ${lang}`);
 
     // Show updated settings
@@ -1304,6 +1310,7 @@ async function handleAddressChangeCallback(callback, formal) {
     const user = getOrCreateUser(callback.from);
 
     user.formal_address = formal;
+    saveDataToFile(); // Persist settings change
     console.log(`✅ Address form changed to: ${formal ? 'formal (вы)' : 'informal (ты)'}`);
 
     // Show updated settings
