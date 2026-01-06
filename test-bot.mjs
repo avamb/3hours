@@ -9,14 +9,162 @@ const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 // Welcome image URL (same as Python implementation)
 const WELCOME_IMAGE_URL = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop";
 
+// File-based persistence
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const DATA_FILE = join(__dirname, 'bot-data.json');
+
 // Simple in-memory user storage for testing
 const users = new Map();
 
 // In-memory moments storage for testing
 const moments = new Map();
 
-// User states for conversation flow
+// User states for conversation flow (not persisted - session only)
 const userStates = new Map();
+
+/**
+ * Load data from file on startup
+ */
+function loadDataFromFile() {
+    try {
+        if (existsSync(DATA_FILE)) {
+            const data = JSON.parse(readFileSync(DATA_FILE, 'utf8'));
+
+            // Load users
+            if (data.users) {
+                for (const [key, value] of Object.entries(data.users)) {
+                    // Convert date strings back to Date objects
+                    if (value.created_at) value.created_at = new Date(value.created_at);
+                    users.set(parseInt(key), value);
+                }
+            }
+
+            // Load moments
+            if (data.moments) {
+                for (const [key, value] of Object.entries(data.moments)) {
+                    // Convert date strings back to Date objects
+                    const momentsArray = value.map(m => ({
+                        ...m,
+                        created_at: new Date(m.created_at)
+                    }));
+                    moments.set(parseInt(key), momentsArray);
+                }
+            }
+
+            console.log(`📁 Loaded data: ${users.size} users, ${[...moments.values()].flat().length} moments`);
+        } else {
+            console.log(`📁 No existing data file found, starting fresh`);
+        }
+    } catch (error) {
+        console.error(`⚠️ Error loading data file: ${error.message}`);
+    }
+}
+
+/**
+ * Save data to file
+ */
+function saveDataToFile() {
+    try {
+        const data = {
+            users: Object.fromEntries(users),
+            moments: Object.fromEntries(moments),
+            savedAt: new Date().toISOString()
+        };
+        writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+        console.log(`💾 Data saved: ${users.size} users, ${[...moments.values()].flat().length} moments`);
+    } catch (error) {
+        console.error(`⚠️ Error saving data file: ${error.message}`);
+    }
+}
+
+/**
+ * Auto-save data periodically (every 30 seconds)
+ */
+function startAutoSave() {
+    setInterval(() => {
+        if (users.size > 0 || moments.size > 0) {
+            saveDataToFile();
+        }
+    }, 30000);
+    console.log(`⏰ Auto-save enabled (every 30 seconds)`);
+}
+
+// Load data on startup
+loadDataFromFile();
+
+// Double-submit prevention: Track processing callbacks
+const processingCallbacks = new Map();
+
+// Double-submit prevention: Track processing user actions
+const processingActions = new Map();
+
+// Double-submit prevention timeout (ms)
+const DOUBLE_SUBMIT_TIMEOUT = 2000;
+
+/**
+ * Check if a callback is currently being processed (double-submit prevention)
+ * @param {string} callbackId - The callback query ID
+ * @returns {boolean} True if already processing
+ */
+function isCallbackProcessing(callbackId) {
+    return processingCallbacks.has(callbackId);
+}
+
+/**
+ * Mark a callback as being processed
+ * @param {string} callbackId - The callback query ID
+ */
+function markCallbackProcessing(callbackId) {
+    processingCallbacks.set(callbackId, Date.now());
+    // Auto-cleanup after timeout
+    setTimeout(() => {
+        processingCallbacks.delete(callbackId);
+    }, DOUBLE_SUBMIT_TIMEOUT);
+}
+
+/**
+ * Check if a user action is currently being processed (double-submit prevention)
+ * @param {number} userId - The user ID
+ * @param {string} action - The action type (e.g., 'save_moment', 'delete_data')
+ * @returns {boolean} True if already processing
+ */
+function isUserActionProcessing(userId, action) {
+    const key = `${userId}:${action}`;
+    const lastTime = processingActions.get(key);
+    if (lastTime && (Date.now() - lastTime) < DOUBLE_SUBMIT_TIMEOUT) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Mark a user action as being processed
+ * @param {number} userId - The user ID
+ * @param {string} action - The action type
+ */
+function markUserActionProcessing(userId, action) {
+    const key = `${userId}:${action}`;
+    processingActions.set(key, Date.now());
+    // Auto-cleanup after timeout
+    setTimeout(() => {
+        processingActions.delete(key);
+    }, DOUBLE_SUBMIT_TIMEOUT);
+}
+
+/**
+ * Clear a user action processing status
+ * @param {number} userId - The user ID
+ * @param {string} action - The action type
+ */
+function clearUserActionProcessing(userId, action) {
+    const key = `${userId}:${action}`;
+    processingActions.delete(key);
+}
 
 /**
  * Localized error messages
@@ -147,6 +295,8 @@ function addMoment(userId, content) {
         content: content,
         created_at: new Date()
     });
+    // Save data immediately after adding a moment
+    saveDataToFile();
     return userMoments[userMoments.length - 1];
 }
 
@@ -175,6 +325,8 @@ function getOrCreateUser(telegramUser) {
             notification_interval_hours: 3,
             created_at: new Date()
         });
+        // Save data when new user is created
+        saveDataToFile();
     }
     return users.get(userId);
 }
@@ -433,9 +585,107 @@ async function getUpdates(offset = null) {
 }
 
 /**
+ * Handle deep link parameters
+ * Deep link format: https://t.me/MindSetHappyBot?start=ACTION
+ * Supported actions:
+ * - moments: Open moments list
+ * - stats: Open statistics
+ * - settings: Open settings
+ * - talk: Start free dialog
+ * - add: Add a new moment
+ * - share_REF: Handle sharing/referral (future use)
+ *
+ * @param {number} chatId - Chat ID
+ * @param {object} user - User object
+ * @param {string} param - Deep link parameter
+ * @returns {boolean} True if deep link was handled
+ */
+async function handleDeepLink(chatId, user, param) {
+    console.log(`Processing deep link: ${param}`);
+
+    // Normalize parameter (lowercase, trim)
+    const action = param.toLowerCase().trim();
+
+    switch (action) {
+        case 'moments':
+            console.log("Deep link action: Opening moments list");
+            await handleMomentsCommand({ chat: { id: chatId }, from: { id: user.telegram_id } });
+            return true;
+
+        case 'stats':
+        case 'statistics':
+            console.log("Deep link action: Opening statistics");
+            await handleStatsCommand({ chat: { id: chatId }, from: { id: user.telegram_id } });
+            return true;
+
+        case 'settings':
+            console.log("Deep link action: Opening settings");
+            await handleSettingsCommand({ chat: { id: chatId }, from: { id: user.telegram_id } });
+            return true;
+
+        case 'talk':
+        case 'dialog':
+            console.log("Deep link action: Starting free dialog");
+            await sendMessage(chatId,
+                "💬 <b>Режим диалога</b>\n\n" +
+                "Я готов выслушать тебя. Расскажи, что у тебя на душе. " +
+                "Я постараюсь помочь взглядом со стороны, " +
+                "но помни — все решения принимаешь ты сам. 💝\n\n" +
+                "Чтобы выйти из режима диалога, напиши /start",
+                getMainMenuKeyboard()
+            );
+            return true;
+
+        case 'add':
+        case 'moment':
+            console.log("Deep link action: Adding new moment");
+            // Set user state to "adding moment"
+            userStates.set(user.telegram_id, { state: 'adding_moment' });
+            await sendMessage(chatId,
+                "✨ <b>Добавление момента</b>\n\n" +
+                "Расскажи, что хорошего произошло? " +
+                "Просто напиши сообщение, и я сохраню его.\n\n" +
+                "💡 Можно отправить текст или голосовое сообщение.",
+                {
+                    inline_keyboard: [
+                        [{ text: "❌ Отмена", callback_data: "moments_cancel" }]
+                    ]
+                }
+            );
+            return true;
+
+        case 'privacy':
+            console.log("Deep link action: Opening privacy policy");
+            await handlePrivacyCommand({ chat: { id: chatId }, from: { id: user.telegram_id } });
+            return true;
+
+        case 'help':
+            console.log("Deep link action: Opening help");
+            await handleHelpCommand({ chat: { id: chatId }, from: { id: user.telegram_id } });
+            return true;
+
+        default:
+            // Check for share/referral links
+            if (action.startsWith('share_') || action.startsWith('ref_')) {
+                const refCode = action.split('_')[1];
+                console.log(`Deep link action: Referral code ${refCode}`);
+                // For now, just acknowledge and continue to normal start
+                await sendMessage(chatId,
+                    `🎁 Спасибо за переход по ссылке! Добро пожаловать! 💝`,
+                    getMainMenuKeyboard()
+                );
+                return true;
+            }
+
+            console.log(`Unknown deep link action: ${action}`);
+            return false; // Not handled, continue with normal start flow
+    }
+}
+
+/**
  * Handle /start command
  */
-async function handleStartCommand(message) {
+async function handleStartCommand(message, deepLinkParam = null) {
     const chatId = message.chat.id;
     const telegramUser = message.from;
     const user = getOrCreateUser(telegramUser);
@@ -444,6 +694,17 @@ async function handleStartCommand(message) {
     console.log(`User: ${user.first_name} (ID: ${user.telegram_id})`);
     console.log(`Language: ${user.language_code}`);
     console.log(`Onboarding completed: ${user.onboarding_completed}`);
+    if (deepLinkParam) {
+        console.log(`Deep link parameter: ${deepLinkParam}`);
+    }
+
+    // Handle deep link actions
+    if (deepLinkParam && user.onboarding_completed) {
+        const handled = await handleDeepLink(chatId, user, deepLinkParam);
+        if (handled) {
+            return; // Deep link was handled, don't show normal start flow
+        }
+    }
 
     if (!user.onboarding_completed) {
         // New user - send welcome image first
@@ -586,10 +847,20 @@ async function handleDeleteConfirmCallback(callback) {
     const messageId = callback.message.message_id;
     const user = getOrCreateUser(callback.from);
 
+    // Double-submit prevention: Check if already deleting
+    if (isUserActionProcessing(user.telegram_id, 'delete_data')) {
+        console.log(`⚠️ Double-submit prevented: delete_data for user ${user.telegram_id}`);
+        await answerCallback(callback.id, "⏳ Подожди...");
+        return;
+    }
+    markUserActionProcessing(user.telegram_id, 'delete_data');
+
     // Delete user data
     moments.delete(user.telegram_id);
     users.delete(user.telegram_id);
     userStates.delete(user.telegram_id);
+    // Save data after deletion
+    saveDataToFile();
 
     const successText = (
         "✅ <b>Данные удалены!</b>\n\n" +
@@ -1112,6 +1383,13 @@ async function handleTextMessage(message) {
     const state = userStates.get(user.telegram_id);
 
     if (state && state.state === 'adding_moment') {
+        // Double-submit prevention: Check if already saving a moment
+        if (isUserActionProcessing(user.telegram_id, 'save_moment')) {
+            console.log(`⚠️ Double-submit prevented: save_moment for user ${user.telegram_id}`);
+            return true; // Return true to indicate message was handled (ignored duplicate)
+        }
+        markUserActionProcessing(user.telegram_id, 'save_moment');
+
         // Save the moment
         const newMoment = addMoment(user.telegram_id, text);
         userStates.delete(user.telegram_id);
@@ -1143,8 +1421,10 @@ async function processUpdate(update) {
             const user = getOrCreateUser(update.message.from);
 
             try {
-                if (text === '/start') {
-                    await handleStartCommand(update.message);
+                if (text === '/start' || text.startsWith('/start ')) {
+                    // Handle deep links: /start or /start PARAMETER
+                    const deepLinkParam = text.startsWith('/start ') ? text.substring(7).trim() : null;
+                    await handleStartCommand(update.message, deepLinkParam);
                 } else if (text === '/help') {
                     await handleHelpCommand(update.message);
                 } else if (text === '/settings') {
@@ -1172,7 +1452,16 @@ async function processUpdate(update) {
             }
         } else if (update.callback_query) {
         const callbackData = update.callback_query.data;
+        const callbackId = update.callback_query.id;
         console.log(`Received callback: ${callbackData}`);
+
+        // Double-submit prevention for callbacks
+        if (isCallbackProcessing(callbackId)) {
+            console.log(`⚠️ Double-submit prevented: callback ${callbackId} already processing`);
+            await answerCallback(callbackId, "⏳ Подожди...");
+            return;
+        }
+        markCallbackProcessing(callbackId);
 
         if (callbackData === "address_informal") {
             await handleAddressCallback(update.callback_query, false);
@@ -1292,6 +1581,21 @@ async function main() {
         console.error("❌ Failed to connect to bot:", meData);
         process.exit(1);
     }
+
+    // Start auto-save for persistence
+    startAutoSave();
+
+    // Save data on graceful shutdown
+    process.on('SIGINT', () => {
+        console.log('\n⏹️ Shutting down...');
+        saveDataToFile();
+        process.exit(0);
+    });
+    process.on('SIGTERM', () => {
+        console.log('\n⏹️ Terminating...');
+        saveDataToFile();
+        process.exit(0);
+    });
 
     let offset = null;
 
