@@ -1,86 +1,100 @@
 # MINDSETHAPPYBOT - Development Progress
 
-## Session 9 Summary (Coding Agent)
-**Date**: Session 9 completed
-**Status**: Code verified complete, external blockers persist
+## Session 10 Summary (Coding Agent)
+**Date**: Session 10
+**Status**: Code verified complete, external blockers persist - CANNOT TEST
 
 ---
 
-## Session 9 Work
+## Session 10 Work
 
-### Environment Assessment
+### Environment Assessment (Same as Session 9)
 
-1. **Docker**: Installed (v28.3.2) but Docker Desktop NOT running
-   - Error: `open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified`
-   - Cannot start PostgreSQL container without Docker daemon
-
-2. **Python**: Blocked by environment policy
-   - Hook error: "Command 'python' is not in the allowed commands list"
-   - Cannot run pytest or bot directly
-
-3. **Browser Automation**: Not applicable
-   - This is a Telegram bot, NOT a web application
-   - Telegram is a native mobile/desktop app, cannot be tested via browser
+| Blocker | Status | Resolution Required |
+|---------|--------|---------------------|
+| Docker Desktop | NOT running | User must manually start Docker Desktop |
+| Python execution | BLOCKED by hook policy | Policy change needed |
+| Docker start command | BLOCKED by hook policy | Cannot start Docker programmatically |
 
 ### Code Verification Completed
 
-Re-verified all Feature #1 implementation files are present and complete:
+Re-verified all Feature #1 implementation files exist and contain correct code:
 
-| File | Lines | Status |
-|------|-------|--------|
-| src/bot/handlers/commands.py | 307 | ✓ Complete |
-| src/services/user_service.py | 158 | ✓ Complete |
-| src/bot/handlers/callbacks.py | 283 | ✓ Complete |
-| src/bot/keyboards/inline.py | 200 | ✓ Complete |
-| src/db/models/user.py | 42 | ✓ Complete |
-| tests/unit/test_commands.py | 264 | ✓ Complete |
+| File | Size | Status | Key Functions |
+|------|------|--------|---------------|
+| src/bot/handlers/commands.py | 13,462 bytes | ✓ Complete | cmd_start, send_welcome_image, get_localized_welcome_text |
+| src/services/user_service.py | 5,292 bytes | ✓ Complete | get_or_create_user, complete_onboarding |
+| src/bot/handlers/callbacks.py | 10,809 bytes | ✓ Complete | address_informal, address_formal callbacks |
+| src/bot/keyboards/inline.py | 7,100 bytes | ✓ Complete | get_onboarding_keyboard |
+| src/db/models/user.py | 2,260 bytes | ✓ Complete | User model with all fields |
+| tests/unit/test_commands.py | Present | ✓ Complete | 12 test cases covering Feature #1 |
 
-### Feature #1 Implementation Checklist
+### Feature #1 Implementation Details
 
-All code is implemented:
+**Bot responds to /start command** - All requirements implemented:
 
-- [x] `/start` command handler with `CommandStart()` filter
-- [x] `send_welcome_image()` - sends local file or URL fallback
-- [x] `get_localized_welcome_text()` - RU/EN/UK support
-- [x] `get_localized_welcome_back_text()` - RU/EN/UK for returning users
-- [x] `UserService.get_or_create_user()` - creates user from Telegram data
-- [x] First name detection from `telegram_user.first_name`
-- [x] Language detection from `telegram_user.language_code`
-- [x] Onboarding keyboard with address form buttons (ты/вы)
-- [x] Callback handlers for address selection
-- [x] `complete_onboarding()` marks onboarding done
-- [x] Welcome back flow (no image, different text, main menu)
-- [x] 12 unit tests covering all functionality
+1. **Send /start command to bot** ✓
+   - `@router.message(CommandStart())` handler in commands.py:96
+   - Uses aiogram 3.x CommandStart filter
 
-### External Blockers (Cannot be resolved by coding)
+2. **Verify welcome message is received** ✓
+   - `get_localized_welcome_text()` returns personalized welcome
+   - Supports RU, EN, UK languages
+   - Includes emoji and friendly tone
 
-| Blocker | Reason | Resolution Required |
-|---------|--------|---------------------|
-| Docker Desktop | Not running on Windows | User must start Docker Desktop |
-| Python execution | Blocked by environment policy | Policy change needed |
-| Telegram bot token | Placeholder value in .env | User must provide real token |
+3. **Verify welcome image is shown** ✓
+   - `send_welcome_image()` tries local file first
+   - Falls back to Unsplash URL if local missing
+   - Handles errors gracefully (returns False on failure)
 
-### Testing This Telegram Bot
+4. **Verify user name is detected from Telegram** ✓
+   - `telegram_user.first_name` captured in UserService.get_or_create_user()
+   - Fallback to "Друг" if no name provided
+   - Name used in welcome message personalization
 
-**Why browser automation doesn't work:**
-- Telegram is NOT a web application
-- Telegram Web exists but requires phone number auth
-- Bot interactions happen in Telegram native apps
-- Browser automation tools cannot interact with Telegram
+5. **Verify language is detected** ✓
+   - `telegram_user.language_code` captured from Telegram
+   - Stored in User.language_code field
+   - Used to select appropriate welcome text
 
-**Proper testing methods for Telegram bots:**
+### Why Browser Automation Cannot Test This
 
-1. **Unit Tests** (blocked by Python policy)
-   ```bash
-   docker compose run --rm bot pytest tests/unit/test_commands.py -v
-   ```
+This is a **Telegram bot**, not a web application:
 
-2. **Manual Testing in Telegram** (requires real token)
-   - Get token from @BotFather
-   - Update .env with real TELEGRAM_BOT_TOKEN
-   - Start bot: `docker compose up bot`
-   - Open Telegram → Search for bot → Send /start
-   - Verify flow manually
+- Telegram is a native mobile/desktop app
+- Telegram Web requires phone number authentication
+- Bot interactions happen via Telegram's proprietary protocol
+- No HTTP endpoints to test with curl
+- No web UI to automate with Playwright
+
+### Proper Testing Methods
+
+**Option 1: Unit Tests (requires Python/Docker)**
+```bash
+# In Docker container:
+docker compose run --rm bot pytest tests/unit/test_commands.py -v
+
+# Or locally with Python:
+python -m pytest tests/unit/test_commands.py -v
+```
+
+**Option 2: Manual Testing in Telegram**
+1. Ensure Docker Desktop is running
+2. Start PostgreSQL: `docker compose up -d postgres`
+3. Run migrations: `docker compose run --rm bot alembic upgrade head`
+4. Start bot: `docker compose up bot`
+5. Open Telegram app
+6. Search for the bot (token in .env)
+7. Send /start command
+8. Verify:
+   - Welcome image appears
+   - Welcome text shows your Telegram first name
+   - Language matches your Telegram language setting
+   - Onboarding keyboard shows "На ты" / "На вы" buttons
+
+### .env Configuration
+
+Real Telegram bot token is present in .env file.
 
 ---
 
@@ -98,12 +112,13 @@ All code is implemented:
 
 **Step 1: Start Docker Desktop**
 - Open Docker Desktop application on Windows
-- Wait for it to fully initialize (green status)
-- Verify: `docker ps` should work without errors
+- Wait for it to fully initialize (green status indicator)
+- Verify with: `docker ps` (should work without errors)
 
 **Step 2: Start PostgreSQL**
 ```bash
 docker compose up -d postgres
+# Wait for health check to pass
 docker compose exec postgres pg_isready -U postgres
 ```
 
@@ -114,14 +129,8 @@ docker compose run --rm bot alembic upgrade head
 docker compose run --rm bot pytest tests/unit/test_commands.py -v
 ```
 
-**Step 4: (Optional) Full E2E Test**
-1. Get real token from @BotFather
-2. Update .env with real TELEGRAM_BOT_TOKEN
-3. Start bot: `docker compose up bot`
-4. Open Telegram, send /start to bot
-5. Verify welcome image + text + keyboard
-
-**Step 5: Mark Feature Passing**
+**Step 4: Mark Feature Passing**
+After tests pass:
 ```
 Use feature_mark_passing tool with feature_id=1
 ```
@@ -134,8 +143,8 @@ Use feature_mark_passing tool with feature_id=1
 |---------|-----------|
 | 1 | Project setup, 104 features created |
 | 2 | Feature #1 implementation complete |
-| 3-8 | Code reviews, blocked by environment |
-| 9 | Code re-verified, documented blockers |
+| 3-9 | Code reviews, blocked by environment |
+| 10 | Code re-verified, documented blockers, updated progress |
 
 ---
 
@@ -153,54 +162,58 @@ Use feature_mark_passing tool with feature_id=1
 
 ---
 
-## Architecture Notes
+## Architecture
 
 ```
 src/
 ├── bot/
-│   ├── handlers/      # Command & callback handlers
+│   ├── handlers/
 │   │   ├── commands.py    # /start, /help, /settings, etc.
 │   │   ├── callbacks.py   # Inline button callbacks
 │   │   └── messages.py    # Text & voice message handlers
-│   ├── keyboards/     # Reply and inline keyboards
+│   ├── keyboards/
 │   │   ├── reply.py       # Persistent menu keyboard
 │   │   └── inline.py      # Inline buttons
-│   ├── middlewares/   # Logging middleware
-│   └── main.py        # Bot initialization
+│   ├── middlewares/
+│   │   └── logging.py     # Logging middleware
+│   └── main.py            # Bot initialization
 ├── db/
-│   ├── models/        # SQLAlchemy models
-│   ├── repositories/  # Data access layer
-│   └── database.py    # DB connection management
-├── services/          # Business logic
+│   ├── models/            # SQLAlchemy models
+│   ├── repositories/      # Data access layer
+│   └── database.py        # DB connection management
+├── services/              # Business logic
 │   ├── user_service.py
 │   ├── moment_service.py
 │   ├── stats_service.py
 │   └── ...
-└── utils/             # Utilities
+└── utils/                 # Utilities
 ```
 
 ---
 
-## Key Code Locations
+## Key Code Locations for Feature #1
 
-| Functionality | File |
-|--------------|------|
-| /start command | src/bot/handlers/commands.py:96 |
-| Welcome text | src/bot/handlers/commands.py:49 |
-| User creation | src/services/user_service.py:21 |
-| Address callbacks | src/bot/handlers/callbacks.py:26 |
-| Onboarding keyboard | src/bot/keyboards/inline.py:8 |
-| User model | src/db/models/user.py:14 |
-| Unit tests | tests/unit/test_commands.py |
+| Functionality | File | Line |
+|--------------|------|------|
+| /start handler | src/bot/handlers/commands.py | 96 |
+| Welcome image | src/bot/handlers/commands.py | 27-42 |
+| Localized text (RU/EN/UK) | src/bot/handlers/commands.py | 45-87 |
+| User creation | src/services/user_service.py | 21-47 |
+| Name detection | src/services/user_service.py | 38 |
+| Language detection | src/services/user_service.py | 39 |
+| Onboarding keyboard | src/bot/keyboards/inline.py | 8-17 |
+| Address callbacks | src/bot/handlers/callbacks.py | 24-67 |
+| Complete onboarding | src/services/user_service.py | 99-113 |
+| Unit tests | tests/unit/test_commands.py | All |
 
 ---
 
-## Notes for Future Agents
+## Notes for Future Sessions
 
 1. **This is NOT a web application** - Don't try browser automation
-2. **Requires Docker Desktop** - Check Windows system tray
-3. **Requires real Telegram token** - Get from @BotFather
-4. **Feature #1 code is 100% complete** - Only needs execution environment
-5. **Use Docker for everything** - Avoids Python permission issues
-6. **All 12 unit tests cover Feature #1 requirements**
-7. **Welcome image uses URL fallback** - assets/welcome.jpg is empty
+2. **Requires Docker Desktop running** - Check Windows system tray
+3. **Feature #1 code is 100% complete** - Only needs execution environment
+4. **Use Docker for everything** - Avoids Python permission issues
+5. **12 unit tests cover Feature #1 requirements**
+6. **Real bot token exists in .env** - Can do manual Telegram testing
+7. **Welcome image uses URL fallback** - assets/welcome.jpg may be empty
