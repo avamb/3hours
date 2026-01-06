@@ -12,6 +12,151 @@ const WELCOME_IMAGE_URL = "https://images.unsplash.com/photo-1506905925346-21bda
 // Simple in-memory user storage for testing
 const users = new Map();
 
+// In-memory moments storage for testing
+const moments = new Map();
+
+// User states for conversation flow
+const userStates = new Map();
+
+/**
+ * Localized error messages
+ */
+const errorMessages = {
+    ru: {
+        generic: "Ой, что-то пошло не так 😔\nПопробуй ещё раз или напиши /start",
+        network: "Не удалось подключиться к серверу 🌐\nПроверь интернет-соединение и попробуй снова",
+        voice_recognition: "Не удалось распознать голосовое сообщение 🎤\nПопробуй записать ещё раз или напиши текстом",
+        empty_input: "Сообщение пустое 📝\nПопробуй написать что-нибудь хорошее! 💝",
+        not_found: "Ничего не найдено 🔍\nПопробуй другой запрос",
+        action_failed: "Действие не выполнено 😕\nПопробуй ещё раз через несколько секунд",
+        timeout: "Это заняло слишком много времени ⏳\nПопробуй ещё раз 🔄",
+        invalid_time: "Время выбрано неверно ⏰\nПопробуй выбрать из предложенных вариантов 📋"
+    },
+    en: {
+        generic: "Oops, something went wrong 😔\nTry again or send /start",
+        network: "Could not connect to the server 🌐\nCheck your internet connection and try again",
+        voice_recognition: "Could not recognize voice message 🎤\nTry recording again or type your message",
+        empty_input: "Message is empty 📝\nTry writing something good! 💝",
+        not_found: "Nothing found 🔍\nTry a different query",
+        action_failed: "Action failed 😕\nTry again in a few seconds",
+        timeout: "That took too long ⏳\nTry again please 🔄",
+        invalid_time: "Time selected incorrectly ⏰\nTry selecting from the options provided 📋"
+    },
+    uk: {
+        generic: "Ой, щось пішло не так 😔\nСпробуй ще раз або напиши /start",
+        network: "Не вдалося підключитися до сервера 🌐\nПеревір інтернет-з'єднання і спробуй знову",
+        voice_recognition: "Не вдалося розпізнати голосове повідомлення 🎤\nСпробуй записати ще раз або напиши текстом",
+        empty_input: "Повідомлення порожнє 📝\nСпробуй написати щось хороше! 💝",
+        not_found: "Нічого не знайдено 🔍\nСпробуй інший запит",
+        action_failed: "Дію не виконано 😕\nСпробуй ще раз через кілька секунд",
+        timeout: "Це зайняло надто багато часу ⏳\nСпробуй ще раз 🔄",
+        invalid_time: "Час обрано неправильно ⏰\nСпробуй обрати з запропонованих варіантів 📋"
+    }
+};
+
+/**
+ * Get localized error message
+ * @param {string} errorType - Type of error (generic, network, voice_recognition, etc.)
+ * @param {string} languageCode - User's language code
+ * @returns {string} Localized error message
+ */
+function getErrorMessage(errorType, languageCode = 'ru') {
+    const lang = errorMessages[languageCode] ? languageCode : 'ru';
+    return errorMessages[lang][errorType] || errorMessages[lang].generic;
+}
+
+/**
+ * Send error message to user
+ * @param {number} chatId - Chat ID to send message to
+ * @param {string} errorType - Type of error
+ * @param {string} languageCode - User's language code
+ */
+async function sendErrorMessage(chatId, errorType, languageCode = 'ru') {
+    const message = getErrorMessage(errorType, languageCode);
+    await sendMessage(chatId, message, {
+        inline_keyboard: [
+            [{ text: "🔄 Попробовать снова", callback_data: "main_menu" }],
+            [{ text: "❓ Помощь", callback_data: "help" }]
+        ]
+    });
+    console.log(`⚠️ Error message sent: ${errorType} (${languageCode})`);
+}
+
+/**
+ * Format date according to user's locale
+ * @param {Date} date - The date to format
+ * @param {string} languageCode - User's language code (ru, en, uk)
+ * @param {boolean} includeTime - Whether to include time
+ * @returns {string} Formatted date string
+ */
+function formatDate(date, languageCode = 'ru', includeTime = false) {
+    const locale = languageCode === 'uk' ? 'uk-UA' :
+                   languageCode === 'en' ? 'en-US' : 'ru-RU';
+
+    const options = {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    };
+
+    if (includeTime) {
+        options.hour = '2-digit';
+        options.minute = '2-digit';
+    }
+
+    return date.toLocaleDateString(locale, options);
+}
+
+/**
+ * Format relative date (today, yesterday, etc.)
+ * @param {Date} date - The date to format
+ * @param {string} languageCode - User's language code
+ * @returns {string} Relative date string
+ */
+function formatRelativeDate(date, languageCode = 'ru') {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.floor((today - dateDay) / (1000 * 60 * 60 * 24));
+
+    const texts = {
+        ru: { today: 'Сегодня', yesterday: 'Вчера', daysAgo: 'дн. назад' },
+        en: { today: 'Today', yesterday: 'Yesterday', daysAgo: 'days ago' },
+        uk: { today: 'Сьогодні', yesterday: 'Вчора', daysAgo: 'дн. тому' }
+    };
+
+    const t = texts[languageCode] || texts.ru;
+
+    if (diffDays === 0) return t.today;
+    if (diffDays === 1) return t.yesterday;
+    if (diffDays < 7) return `${diffDays} ${t.daysAgo}`;
+
+    return formatDate(date, languageCode, false);
+}
+
+/**
+ * Add a moment to user's history
+ */
+function addMoment(userId, content) {
+    if (!moments.has(userId)) {
+        moments.set(userId, []);
+    }
+    const userMoments = moments.get(userId);
+    userMoments.push({
+        id: userMoments.length + 1,
+        content: content,
+        created_at: new Date()
+    });
+    return userMoments[userMoments.length - 1];
+}
+
+/**
+ * Get user's moments
+ */
+function getUserMoments(userId) {
+    return moments.get(userId) || [];
+}
+
 /**
  * Get or create user from Telegram data
  */
@@ -408,23 +553,153 @@ async function handlePrivacyCommand(message) {
 }
 
 /**
+ * Handle /delete_data command (GDPR compliance)
+ */
+async function handleDeleteDataCommand(message) {
+    const chatId = message.chat.id;
+    const user = getOrCreateUser(message.from);
+
+    const deleteText = (
+        "🗑️ <b>Удаление данных</b>\n\n" +
+        "Ты собираешься удалить все свои данные:\n" +
+        "• Все сохранённые моменты\n" +
+        "• Историю диалогов\n" +
+        "• Настройки\n\n" +
+        "⚠️ <b>Это действие необратимо!</b>\n\n" +
+        "Уверен, что хочешь удалить все данные?"
+    );
+
+    await sendMessage(chatId, deleteText, {
+        inline_keyboard: [
+            [{ text: "✅ Да, удалить всё", callback_data: "delete_confirm" }],
+            [{ text: "❌ Нет, отменить", callback_data: "main_menu" }]
+        ]
+    });
+    console.log("✅ Delete data confirmation requested");
+}
+
+/**
+ * Handle delete confirmation callback
+ */
+async function handleDeleteConfirmCallback(callback) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+
+    // Delete user data
+    moments.delete(user.telegram_id);
+    users.delete(user.telegram_id);
+    userStates.delete(user.telegram_id);
+
+    const successText = (
+        "✅ <b>Данные удалены!</b>\n\n" +
+        "Все твои данные были полностью удалены:\n" +
+        "• Моменты ✓\n" +
+        "• История диалогов ✓\n" +
+        "• Настройки ✓\n\n" +
+        "Если захочешь вернуться, просто напиши /start 💝"
+    );
+
+    await editMessage(chatId, messageId, successText, {
+        inline_keyboard: [
+            [{ text: "🔄 Начать заново", callback_data: "restart" }]
+        ]
+    });
+    await answerCallback(callback.id, "✅ Данные удалены");
+    console.log(`✅ All data deleted for user ${user.telegram_id}`);
+}
+
+/**
+ * Handle /export_data command (GDPR compliance)
+ */
+async function handleExportDataCommand(message) {
+    const chatId = message.chat.id;
+    const user = getOrCreateUser(message.from);
+    const userMoments = getUserMoments(user.telegram_id);
+
+    // Build export data
+    let exportText = "📦 <b>Твои данные</b>\n\n";
+    exportText += "<b>Профиль:</b>\n";
+    exportText += `• Имя: ${user.first_name}\n`;
+    exportText += `• Язык: ${user.language_code}\n`;
+    exportText += `• Обращение: ${user.formal_address ? 'на «вы»' : 'на «ты»'}\n`;
+    exportText += `• Активные часы: ${user.active_hours_start} - ${user.active_hours_end}\n`;
+    exportText += `• Интервал: ${user.notification_interval_hours} ч.\n`;
+    exportText += `• Уведомления: ${user.notifications_enabled ? 'вкл' : 'выкл'}\n`;
+    exportText += `• Регистрация: ${formatDate(user.created_at, user.language_code)}\n\n`;
+
+    exportText += `<b>Моменты (${userMoments.length}):</b>\n`;
+
+    if (userMoments.length === 0) {
+        exportText += "Пока нет сохранённых моментов.\n";
+    } else {
+        for (const moment of userMoments.slice(-10)) {
+            const date = formatDate(moment.created_at, user.language_code, true);
+            exportText += `\n📅 ${date}\n${moment.content}\n`;
+        }
+        if (userMoments.length > 10) {
+            exportText += `\n... и ещё ${userMoments.length - 10} моментов`;
+        }
+    }
+
+    exportText += "\n\n✅ <b>Экспорт завершён!</b>";
+
+    await sendMessage(chatId, exportText);
+    console.log(`✅ Data exported for user ${user.telegram_id}`);
+}
+
+/**
  * Handle /stats command
  */
 async function handleStatsCommand(message) {
     const chatId = message.chat.id;
     const user = getOrCreateUser(message.from);
+    const userMoments = getUserMoments(user.telegram_id);
 
-    // Simple stats for testing
-    const statsText = (
-        "📊 <b>Твоя статистика</b>\n\n" +
-        "🌟 Всего моментов: 0\n" +
-        "🔥 Текущий стрик: 0 дн.\n" +
-        "🏆 Лучший стрик: 0 дн.\n" +
-        "✉️ Отправлено вопросов: 0\n" +
-        "✅ Отвечено: 0\n"
-    );
-    await sendMessage(chatId, statsText);
+    // Calculate stats
+    const totalMoments = userMoments.length;
+    const registrationDate = formatDate(user.created_at, user.language_code, false);
+
+    // Find first and last moment dates
+    let firstMomentDate = null;
+    let lastMomentDate = null;
+
+    if (totalMoments > 0) {
+        firstMomentDate = formatDate(userMoments[0].created_at, user.language_code, false);
+        lastMomentDate = formatRelativeDate(userMoments[userMoments.length - 1].created_at, user.language_code);
+    }
+
+    // Build stats text
+    let statsText = "📊 <b>Твоя статистика</b>\n\n";
+    statsText += `🌟 Всего моментов: ${totalMoments}\n`;
+    statsText += "🔥 Текущий стрик: 0 дн.\n";
+    statsText += "🏆 Лучший стрик: 0 дн.\n";
+    statsText += "✉️ Отправлено вопросов: 0\n";
+    statsText += "✅ Отвечено: 0\n\n";
+
+    statsText += "📅 <b>Даты</b>\n";
+    statsText += `📝 Регистрация: ${registrationDate}\n`;
+
+    if (firstMomentDate) {
+        statsText += `🌱 Первый момент: ${firstMomentDate}\n`;
+        statsText += `✨ Последний момент: ${lastMomentDate}\n`;
+    }
+
+    await sendMessage(chatId, statsText, getStatsKeyboard());
     console.log("✅ Stats message sent");
+}
+
+/**
+ * Get statistics keyboard
+ */
+function getStatsKeyboard() {
+    return {
+        inline_keyboard: [
+            [{ text: "📅 За неделю", callback_data: "stats_week" }],
+            [{ text: "📆 За месяц", callback_data: "stats_month" }],
+            [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
+        ]
+    };
 }
 
 /**
@@ -432,12 +707,62 @@ async function handleStatsCommand(message) {
  */
 async function handleMomentsCommand(message) {
     const chatId = message.chat.id;
-    const momentsText = (
-        "📖 У тебя пока нет сохранённых моментов.\n" +
-        "Когда придёт время вопроса, поделись чем-то хорошим! 🌟"
-    );
-    await sendMessage(chatId, momentsText);
-    console.log("✅ Moments message sent");
+    const user = getOrCreateUser(message.from);
+    const userMoments = getUserMoments(user.telegram_id);
+
+    if (userMoments.length === 0) {
+        const emptyText = (
+            "📖 У тебя пока нет сохранённых моментов.\n" +
+            "Когда придёт время вопроса, поделись чем-то хорошим! 🌟"
+        );
+        await sendMessage(chatId, emptyText, getMomentsKeyboard(user.telegram_id, 0));
+        console.log("✅ Moments message sent (empty)");
+        return;
+    }
+
+    // Show last 5 moments with dates
+    const recentMoments = userMoments.slice(-5).reverse();
+    let momentsText = "📖 <b>Твои радостные моменты</b>\n\n";
+
+    for (const moment of recentMoments) {
+        const relativeDate = formatRelativeDate(moment.created_at, user.language_code);
+        const fullDate = formatDate(moment.created_at, user.language_code, true);
+        momentsText += `🌟 <i>${relativeDate}</i>\n`;
+        momentsText += `${moment.content}\n`;
+        momentsText += `<code>${fullDate}</code>\n\n`;
+    }
+
+    if (userMoments.length > 5) {
+        momentsText += `\n📚 Всего моментов: ${userMoments.length}`;
+    }
+
+    await sendMessage(chatId, momentsText, getMomentsKeyboard(user.telegram_id, userMoments.length));
+    console.log(`✅ Moments message sent (${userMoments.length} moments)`);
+}
+
+/**
+ * Get moments keyboard with navigation
+ */
+function getMomentsKeyboard(userId, totalMoments) {
+    const keyboard = {
+        inline_keyboard: []
+    };
+
+    if (totalMoments > 0) {
+        keyboard.inline_keyboard.push([
+            { text: "🎲 Случайный момент", callback_data: "moments_random" }
+        ]);
+    }
+
+    keyboard.inline_keyboard.push([
+        { text: "➕ Добавить момент", callback_data: "moments_add" }
+    ]);
+
+    keyboard.inline_keyboard.push([
+        { text: "⬅️ Главное меню", callback_data: "main_menu" }
+    ]);
+
+    return keyboard;
 }
 
 /**
@@ -716,28 +1041,136 @@ async function handleAddressChangeCallback(callback, formal) {
 }
 
 /**
- * Process a single update
+ * Handle moments-related callbacks
+ */
+async function handleMomentsCallback(callback, action) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+    const userMoments = getUserMoments(user.telegram_id);
+
+    if (action === "moments_add") {
+        // Set user state to "adding moment"
+        userStates.set(user.telegram_id, { state: 'adding_moment' });
+
+        await editMessage(chatId, messageId,
+            "✨ <b>Добавление момента</b>\n\n" +
+            "Расскажи, что хорошего произошло? " +
+            "Просто напиши сообщение, и я сохраню его.\n\n" +
+            "💡 Можно отправить текст или голосовое сообщение.",
+            {
+                inline_keyboard: [
+                    [{ text: "❌ Отмена", callback_data: "moments_cancel" }]
+                ]
+            }
+        );
+        console.log("✅ Prompted user to add moment");
+    } else if (action === "moments_cancel") {
+        // Clear user state
+        userStates.delete(user.telegram_id);
+
+        // Return to moments view
+        await handleMomentsCommand({ chat: { id: chatId }, from: callback.from });
+    } else if (action === "moments_random") {
+        if (userMoments.length === 0) {
+            await answerCallback(callback.id, "У тебя пока нет моментов");
+            return;
+        }
+
+        const randomMoment = userMoments[Math.floor(Math.random() * userMoments.length)];
+        const relativeDate = formatRelativeDate(randomMoment.created_at, user.language_code);
+        const fullDate = formatDate(randomMoment.created_at, user.language_code, true);
+
+        await editMessage(chatId, messageId,
+            "🎲 <b>Случайный момент</b>\n\n" +
+            `🌟 <i>${relativeDate}</i>\n` +
+            `${randomMoment.content}\n` +
+            `<code>${fullDate}</code>`,
+            {
+                inline_keyboard: [
+                    [{ text: "🎲 Ещё один", callback_data: "moments_random" }],
+                    [{ text: "📖 Все моменты", callback_data: "menu_moments" }],
+                    [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
+                ]
+            }
+        );
+        console.log("✅ Random moment shown");
+    }
+
+    await answerCallback(callback.id);
+}
+
+/**
+ * Handle text message (potentially a new moment)
+ */
+async function handleTextMessage(message) {
+    const chatId = message.chat.id;
+    const user = getOrCreateUser(message.from);
+    const text = message.text;
+
+    // Check if user is in "adding moment" state
+    const state = userStates.get(user.telegram_id);
+
+    if (state && state.state === 'adding_moment') {
+        // Save the moment
+        const newMoment = addMoment(user.telegram_id, text);
+        userStates.delete(user.telegram_id);
+
+        const savedDate = formatDate(newMoment.created_at, user.language_code, true);
+
+        await sendMessage(chatId,
+            "✨ <b>Момент сохранён!</b>\n\n" +
+            `🌟 ${text}\n\n` +
+            `📅 ${savedDate}\n\n` +
+            "Спасибо, что делишься хорошим! 💝",
+            getMomentsKeyboard(user.telegram_id, getUserMoments(user.telegram_id).length)
+        );
+        console.log(`✅ Moment saved for user ${user.telegram_id}: "${text.substring(0, 30)}..."`);
+        return true;
+    }
+
+    return false; // Message was not handled as a moment
+}
+
+/**
+ * Process a single update with error handling
  */
 async function processUpdate(update) {
-    if (update.message && update.message.text) {
-        const text = update.message.text;
+    try {
+        if (update.message && update.message.text) {
+            const text = update.message.text;
+            const chatId = update.message.chat.id;
+            const user = getOrCreateUser(update.message.from);
 
-        if (text === '/start') {
-            await handleStartCommand(update.message);
-        } else if (text === '/help') {
-            await handleHelpCommand(update.message);
-        } else if (text === '/settings') {
-            await handleSettingsCommand(update.message);
-        } else if (text === '/privacy') {
-            await handlePrivacyCommand(update.message);
-        } else if (text === '/stats') {
-            await handleStatsCommand(update.message);
-        } else if (text === '/moments') {
-            await handleMomentsCommand(update.message);
-        } else {
-            console.log(`Received message: ${text}`);
-        }
-    } else if (update.callback_query) {
+            try {
+                if (text === '/start') {
+                    await handleStartCommand(update.message);
+                } else if (text === '/help') {
+                    await handleHelpCommand(update.message);
+                } else if (text === '/settings') {
+                    await handleSettingsCommand(update.message);
+                } else if (text === '/privacy') {
+                    await handlePrivacyCommand(update.message);
+                } else if (text === '/stats') {
+                    await handleStatsCommand(update.message);
+                } else if (text === '/moments') {
+                    await handleMomentsCommand(update.message);
+                } else if (text === '/delete_data') {
+                    await handleDeleteDataCommand(update.message);
+                } else if (text === '/export_data') {
+                    await handleExportDataCommand(update.message);
+                } else {
+                    // Try to handle as a moment or general message
+                    const handled = await handleTextMessage(update.message);
+                    if (!handled) {
+                        console.log(`Received message: ${text}`);
+                    }
+                }
+            } catch (handlerError) {
+                console.error(`Handler error for "${text}":`, handlerError.message);
+                await sendErrorMessage(chatId, 'generic', user.language_code);
+            }
+        } else if (update.callback_query) {
         const callbackData = update.callback_query.data;
         console.log(`Received callback: ${callbackData}`);
 
@@ -764,10 +1197,83 @@ async function processUpdate(update) {
             await handleLanguageCallback(update.callback_query, callbackData);
         } else if (callbackData === "address_change_informal" || callbackData === "address_change_formal") {
             await handleAddressChangeCallback(update.callback_query, callbackData === "address_change_formal");
+        } else if (callbackData.startsWith("moments_")) {
+            await handleMomentsCallback(update.callback_query, callbackData);
+        } else if (callbackData.startsWith("stats_")) {
+            await handleStatsFilterCallback(update.callback_query, callbackData);
+        } else if (callbackData === "help") {
+            // Handle help button from error messages
+            const chatId = update.callback_query.message.chat.id;
+            await handleHelpCommand({ chat: { id: chatId }, from: update.callback_query.from });
+            await answerCallback(update.callback_query.id);
+        } else if (callbackData === "delete_confirm") {
+            await handleDeleteConfirmCallback(update.callback_query);
+        } else if (callbackData === "restart") {
+            // Handle restart after delete
+            const chatId = update.callback_query.message.chat.id;
+            await handleStartCommand({ chat: { id: chatId }, from: update.callback_query.from });
+            await answerCallback(update.callback_query.id);
         } else {
             await answerCallback(update.callback_query.id);
         }
     }
+    } catch (error) {
+        console.error("Error processing update:", error.message);
+        // Try to send error message if we have chat info
+        try {
+            const chatId = update.message?.chat?.id || update.callback_query?.message?.chat?.id;
+            const user = update.message?.from || update.callback_query?.from;
+            if (chatId && user) {
+                const userObj = getOrCreateUser(user);
+                await sendErrorMessage(chatId, 'generic', userObj.language_code);
+            }
+        } catch (errorSendError) {
+            console.error("Failed to send error message:", errorSendError.message);
+        }
+    }
+}
+
+/**
+ * Handle stats filter callbacks
+ */
+async function handleStatsFilterCallback(callback, action) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+    const userMoments = getUserMoments(user.telegram_id);
+
+    const now = new Date();
+    let periodName = "";
+    let periodMoments = [];
+
+    if (action === "stats_week") {
+        periodName = "за неделю";
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        periodMoments = userMoments.filter(m => m.created_at >= weekAgo);
+    } else if (action === "stats_month") {
+        periodName = "за месяц";
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        periodMoments = userMoments.filter(m => m.created_at >= monthAgo);
+    }
+
+    const startDate = action === "stats_week" ?
+        formatDate(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), user.language_code) :
+        formatDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), user.language_code);
+    const endDate = formatDate(now, user.language_code);
+
+    let statsText = `📊 <b>Статистика ${periodName}</b>\n`;
+    statsText += `📅 ${startDate} — ${endDate}\n\n`;
+    statsText += `🌟 Моментов: ${periodMoments.length}\n`;
+
+    await editMessage(chatId, messageId, statsText, {
+        inline_keyboard: [
+            [{ text: "📊 Общая статистика", callback_data: "menu_stats" }],
+            [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
+        ]
+    });
+
+    await answerCallback(callback.id);
+    console.log(`✅ Stats filtered: ${periodName} (${periodMoments.length} moments)`);
 }
 
 /**
