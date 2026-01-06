@@ -9,6 +9,10 @@ const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 // Welcome image URL (same as Python implementation)
 const WELCOME_IMAGE_URL = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop";
 
+// Telegram message limits
+const TELEGRAM_MESSAGE_LIMIT = 4096;
+const MOMENT_CONTENT_LIMIT = 2000;  // Reasonable limit for moment content
+
 // File-based persistence
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
@@ -203,6 +207,89 @@ const errorMessages = {
 };
 
 /**
+ * Escape HTML special characters to prevent XSS
+ * Telegram uses HTML parse mode, so user content must be escaped
+ * @param {string} text - Text to escape
+ * @returns {string} HTML-escaped text
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/**
+ * Truncate text to specified length with ellipsis
+ * @param {string} text - Text to truncate
+ * @param {number} maxLength - Maximum length
+ * @param {string} suffix - Suffix to add when truncated (default: '...')
+ * @returns {string} Truncated text
+ */
+function truncateText(text, maxLength, suffix = '...') {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - suffix.length) + suffix;
+}
+
+/**
+ * Split long message into multiple parts for Telegram
+ * Tries to split at sentence boundaries when possible
+ * @param {string} text - Text to split
+ * @param {number} maxLength - Maximum length per part (default: TELEGRAM_MESSAGE_LIMIT)
+ * @returns {string[]} Array of message parts
+ */
+function splitLongMessage(text, maxLength = TELEGRAM_MESSAGE_LIMIT) {
+    if (!text) return [''];
+    if (text.length <= maxLength) return [text];
+
+    const parts = [];
+    let remaining = text;
+
+    while (remaining.length > 0) {
+        if (remaining.length <= maxLength) {
+            parts.push(remaining);
+            break;
+        }
+
+        // Try to find a good split point (sentence end or paragraph)
+        let splitPoint = maxLength;
+
+        // Look for paragraph break
+        const paragraphBreak = remaining.lastIndexOf('\n\n', maxLength);
+        if (paragraphBreak > maxLength * 0.5) {
+            splitPoint = paragraphBreak + 2;
+        } else {
+            // Look for sentence end
+            const sentenceEnd = remaining.lastIndexOf('. ', maxLength);
+            if (sentenceEnd > maxLength * 0.5) {
+                splitPoint = sentenceEnd + 2;
+            } else {
+                // Look for any newline
+                const newline = remaining.lastIndexOf('\n', maxLength);
+                if (newline > maxLength * 0.5) {
+                    splitPoint = newline + 1;
+                } else {
+                    // Look for space
+                    const space = remaining.lastIndexOf(' ', maxLength);
+                    if (space > maxLength * 0.5) {
+                        splitPoint = space + 1;
+                    }
+                }
+            }
+        }
+
+        parts.push(remaining.substring(0, splitPoint).trim());
+        remaining = remaining.substring(splitPoint).trim();
+    }
+
+    return parts;
+}
+
+/**
  * Get localized error message
  * @param {string} errorType - Type of error (generic, network, voice_recognition, etc.)
  * @param {string} languageCode - User's language code
@@ -335,9 +422,10 @@ function getOrCreateUser(telegramUser) {
  * Get localized welcome text based on user's language
  */
 function getLocalizedWelcomeText(firstName, languageCode) {
+    const safeName = escapeHtml(firstName);
     if (languageCode && languageCode.startsWith("en")) {
         return (
-            `Hello, ${firstName}! 👋\n\n` +
+            `Hello, ${safeName}! 👋\n\n` +
             "I'm your assistant for developing positive thinking. " +
             "Every day I will ask you about good things, " +
             "so that we can notice the joyful moments of life together. ✨\n\n" +
@@ -345,7 +433,7 @@ function getLocalizedWelcomeText(firstName, languageCode) {
         );
     } else if (languageCode && languageCode.startsWith("uk")) {
         return (
-            `Привіт, ${firstName}! 👋\n\n` +
+            `Привіт, ${safeName}! 👋\n\n` +
             "Я — твій помічник для розвитку позитивного мислення. " +
             "Щодня я буду запитувати тебе про хороше, " +
             "щоб разом помічати радісні моменти життя. ✨\n\n" +
@@ -354,7 +442,7 @@ function getLocalizedWelcomeText(firstName, languageCode) {
     } else {
         // Default to Russian
         return (
-            `Привет, ${firstName}! 👋\n\n` +
+            `Привет, ${safeName}! 👋\n\n` +
             "Я — твой помощник для развития позитивного мышления. " +
             "Каждый день я буду спрашивать тебя о хорошем, " +
             "чтобы вместе замечать радостные моменты жизни. ✨\n\n" +
@@ -367,12 +455,13 @@ function getLocalizedWelcomeText(firstName, languageCode) {
  * Get welcome back text
  */
 function getLocalizedWelcomeBackText(firstName, languageCode) {
+    const safeName = escapeHtml(firstName);
     if (languageCode && languageCode.startsWith("en")) {
-        return `Welcome back, ${firstName}! 💝\n\nGood to see you again. How can I help?`;
+        return `Welcome back, ${safeName}! 💝\n\nGood to see you again. How can I help?`;
     } else if (languageCode && languageCode.startsWith("uk")) {
-        return `З поверненням, ${firstName}! 💝\n\nРадий знову тебе бачити. Чим можу допомогти?`;
+        return `З поверненням, ${safeName}! 💝\n\nРадий знову тебе бачити. Чим можу допомогти?`;
     } else {
-        return `С возвращением, ${firstName}! 💝\n\nРад снова тебя видеть. Чем могу помочь?`;
+        return `С возвращением, ${safeName}! 💝\n\nРад снова тебя видеть. Чем могу помочь?`;
     }
 }
 
@@ -398,6 +487,41 @@ async function sendPhoto(chatId, photoUrl, caption = "") {
  */
 async function sendMessage(chatId, text, replyMarkup = null, parseMode = 'HTML') {
     const url = `${BASE_URL}/sendMessage`;
+
+    // Handle very long messages by splitting them
+    if (text.length > TELEGRAM_MESSAGE_LIMIT) {
+        console.log(`⚠️ Message too long (${text.length} chars), splitting into parts`);
+        const parts = splitLongMessage(text, TELEGRAM_MESSAGE_LIMIT - 100); // Leave room for formatting
+        let lastResult = null;
+
+        for (let i = 0; i < parts.length; i++) {
+            const isLastPart = i === parts.length - 1;
+            const body = {
+                chat_id: chatId,
+                text: parts[i],
+                parse_mode: parseMode
+            };
+            // Only add keyboard to last message
+            if (isLastPart && replyMarkup) {
+                body.reply_markup = replyMarkup;
+            }
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            lastResult = await response.json();
+
+            // Small delay between messages to avoid rate limiting
+            if (!isLastPart) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        console.log(`✅ Message split into ${parts.length} parts`);
+        return lastResult;
+    }
+
+    // Normal message sending
     const body = {
         chat_id: chatId,
         text: text,
@@ -891,7 +1015,7 @@ async function handleExportDataCommand(message) {
     // Build export data
     let exportText = "📦 <b>Твои данные</b>\n\n";
     exportText += "<b>Профиль:</b>\n";
-    exportText += `• Имя: ${user.first_name}\n`;
+    exportText += `• Имя: ${escapeHtml(user.first_name)}\n`;
     exportText += `• Язык: ${user.language_code}\n`;
     exportText += `• Обращение: ${user.formal_address ? 'на «вы»' : 'на «ты»'}\n`;
     exportText += `• Активные часы: ${user.active_hours_start} - ${user.active_hours_end}\n`;
@@ -906,7 +1030,7 @@ async function handleExportDataCommand(message) {
     } else {
         for (const moment of userMoments.slice(-10)) {
             const date = formatDate(moment.created_at, user.language_code, true);
-            exportText += `\n📅 ${date}\n${moment.content}\n`;
+            exportText += `\n📅 ${date}\n${escapeHtml(moment.content)}\n`;
         }
         if (userMoments.length > 10) {
             exportText += `\n... и ещё ${userMoments.length - 10} моментов`;
@@ -999,7 +1123,7 @@ async function handleMomentsCommand(message) {
         const relativeDate = formatRelativeDate(moment.created_at, user.language_code);
         const fullDate = formatDate(moment.created_at, user.language_code, true);
         momentsText += `🌟 <i>${relativeDate}</i>\n`;
-        momentsText += `${moment.content}\n`;
+        momentsText += `${escapeHtml(moment.content)}\n`;
         momentsText += `<code>${fullDate}</code>\n\n`;
     }
 
@@ -1362,7 +1486,7 @@ async function handleMomentsCallback(callback, action) {
         await editMessage(chatId, messageId,
             "🎲 <b>Случайный момент</b>\n\n" +
             `🌟 <i>${relativeDate}</i>\n` +
-            `${randomMoment.content}\n` +
+            `${escapeHtml(randomMoment.content)}\n` +
             `<code>${fullDate}</code>`,
             {
                 inline_keyboard: [
@@ -1384,7 +1508,7 @@ async function handleMomentsCallback(callback, action) {
 async function handleTextMessage(message) {
     const chatId = message.chat.id;
     const user = getOrCreateUser(message.from);
-    const text = message.text;
+    let text = message.text;
 
     // Check if user is in "adding moment" state
     const state = userStates.get(user.telegram_id);
@@ -1397,20 +1521,35 @@ async function handleTextMessage(message) {
         }
         markUserActionProcessing(user.telegram_id, 'save_moment');
 
-        // Save the moment
+        // Handle very long messages - truncate to reasonable limit
+        let wasTruncated = false;
+        if (text.length > MOMENT_CONTENT_LIMIT) {
+            console.log(`⚠️ Message too long (${text.length} chars), truncating to ${MOMENT_CONTENT_LIMIT}`);
+            text = truncateText(text, MOMENT_CONTENT_LIMIT, '...');
+            wasTruncated = true;
+        }
+
+        // Save the moment (with potentially truncated text)
         const newMoment = addMoment(user.telegram_id, text);
         userStates.delete(user.telegram_id);
 
         const savedDate = formatDate(newMoment.created_at, user.language_code, true);
 
-        await sendMessage(chatId,
-            "✨ <b>Момент сохранён!</b>\n\n" +
-            `🌟 ${text}\n\n` +
-            `📅 ${savedDate}\n\n` +
-            "Спасибо, что делишься хорошим! 💝",
+        // Build response message
+        let responseText = "✨ <b>Момент сохранён!</b>\n\n" +
+            `🌟 ${escapeHtml(text)}\n\n` +
+            `📅 ${savedDate}\n\n`;
+
+        if (wasTruncated) {
+            responseText += "⚠️ <i>Сообщение было сокращено до допустимой длины.</i>\n\n";
+        }
+
+        responseText += "Спасибо, что делишься хорошим! 💝";
+
+        await sendMessage(chatId, responseText,
             getMomentsKeyboard(user.telegram_id, getUserMoments(user.telegram_id).length)
         );
-        console.log(`✅ Moment saved for user ${user.telegram_id}: "${text.substring(0, 30)}..."`);
+        console.log(`✅ Moment saved for user ${user.telegram_id}: "${text.substring(0, 30)}..."${wasTruncated ? ' (truncated)' : ''}`);
         return true;
     }
 
