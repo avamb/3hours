@@ -483,6 +483,32 @@ async function sendPhoto(chatId, photoUrl, caption = "") {
 }
 
 /**
+ * Send a document/file
+ * Uses multipart/form-data to send file content directly
+ */
+async function sendDocument(chatId, content, filename, caption = "") {
+    const url = `${BASE_URL}/sendDocument`;
+
+    // Create a Blob from the content
+    const blob = new Blob([content], { type: 'application/json' });
+
+    // Create FormData
+    const formData = new FormData();
+    formData.append('chat_id', chatId.toString());
+    formData.append('document', blob, filename);
+    if (caption) {
+        formData.append('caption', caption);
+        formData.append('parse_mode', 'HTML');
+    }
+
+    const response = await fetch(url, {
+        method: 'POST',
+        body: formData
+    });
+    return await response.json();
+}
+
+/**
  * Send a text message with optional inline/reply keyboard
  */
 async function sendMessage(chatId, text, replyMarkup = null, parseMode = 'HTML') {
@@ -1012,7 +1038,48 @@ async function handleExportDataCommand(message) {
     const user = getOrCreateUser(message.from);
     const userMoments = getUserMoments(user.telegram_id);
 
-    // Build export data
+    // Build JSON export data (full data for file)
+    const exportData = {
+        export_date: new Date().toISOString(),
+        format_version: "1.0",
+        user: {
+            telegram_id: user.telegram_id,
+            first_name: user.first_name,
+            language_code: user.language_code,
+            formal_address: user.formal_address,
+            active_hours_start: user.active_hours_start,
+            active_hours_end: user.active_hours_end,
+            notification_interval_hours: user.notification_interval_hours,
+            notifications_enabled: user.notifications_enabled,
+            onboarding_completed: user.onboarding_completed,
+            created_at: user.created_at
+        },
+        moments: userMoments.map(m => ({
+            id: m.id,
+            content: m.content,
+            created_at: m.created_at
+        })),
+        statistics: {
+            total_moments: userMoments.length,
+            first_moment_date: userMoments.length > 0 ? userMoments[0].created_at : null,
+            last_moment_date: userMoments.length > 0 ? userMoments[userMoments.length - 1].created_at : null
+        }
+    };
+
+    // Send JSON file
+    const jsonContent = JSON.stringify(exportData, null, 2);
+    const filename = `mindsethappybot_data_${user.telegram_id}_${new Date().toISOString().split('T')[0]}.json`;
+
+    try {
+        await sendDocument(chatId, jsonContent, filename,
+            "📦 <b>Твои данные в формате JSON</b>\n\nФайл содержит все твои данные в машиночитаемом формате."
+        );
+    } catch (err) {
+        console.error("Failed to send document:", err.message);
+        // Fall back to text message if document fails
+    }
+
+    // Build human-readable export text (summary)
     let exportText = "📦 <b>Твои данные</b>\n\n";
     exportText += "<b>Профиль:</b>\n";
     exportText += `• Имя: ${escapeHtml(user.first_name)}\n`;
