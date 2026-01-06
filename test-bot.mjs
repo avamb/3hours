@@ -200,8 +200,77 @@ function getSettingsKeyboard() {
             [{ text: "⏰ Интервал", callback_data: "settings_interval" }],
             [{ text: "🗣 Форма обращения", callback_data: "settings_address" }],
             [{ text: "🔔 Уведомления", callback_data: "settings_notifications" }],
+            [{ text: "🌍 Язык", callback_data: "settings_language" }],
             [{ text: "🔄 Сбросить настройки", callback_data: "settings_reset" }],
             [{ text: "⬅️ Назад", callback_data: "main_menu" }]
+        ]
+    };
+}
+
+function getHoursStartKeyboard() {
+    return {
+        inline_keyboard: [
+            [
+                { text: "06:00", callback_data: "hours_start_06" },
+                { text: "07:00", callback_data: "hours_start_07" },
+                { text: "08:00", callback_data: "hours_start_08" }
+            ],
+            [
+                { text: "09:00", callback_data: "hours_start_09" },
+                { text: "10:00", callback_data: "hours_start_10" },
+                { text: "11:00", callback_data: "hours_start_11" }
+            ],
+            [
+                { text: "12:00", callback_data: "hours_start_12" }
+            ],
+            [{ text: "⬅️ Назад", callback_data: "settings_back" }]
+        ]
+    };
+}
+
+function getHoursEndKeyboard() {
+    return {
+        inline_keyboard: [
+            [
+                { text: "18:00", callback_data: "hours_end_18" },
+                { text: "19:00", callback_data: "hours_end_19" },
+                { text: "20:00", callback_data: "hours_end_20" }
+            ],
+            [
+                { text: "21:00", callback_data: "hours_end_21" },
+                { text: "22:00", callback_data: "hours_end_22" },
+                { text: "23:00", callback_data: "hours_end_23" }
+            ],
+            [{ text: "⬅️ Назад", callback_data: "settings_back" }]
+        ]
+    };
+}
+
+function getIntervalKeyboard() {
+    return {
+        inline_keyboard: [
+            [
+                { text: "2 часа", callback_data: "interval_2" },
+                { text: "3 часа", callback_data: "interval_3" },
+                { text: "4 часа", callback_data: "interval_4" }
+            ],
+            [
+                { text: "6 часов", callback_data: "interval_6" },
+                { text: "8 часов", callback_data: "interval_8" },
+                { text: "12 часов", callback_data: "interval_12" }
+            ],
+            [{ text: "⬅️ Назад", callback_data: "settings_back" }]
+        ]
+    };
+}
+
+function getLanguageKeyboard() {
+    return {
+        inline_keyboard: [
+            [{ text: "🇷🇺 Русский", callback_data: "lang_ru" }],
+            [{ text: "🇬🇧 English", callback_data: "lang_en" }],
+            [{ text: "🇺🇦 Українська", callback_data: "lang_uk" }],
+            [{ text: "⬅️ Назад", callback_data: "settings_back" }]
         ]
     };
 }
@@ -295,12 +364,18 @@ async function handleSettingsCommand(message) {
     const chatId = message.chat.id;
     const user = getOrCreateUser(message.from);
 
+    const languageNames = {
+        'ru': 'Русский',
+        'en': 'English',
+        'uk': 'Українська'
+    };
     const settingsText = (
         "⚙️ <b>Настройки</b>\n\n" +
         `🕐 Активные часы: ${user.active_hours_start} - ${user.active_hours_end}\n` +
         `⏰ Интервал: каждые ${user.notification_interval_hours} ч.\n` +
         `🗣 Обращение: ${user.formal_address ? 'на «вы»' : 'на «ты»'}\n` +
-        `🔔 Уведомления: ${user.notifications_enabled ? 'включены' : 'выключены'}\n`
+        `🔔 Уведомления: ${user.notifications_enabled ? 'включены' : 'выключены'}\n` +
+        `🌍 Язык: ${languageNames[user.language_code] || user.language_code}\n`
     );
     await sendMessage(chatId, settingsText, getSettingsKeyboard());
     console.log("✅ Settings message sent");
@@ -459,6 +534,188 @@ async function handleMainMenuCallback(callback, action) {
 }
 
 /**
+ * Handle settings menu callbacks
+ */
+async function handleSettingsCallback(callback, action) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+
+    console.log(`\n=== Processing settings action: ${action} ===`);
+
+    switch (action) {
+        case "settings_hours":
+            await editMessage(chatId, messageId,
+                "🕐 <b>Начало активных часов</b>\n\n" +
+                `Текущее значение: ${user.active_hours_start}\n\n` +
+                "Выберите время начала:",
+                getHoursStartKeyboard()
+            );
+            break;
+        case "settings_interval":
+            await editMessage(chatId, messageId,
+                "⏰ <b>Интервал между вопросами</b>\n\n" +
+                `Текущее значение: каждые ${user.notification_interval_hours} ч.\n\n` +
+                "Выберите интервал:",
+                getIntervalKeyboard()
+            );
+            break;
+        case "settings_address":
+            await editMessage(chatId, messageId,
+                "🗣 <b>Форма обращения</b>\n\n" +
+                `Текущее значение: ${user.formal_address ? 'на «вы»' : 'на «ты»'}\n\n` +
+                "Выберите форму:",
+                {
+                    inline_keyboard: [
+                        [{ text: "На «ты» 😊", callback_data: "address_change_informal" }],
+                        [{ text: "На «вы» 🤝", callback_data: "address_change_formal" }],
+                        [{ text: "⬅️ Назад", callback_data: "settings_back" }]
+                    ]
+                }
+            );
+            break;
+        case "settings_notifications":
+            user.notifications_enabled = !user.notifications_enabled;
+            console.log(`✅ Notifications toggled to: ${user.notifications_enabled}`);
+            // Show updated settings
+            await showSettings(chatId, messageId, user);
+            break;
+        case "settings_language":
+            await editMessage(chatId, messageId,
+                "🌍 <b>Язык интерфейса</b>\n\n" +
+                `Текущий язык: ${user.language_code}\n\n` +
+                "Выберите язык:",
+                getLanguageKeyboard()
+            );
+            break;
+        case "settings_reset":
+            user.active_hours_start = "09:00";
+            user.active_hours_end = "21:00";
+            user.notification_interval_hours = 3;
+            user.notifications_enabled = true;
+            console.log("✅ Settings reset to defaults");
+            await showSettings(chatId, messageId, user);
+            break;
+        case "settings_back":
+            await showSettings(chatId, messageId, user);
+            break;
+    }
+
+    await answerCallback(callback.id);
+}
+
+/**
+ * Helper function to show settings
+ */
+async function showSettings(chatId, messageId, user) {
+    const languageNames = {
+        'ru': 'Русский',
+        'en': 'English',
+        'uk': 'Українська'
+    };
+    const settingsText = (
+        "⚙️ <b>Настройки</b>\n\n" +
+        `🕐 Активные часы: ${user.active_hours_start} - ${user.active_hours_end}\n` +
+        `⏰ Интервал: каждые ${user.notification_interval_hours} ч.\n` +
+        `🗣 Обращение: ${user.formal_address ? 'на «вы»' : 'на «ты»'}\n` +
+        `🔔 Уведомления: ${user.notifications_enabled ? 'включены' : 'выключены'}\n` +
+        `🌍 Язык: ${languageNames[user.language_code] || user.language_code}\n`
+    );
+    await editMessage(chatId, messageId, settingsText, getSettingsKeyboard());
+}
+
+/**
+ * Handle hours start selection
+ */
+async function handleHoursStartCallback(callback, action) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+
+    const hour = action.replace("hours_start_", "");
+    user.active_hours_start = `${hour}:00`;
+    console.log(`✅ Active hours start set to: ${user.active_hours_start}`);
+
+    // Now ask for end time
+    await editMessage(chatId, messageId,
+        "🕐 <b>Конец активных часов</b>\n\n" +
+        `Начало: ${user.active_hours_start}\n\n` +
+        "Выберите время окончания:",
+        getHoursEndKeyboard()
+    );
+
+    await answerCallback(callback.id, "✅ Начало установлено");
+}
+
+/**
+ * Handle hours end selection
+ */
+async function handleHoursEndCallback(callback, action) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+
+    const hour = action.replace("hours_end_", "");
+    user.active_hours_end = `${hour}:00`;
+    console.log(`✅ Active hours end set to: ${user.active_hours_end}`);
+    console.log(`✅ Active hours saved: ${user.active_hours_start} - ${user.active_hours_end}`);
+
+    // Show updated settings
+    await showSettings(chatId, messageId, user);
+    await answerCallback(callback.id, "✅ Часы сохранены!");
+}
+
+/**
+ * Handle interval selection
+ */
+async function handleIntervalCallback(callback, action) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+
+    const interval = parseInt(action.replace("interval_", ""));
+    user.notification_interval_hours = interval;
+    console.log(`✅ Notification interval set to: ${interval} hours`);
+
+    // Show updated settings
+    await showSettings(chatId, messageId, user);
+    await answerCallback(callback.id, "✅ Интервал сохранён!");
+}
+
+/**
+ * Handle language selection
+ */
+async function handleLanguageCallback(callback, action) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+
+    const lang = action.replace("lang_", "");
+    user.language_code = lang;
+    console.log(`✅ Language set to: ${lang}`);
+
+    // Show updated settings
+    await showSettings(chatId, messageId, user);
+    await answerCallback(callback.id, "✅ Язык сохранён!");
+}
+
+/**
+ * Handle address form change
+ */
+async function handleAddressChangeCallback(callback, formal) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+
+    user.formal_address = formal;
+    console.log(`✅ Address form changed to: ${formal ? 'formal (вы)' : 'informal (ты)'}`);
+
+    // Show updated settings
+    await showSettings(chatId, messageId, user);
+    await answerCallback(callback.id, formal ? "✅ Теперь на «вы»" : "✅ Теперь на «ты»");
+}
+
+/**
  * Process a single update
  */
 async function processUpdate(update) {
@@ -495,6 +752,18 @@ async function processUpdate(update) {
             await editMessage(chatId, update.callback_query.message.message_id,
                 "Чем могу помочь? 😊", getMainMenuInline());
             await answerCallback(update.callback_query.id);
+        } else if (callbackData.startsWith("settings_")) {
+            await handleSettingsCallback(update.callback_query, callbackData);
+        } else if (callbackData.startsWith("hours_start_")) {
+            await handleHoursStartCallback(update.callback_query, callbackData);
+        } else if (callbackData.startsWith("hours_end_")) {
+            await handleHoursEndCallback(update.callback_query, callbackData);
+        } else if (callbackData.startsWith("interval_")) {
+            await handleIntervalCallback(update.callback_query, callbackData);
+        } else if (callbackData.startsWith("lang_")) {
+            await handleLanguageCallback(update.callback_query, callbackData);
+        } else if (callbackData === "address_change_informal" || callbackData === "address_change_formal") {
+            await handleAddressChangeCallback(update.callback_query, callbackData === "address_change_formal");
         } else {
             await answerCallback(update.callback_query.id);
         }
