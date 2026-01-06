@@ -3,8 +3,10 @@ MINDSETHAPPYBOT - Command handlers
 Handles all bot commands: /start, /help, /settings, /moments, /stats, etc.
 """
 import logging
+from pathlib import Path
+
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile, URLInputFile
 from aiogram.filters import Command, CommandStart
 
 from src.bot.keyboards.reply import get_main_menu_keyboard
@@ -15,36 +17,107 @@ from src.services.user_service import UserService
 logger = logging.getLogger(__name__)
 router = Router(name="commands")
 
+# Welcome image URL (using a placeholder positive/mindset image)
+WELCOME_IMAGE_URL = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop"
+
+# Path to local welcome image (if exists)
+ASSETS_DIR = Path(__file__).parent.parent.parent.parent / "assets"
+WELCOME_IMAGE_PATH = ASSETS_DIR / "welcome.jpg"
+
+
+async def send_welcome_image(message: Message) -> bool:
+    """
+    Send welcome image to user
+    Returns True if image was sent successfully, False otherwise
+    """
+    try:
+        # Try local file first
+        if WELCOME_IMAGE_PATH.exists():
+            photo = FSInputFile(str(WELCOME_IMAGE_PATH))
+            await message.answer_photo(photo)
+            return True
+
+        # Fall back to URL image
+        photo = URLInputFile(WELCOME_IMAGE_URL)
+        await message.answer_photo(photo)
+        return True
+    except Exception as e:
+        logger.warning(f"Could not send welcome image: {e}")
+        return False
+
+
+def get_localized_welcome_text(first_name: str, language_code: str) -> str:
+    """Get welcome text in user's language"""
+    if language_code and language_code.startswith("en"):
+        return (
+            f"Hello, {first_name}! 👋\n\n"
+            "I'm your assistant for developing positive thinking. "
+            "Every day I will ask you about good things, "
+            "so that we can notice the joyful moments of life together. ✨\n\n"
+            "Let's begin! How would you prefer to communicate?"
+        )
+    elif language_code and language_code.startswith("uk"):
+        return (
+            f"Привіт, {first_name}! 👋\n\n"
+            "Я — твій помічник для розвитку позитивного мислення. "
+            "Щодня я буду запитувати тебе про хороше, "
+            "щоб разом помічати радісні моменти життя. ✨\n\n"
+            "Давай почнемо! Як тобі зручніше спілкуватися?"
+        )
+    else:  # Default to Russian
+        return (
+            f"Привет, {first_name}! 👋\n\n"
+            "Я — твой помощник для развития позитивного мышления. "
+            "Каждый день я буду спрашивать тебя о хорошем, "
+            "чтобы вместе замечать радостные моменты жизни. ✨\n\n"
+            "Давай начнём! Как тебе удобнее общаться?"
+        )
+
+
+def get_localized_welcome_back_text(first_name: str, language_code: str) -> str:
+    """Get welcome back text in user's language"""
+    if language_code and language_code.startswith("en"):
+        return (
+            f"Welcome back, {first_name}! 💝\n\n"
+            "Good to see you again. How can I help?"
+        )
+    elif language_code and language_code.startswith("uk"):
+        return (
+            f"З поверненням, {first_name}! 💝\n\n"
+            "Радий знову тебе бачити. Чим можу допомогти?"
+        )
+    else:  # Default to Russian
+        return (
+            f"С возвращением, {first_name}! 💝\n\n"
+            "Рад снова тебя видеть. Чем могу помочь?"
+        )
+
 
 @router.message(CommandStart())
 async def cmd_start(message: Message) -> None:
     """
     Handle /start command
-    - For new users: Start onboarding flow
+    - For new users: Start onboarding flow with welcome image
     - For existing users: Show welcome back message
     """
     user_service = UserService()
     user = await user_service.get_or_create_user(message.from_user)
 
     if not user.onboarding_completed:
-        # New user - start onboarding
-        welcome_text = (
-            f"Привет, {user.first_name}! 👋\n\n"
-            "Я — твой помощник для развития позитивного мышления. "
-            "Каждый день я буду спрашивать тебя о хорошем, "
-            "чтобы вместе замечать радостные моменты жизни. ✨\n\n"
-            "Давай начнём! Как тебе удобнее общаться?"
-        )
+        # New user - send welcome image first
+        await send_welcome_image(message)
+
+        # Get localized welcome text based on user's language
+        welcome_text = get_localized_welcome_text(user.first_name, user.language_code)
+
         await message.answer(
             welcome_text,
             reply_markup=get_onboarding_keyboard()
         )
     else:
         # Existing user - welcome back
-        welcome_back_text = (
-            f"С возвращением, {user.first_name}! 💝\n\n"
-            "Рад снова тебя видеть. Чем могу помочь?"
-        )
+        welcome_back_text = get_localized_welcome_back_text(user.first_name, user.language_code)
+
         await message.answer(
             welcome_back_text,
             reply_markup=get_main_menu_keyboard()

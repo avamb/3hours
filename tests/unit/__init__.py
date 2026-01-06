@@ -1,0 +1,1 @@
+# MINDSETHAPPYBOT - Unit tests package
