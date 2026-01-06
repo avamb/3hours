@@ -1,0 +1,233 @@
+"""
+MINDSETHAPPYBOT - Command handlers
+Handles all bot commands: /start, /help, /settings, /moments, /stats, etc.
+"""
+import logging
+from aiogram import Router, F
+from aiogram.types import Message
+from aiogram.filters import Command, CommandStart
+
+from src.bot.keyboards.reply import get_main_menu_keyboard
+from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
+from src.db.repositories.user_repository import UserRepository
+from src.services.user_service import UserService
+
+logger = logging.getLogger(__name__)
+router = Router(name="commands")
+
+
+@router.message(CommandStart())
+async def cmd_start(message: Message) -> None:
+    """
+    Handle /start command
+    - For new users: Start onboarding flow
+    - For existing users: Show welcome back message
+    """
+    user_service = UserService()
+    user = await user_service.get_or_create_user(message.from_user)
+
+    if not user.onboarding_completed:
+        # New user - start onboarding
+        welcome_text = (
+            f"Привет, {user.first_name}! 👋\n\n"
+            "Я — твой помощник для развития позитивного мышления. "
+            "Каждый день я буду спрашивать тебя о хорошем, "
+            "чтобы вместе замечать радостные моменты жизни. ✨\n\n"
+            "Давай начнём! Как тебе удобнее общаться?"
+        )
+        await message.answer(
+            welcome_text,
+            reply_markup=get_onboarding_keyboard()
+        )
+    else:
+        # Existing user - welcome back
+        welcome_back_text = (
+            f"С возвращением, {user.first_name}! 💝\n\n"
+            "Рад снова тебя видеть. Чем могу помочь?"
+        )
+        await message.answer(
+            welcome_back_text,
+            reply_markup=get_main_menu_keyboard()
+        )
+
+
+@router.message(Command("help"))
+async def cmd_help(message: Message) -> None:
+    """Handle /help command - show available commands and usage"""
+    help_text = (
+        "📚 <b>Команды бота</b>\n\n"
+        "/start - Начать заново\n"
+        "/help - Показать эту справку\n"
+        "/moments - Просмотреть историю моментов\n"
+        "/stats - Посмотреть статистику\n"
+        "/settings - Настройки\n"
+        "/talk - Начать свободный диалог\n"
+        "/privacy - Политика конфиденциальности\n"
+        "/export_data - Экспортировать свои данные\n"
+        "/delete_data - Удалить все свои данные\n\n"
+        "💡 <b>Как это работает</b>\n"
+        "Каждые несколько часов я спрошу тебя: «Что хорошего произошло?» "
+        "Ты можешь ответить текстом или голосовым сообщением. "
+        "Я сохраню твои радостные моменты и напомню о них, "
+        "когда будет нужна поддержка. 🌟"
+    )
+    await message.answer(help_text, reply_markup=get_main_menu_keyboard())
+
+
+@router.message(Command("settings"))
+async def cmd_settings(message: Message) -> None:
+    """Handle /settings command - show settings menu"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+
+    if not user:
+        await message.answer(
+            "Пожалуйста, сначала запусти бота командой /start"
+        )
+        return
+
+    settings_text = (
+        "⚙️ <b>Настройки</b>\n\n"
+        f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
+        f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
+        f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
+        f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
+        f"🌍 Язык: {user.language_code}\n"
+    )
+    await message.answer(settings_text, reply_markup=get_settings_keyboard())
+
+
+@router.message(Command("moments"))
+async def cmd_moments(message: Message) -> None:
+    """Handle /moments command - show user's moment history"""
+    from src.services.moment_service import MomentService
+    from src.bot.keyboards.inline import get_moments_keyboard
+
+    moment_service = MomentService()
+    moments = await moment_service.get_user_moments(
+        telegram_id=message.from_user.id,
+        limit=5
+    )
+
+    if not moments:
+        await message.answer(
+            "📖 У тебя пока нет сохранённых моментов.\n"
+            "Когда придёт время вопроса, поделись чем-то хорошим! 🌟"
+        )
+        return
+
+    moments_text = "📖 <b>Твои хорошие моменты</b>\n\n"
+    for moment in moments:
+        date_str = moment.created_at.strftime("%d.%m.%Y")
+        content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
+        moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
+
+    await message.answer(moments_text, reply_markup=get_moments_keyboard())
+
+
+@router.message(Command("stats"))
+async def cmd_stats(message: Message) -> None:
+    """Handle /stats command - show user statistics"""
+    from src.services.stats_service import StatsService
+
+    stats_service = StatsService()
+    stats = await stats_service.get_user_stats(message.from_user.id)
+
+    if not stats:
+        await message.answer(
+            "📊 Статистика пока недоступна.\n"
+            "Начни отвечать на вопросы, и здесь появится твой прогресс! ✨"
+        )
+        return
+
+    stats_text = (
+        "📊 <b>Твоя статистика</b>\n\n"
+        f"🌟 Всего моментов: {stats.total_moments}\n"
+        f"🔥 Текущий стрик: {stats.current_streak} дн.\n"
+        f"🏆 Лучший стрик: {stats.longest_streak} дн.\n"
+        f"✉️ Отправлено вопросов: {stats.total_questions_sent}\n"
+        f"✅ Отвечено: {stats.total_questions_answered}\n"
+    )
+
+    if stats.total_questions_sent > 0:
+        answer_rate = (stats.total_questions_answered / stats.total_questions_sent) * 100
+        stats_text += f"📈 Процент ответов: {answer_rate:.1f}%\n"
+
+    await message.answer(stats_text)
+
+
+@router.message(Command("talk"))
+async def cmd_talk(message: Message) -> None:
+    """Handle /talk command - start free dialog mode"""
+    from src.bot.keyboards.inline import get_dialog_keyboard
+
+    dialog_intro = (
+        "💬 <b>Режим диалога</b>\n\n"
+        "Я готов выслушать тебя. Расскажи, что у тебя на душе. "
+        "Я постараюсь помочь взглядом со стороны, "
+        "но помни — все решения принимаешь ты сам. 💝\n\n"
+        "Чтобы выйти из режима диалога, нажми кнопку ниже."
+    )
+    await message.answer(dialog_intro, reply_markup=get_dialog_keyboard())
+
+
+@router.message(Command("privacy"))
+async def cmd_privacy(message: Message) -> None:
+    """Handle /privacy command - show privacy policy"""
+    privacy_text = (
+        "🔒 <b>Политика конфиденциальности</b>\n\n"
+        "Я храню твои данные только для того, чтобы делать наше общение "
+        "более персональным и полезным для тебя.\n\n"
+        "<b>Что я сохраняю:</b>\n"
+        "• Твои ответы о хороших моментах\n"
+        "• Историю наших диалогов\n"
+        "• Настройки (часы, интервал, язык)\n\n"
+        "<b>Как использую:</b>\n"
+        "• Только для персонализации нашего общения\n"
+        "• Чтобы напоминать тебе о прошлых радостях\n"
+        "• Данные НЕ передаются третьим лицам\n\n"
+        "<b>Твои права:</b>\n"
+        "• /export_data — скачать все свои данные\n"
+        "• /delete_data — полностью удалить всё\n\n"
+        "Вопросы? Напиши мне в свободном диалоге! 💝"
+    )
+    await message.answer(privacy_text)
+
+
+@router.message(Command("export_data"))
+async def cmd_export_data(message: Message) -> None:
+    """Handle /export_data command - export user data (GDPR)"""
+    from src.services.gdpr_service import GDPRService
+
+    await message.answer("📦 Готовлю твои данные для экспорта...")
+
+    gdpr_service = GDPRService()
+    try:
+        file_data = await gdpr_service.export_user_data(message.from_user.id)
+        await message.answer_document(
+            file_data,
+            caption="📦 Вот все твои данные в формате JSON."
+        )
+    except Exception as e:
+        logger.error(f"Export failed: {e}")
+        await message.answer(
+            "😔 Не удалось экспортировать данные. Попробуй позже."
+        )
+
+
+@router.message(Command("delete_data"))
+async def cmd_delete_data(message: Message) -> None:
+    """Handle /delete_data command - request data deletion (GDPR)"""
+    from src.bot.keyboards.inline import get_delete_confirmation_keyboard
+
+    confirm_text = (
+        "⚠️ <b>Удаление данных</b>\n\n"
+        "Ты уверен, что хочешь удалить ВСЕ свои данные?\n\n"
+        "Это действие:\n"
+        "• Удалит все твои моменты\n"
+        "• Удалит историю диалогов\n"
+        "• Удалит статистику\n"
+        "• Сбросит настройки\n\n"
+        "⚠️ <b>Это действие необратимо!</b>"
+    )
+    await message.answer(confirm_text, reply_markup=get_delete_confirmation_keyboard())

@@ -1,0 +1,29 @@
+"""
+MINDSETHAPPYBOT - Reply keyboards
+Persistent keyboard with main menu buttons
+"""
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
+
+def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
+    """
+    Create main menu reply keyboard
+    Layout:
+    [📖 Мои моменты] [📊 Статистика]
+    [⚙️ Настройки] [💬 Поговорить]
+    """
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="📖 Мои моменты"),
+                KeyboardButton(text="📊 Статистика"),
+            ],
+            [
+                KeyboardButton(text="⚙️ Настройки"),
+                KeyboardButton(text="💬 Поговорить"),
+            ],
+        ],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
+    return keyboard

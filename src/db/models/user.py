@@ -1,0 +1,41 @@
+"""
+MINDSETHAPPYBOT - User model
+Stores Telegram user information and settings
+"""
+from datetime import datetime, time
+from typing import Optional
+
+from sqlalchemy import BigInteger, Boolean, String, Time, Integer, DateTime
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from src.db.database import Base
+
+
+class User(Base):
+    """User model - stores Telegram user info and preferences"""
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, index=True)
+    username: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    first_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    language_code: Mapped[str] = mapped_column(String(10), default="ru")
+    formal_address: Mapped[bool] = mapped_column(Boolean, default=False)  # True = вы, False = ты
+    active_hours_start: Mapped[time] = mapped_column(Time, default=time(9, 0))
+    active_hours_end: Mapped[time] = mapped_column(Time, default=time(21, 0))
+    notification_interval_hours: Mapped[int] = mapped_column(Integer, default=3)
+    notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    timezone: Mapped[str] = mapped_column(String(50), default="UTC")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_active_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Relationships
+    moments = relationship("Moment", back_populates="user", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    stats = relationship("UserStats", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    scheduled_notifications = relationship("ScheduledNotification", back_populates="user", cascade="all, delete-orphan")
+
+    def __repr__(self) -> str:
+        return f"<User(id={self.id}, telegram_id={self.telegram_id}, username={self.username})>"
