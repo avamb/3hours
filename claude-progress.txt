@@ -1,57 +1,44 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Current Status: COMPLETE
-- All 108 features passing (100%)
+## Current Status: COMPLETE - ALL FEATURES PASSING
+- All 109 features passing (100%)
 - Application fully functional
 
-## Session 173 - Verification Check
+## Session 174 - Summary Feature Implementation
 Date: 2026-01-07
 
-### What was verified:
-1. Docker containers running (bot + postgres) - 6+ hours uptime, healthy status
-2. Admin panel accessible at http://localhost:8080
-3. Dashboard Overview showing correct stats:
-   - 8 Total Users
-   - 13 Total Moments
-   - System Health: HEALTHY
-4. Users section showing all 8 users with correct data:
-   - Andrei (ru): 8 moments, 1-day streak
-   - MarinaBakanova (ru): 5 moments, 1-day streak
-   - Multiple languages: ru, en, uk
-5. User details modal displaying real data for Andrei:
-   - 8 moments, 1-day streak, 133% response rate
-   - Real Russian moments with proper timestamps
-   - Settings: 08:00-23:00 active hours, 1h notification interval
-   - Address form: Informal (ты) - onboarding completed
-6. System logs showing APScheduler running every minute successfully
-7. Real user activity in logs:
-   - User 446002546 (@andreiandreev62): Posted new moment at 19:26
-   - User 2143220578: Received scheduled question at 18:58
-   - OpenAI API calls successful (chat completions, embeddings)
-8. No ERROR logs in system - filtered to ERROR level shows "No logs found"
-9. Notifications section verified:
-   - 6 pending notifications scheduled for tomorrow (1/8/2026)
-   - 9 sent notifications with correct timestamps
-   - Scheduler working correctly
-10. pgvector extension verified:
-    - Extension version 0.8.1 installed
-    - All 13 moments have 1536-dimensional embeddings
-    - Vector similarity search working correctly
+### What was accomplished:
+1. Implemented Feature #109: Weekly and Monthly Summaries
+   - Created `src/services/summary_service.py` with:
+     - `generate_weekly_summary()` - Personalized weekly moment summaries
+     - `generate_monthly_summary()` - Personalized monthly moment summaries
+   - Updated `src/services/scheduler.py` with:
+     - Weekly summary job (runs Sundays at 10:00 UTC)
+     - Monthly summary job (runs 1st of month at 10:00 UTC)
+     - `send_summary_to_user()` for on-demand summaries
+   - Added `/summary` command in `src/bot/handlers/commands.py`
+   - Added summary inline keyboard in `src/bot/keyboards/inline.py`
+   - Added callback handlers for summary buttons in `src/bot/handlers/callbacks.py`
 
-### Regression Tests Selected:
-- Feature #10: Active hours enforcement
-- Feature #26: Negative mood detection
-- Feature #2: Onboarding flow completion
+2. Verified implementation:
+   - Rebuilt Docker container with new code
+   - Confirmed scheduler jobs registered in logs
+   - Tested summary generation with real user data
+   - Both weekly and monthly summaries generate correctly
+
+### Test Results:
+- Weekly summary: Successfully generated for user with 8 moments
+- Monthly summary: Successfully generated with streak info and topics
+- Scheduler logs show all 4 jobs registered:
+  - NotificationScheduler._process_notifications
+  - NotificationScheduler._schedule_user_notifications
+  - NotificationScheduler._send_weekly_summaries (NEW)
+  - NotificationScheduler._send_monthly_summaries (NEW)
 
 ### Database Status:
 - 8 users, 13 moments
-- pgvector extension v0.8.1 enabled
-- 1536-dimensional embeddings working
-- System HEALTHY, no errors
-- APScheduler scheduling notifications correctly
-
-### Browser Console:
-- Only favicon.ico 404 (cosmetic issue, does not affect functionality)
+- pgvector extension working
+- System HEALTHY
 
 ## Application Overview
 MINDSETHAPPYBOT - Telegram bot for positive thinking development
@@ -64,10 +51,27 @@ MINDSETHAPPYBOT - Telegram bot for positive thinking development
 - Statistics and streak tracking
 - GDPR compliance (data export/delete)
 - Multi-language support (Russian, English, Ukrainian)
+- **Weekly and monthly personalized summaries** (NEW)
 
 ### Architecture:
 - Backend: Python 3.11+ with aiogram 3.x
 - Database: PostgreSQL 15+ with pgvector extension
 - AI Services: OpenAI GPT-4, Embeddings, Whisper
-- Task Scheduler: APScheduler for periodic notifications
+- Task Scheduler: APScheduler for periodic notifications and summaries
 - Admin Panel: Web-based dashboard at localhost:8080
+
+### Summary Feature Details:
+- **Weekly**: Sent every Sunday at 10:00 UTC
+  - Includes moment count, key themes, highlights
+  - Personalized greeting with user's name
+  - Uses formal/informal address based on user settings
+
+- **Monthly**: Sent 1st of each month at 10:00 UTC
+  - Comprehensive month overview
+  - Streak information
+  - Top topics and most memorable moments
+  - Motivational closing for next month
+
+- **On-demand**: Users can request via /summary command
+  - Choose between weekly or monthly
+  - Generated in real-time using GPT-4
