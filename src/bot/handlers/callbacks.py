@@ -195,6 +195,32 @@ async def callback_settings_back(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
+@router.callback_query(F.data == "settings_reset")
+async def callback_settings_reset(callback: CallbackQuery) -> None:
+    """Reset all settings to default values"""
+    user_service = UserService()
+    success = await user_service.reset_settings_to_defaults(callback.from_user.id)
+
+    if success:
+        # Fetch updated user to show new settings
+        user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+        settings_text = (
+            "✅ <b>Настройки сброшены!</b>\n\n"
+            f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
+            f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
+            f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
+            f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
+        )
+        await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard())
+        await callback.answer("Настройки сброшены!")
+    else:
+        await callback.message.edit_text(
+            "😔 Не удалось сбросить настройки. Попробуй позже.",
+            reply_markup=get_settings_keyboard()
+        )
+        await callback.answer("Ошибка")
+
+
 # Moments callbacks
 @router.callback_query(F.data == "moments_next")
 async def callback_moments_next(callback: CallbackQuery) -> None:
@@ -347,4 +373,153 @@ async def callback_main_menu(callback: CallbackQuery) -> None:
         "Чем могу помочь? 😊",
         reply_markup=get_main_menu_inline()
     )
+    await callback.answer()
+
+
+# Menu callbacks - route to appropriate handlers
+@router.callback_query(F.data == "menu_moments")
+async def callback_menu_moments(callback: CallbackQuery) -> None:
+    """Show moments list"""
+    from src.bot.keyboards.inline import get_moments_keyboard
+
+    moment_service = MomentService()
+    moments = await moment_service.get_user_moments(
+        telegram_id=callback.from_user.id,
+        limit=5
+    )
+
+    if not moments:
+        await callback.message.edit_text(
+            "📖 У тебя пока нет сохранённых моментов.\n"
+            "Когда придёт время вопроса, поделись чем-то хорошим! 🌟",
+            reply_markup=get_main_menu_inline()
+        )
+    else:
+        moments_text = "📖 <b>Твои хорошие моменты</b>\n\n"
+        for moment in moments:
+            date_str = moment.created_at.strftime("%d.%m.%Y")
+            content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
+            moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
+        await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard())
+
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu_stats")
+async def callback_menu_stats(callback: CallbackQuery) -> None:
+    """Show statistics"""
+    from src.services.stats_service import StatsService
+
+    stats_service = StatsService()
+    stats = await stats_service.get_user_stats(callback.from_user.id)
+
+    if not stats:
+        await callback.message.edit_text(
+            "📊 Статистика пока недоступна.\n"
+            "Начни отвечать на вопросы, и здесь появится твой прогресс! ✨",
+            reply_markup=get_main_menu_inline()
+        )
+    else:
+        stats_text = (
+            "📊 <b>Твоя статистика</b>\n\n"
+            f"🌟 Всего моментов: {stats.total_moments}\n"
+            f"🔥 Текущий стрик: {stats.current_streak} дн.\n"
+            f"🏆 Лучший стрик: {stats.longest_streak} дн.\n"
+            f"✉️ Отправлено вопросов: {stats.total_questions_sent}\n"
+            f"✅ Отвечено: {stats.total_questions_answered}\n"
+        )
+        if stats.total_questions_sent > 0:
+            answer_rate = (stats.total_questions_answered / stats.total_questions_sent) * 100
+            stats_text += f"📈 Процент ответов: {answer_rate:.1f}%\n"
+        await callback.message.edit_text(stats_text, reply_markup=get_main_menu_inline())
+
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu_settings")
+async def callback_menu_settings(callback: CallbackQuery) -> None:
+    """Show settings menu"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+
+    if not user:
+        await callback.message.edit_text(
+            "Пожалуйста, сначала запусти бота командой /start",
+            reply_markup=get_main_menu_inline()
+        )
+    else:
+        settings_text = (
+            "⚙️ <b>Настройки</b>\n\n"
+            f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
+            f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
+            f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
+            f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
+            f"🌍 Язык: {user.language_code}\n"
+        )
+        await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard())
+
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu_talk")
+async def callback_menu_talk(callback: CallbackQuery) -> None:
+    """Start free dialog mode"""
+    from src.bot.keyboards.inline import get_dialog_keyboard
+
+    dialog_intro = (
+        "💬 <b>Режим диалога</b>\n\n"
+        "Я готов выслушать тебя. Расскажи, что у тебя на душе. "
+        "Я постараюсь помочь взглядом со стороны, "
+        "но помни — все решения принимаешь ты сам. 💝\n\n"
+        "Чтобы выйти из режима диалога, нажми кнопку ниже."
+    )
+    await callback.message.edit_text(dialog_intro, reply_markup=get_dialog_keyboard())
+    await callback.answer()
+
+
+# Filter callbacks for moments
+@router.callback_query(F.data.startswith("filter_"))
+async def callback_filter_moments(callback: CallbackQuery) -> None:
+    """Filter moments by period"""
+    period = callback.data.replace("filter_", "")
+    moment_service = MomentService()
+    moments = await moment_service.get_user_moments(
+        telegram_id=callback.from_user.id,
+        limit=5,
+        period=period
+    )
+
+    period_names = {"today": "сегодня", "week": "за неделю", "month": "за месяц"}
+    period_name = period_names.get(period, period)
+
+    if not moments:
+        await callback.message.edit_text(
+            f"📖 Нет моментов {period_name}.",
+            reply_markup=get_moments_keyboard()
+        )
+    else:
+        moments_text = f"📖 <b>Моменты {period_name}</b>\n\n"
+        for moment in moments:
+            date_str = moment.created_at.strftime("%d.%m.%Y")
+            content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
+            moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
+        await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard())
+
+    await callback.answer()
+
+
+# Skip question callback
+@router.callback_query(F.data == "question_skip")
+async def callback_question_skip(callback: CallbackQuery) -> None:
+    """Skip the current scheduled question"""
+    await callback.message.edit_text(
+        "👍 Хорошо, пропустим этот вопрос. До скорой встречи! 😊"
+    )
+    await callback.answer()
+
+
+# Noop callback for display-only buttons
+@router.callback_query(F.data == "noop")
+async def callback_noop(callback: CallbackQuery) -> None:
+    """Do nothing - for display-only buttons like page numbers"""
     await callback.answer()

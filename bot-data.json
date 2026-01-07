@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 2,
+  "users": {
+    "446002546": {
+      "telegram_id": 446002546,
+      "first_name": "Andrei",
+      "language_code": "ru",
+      "formal_address": false,
+      "onboarding_completed": true,
+      "notifications_enabled": true,
+      "active_hours_start": "09:00",
+      "active_hours_end": "21:00",
+      "notification_interval_hours": 3,
+      "created_at": "2026-01-06T23:42:25.523Z",
+      "timezone": "UTC"
+    }
+  },
+  "moments": {},
+  "scheduledJobs": {},
+  "savedAt": "2026-01-07T04:47:32.588Z"
+}
