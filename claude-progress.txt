@@ -2,13 +2,13 @@
 
 ## Session 25 Summary (Coding Agent)
 **Date**: Session 25
-**Status**: **83 Features PASSING (79.8%)** - ALMOST 80% MILESTONE!
+**Status**: **85 Features PASSING (81.7%)** - 80% MILESTONE REACHED!
 
 ---
 
 ## Key Achievements This Session
 
-### Features Verified PASSING (10 new)
+### Features Verified PASSING (12 new)
 
 | Feature ID | Name | Status |
 |------------|------|--------|
@@ -22,8 +22,10 @@
 | #39 | Moment topics extraction | PASS (NEW) |
 | #40 | Mood score calculation | PASS (NEW) |
 | #41 | Conversation history saving | PASS (NEW) |
+| #42 | Question templates by language | PASS (NEW) |
+| #43 | Formal/informal templates | PASS (NEW) |
 
-### Total Features Now Passing: 83
+### Total Features Now Passing: 85
 
 ---
 
