@@ -211,7 +211,9 @@ async def callback_moments_prev(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "moments_random")
 async def callback_moments_random(callback: CallbackQuery) -> None:
-    """Show random moment"""
+    """Show random moment with delete option"""
+    from src.bot.keyboards.inline import get_random_moment_keyboard
+
     moment_service = MomentService()
     moment = await moment_service.get_random_moment(callback.from_user.id)
 
@@ -220,7 +222,8 @@ async def callback_moments_random(callback: CallbackQuery) -> None:
         await callback.message.answer(
             f"🎲 <b>Случайный хороший момент</b>\n\n"
             f"📅 {date_str}\n\n"
-            f"«{moment.content}»"
+            f"«{moment.content}»",
+            reply_markup=get_random_moment_keyboard(moment.id)
         )
     else:
         await callback.message.answer("У тебя пока нет сохранённых моментов.")
@@ -255,6 +258,71 @@ async def callback_delete_cancel(callback: CallbackQuery) -> None:
     await callback.message.edit_text(
         "👍 Удаление отменено. Твои данные в безопасности!"
     )
+    await callback.answer()
+
+
+# Individual moment delete callbacks
+@router.callback_query(F.data.startswith("moment_delete_confirm_"))
+async def callback_moment_delete_confirm(callback: CallbackQuery) -> None:
+    """Show confirmation dialog for deleting a moment"""
+    from src.bot.keyboards.inline import get_moment_delete_confirm_keyboard
+
+    moment_id = int(callback.data.replace("moment_delete_confirm_", ""))
+    moment_service = MomentService()
+
+    # Get the moment to show preview
+    moments = await moment_service.get_user_moments(
+        telegram_id=callback.from_user.id,
+        limit=100  # Get all to find the specific one
+    )
+
+    target_moment = None
+    for m in moments:
+        if m.id == moment_id:
+            target_moment = m
+            break
+
+    if not target_moment:
+        await callback.message.edit_text(
+            "😔 Момент не найден.",
+            reply_markup=get_moments_keyboard()
+        )
+        await callback.answer()
+        return
+
+    preview = target_moment.content[:50] + ("..." if len(target_moment.content) > 50 else "")
+
+    await callback.message.edit_text(
+        f"🗑️ <b>Удалить момент?</b>\n\n"
+        f"«{preview}»\n\n"
+        f"⚠️ Это действие необратимо!",
+        reply_markup=get_moment_delete_confirm_keyboard(moment_id)
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("moment_delete_") & ~F.data.startswith("moment_delete_confirm_"))
+async def callback_moment_delete(callback: CallbackQuery) -> None:
+    """Actually delete a moment"""
+    moment_id = int(callback.data.replace("moment_delete_", ""))
+    moment_service = MomentService()
+
+    success = await moment_service.delete_moment(
+        telegram_id=callback.from_user.id,
+        moment_id=moment_id
+    )
+
+    if success:
+        await callback.message.edit_text(
+            "✅ Момент удалён.",
+            reply_markup=get_moments_keyboard()
+        )
+    else:
+        await callback.message.edit_text(
+            "😔 Не удалось удалить момент.",
+            reply_markup=get_moments_keyboard()
+        )
+
     await callback.answer()
 
 

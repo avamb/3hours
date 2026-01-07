@@ -197,3 +197,37 @@ def get_question_keyboard() -> InlineKeyboardMarkup:
         ]
     )
     return keyboard
+
+
+def get_moment_delete_confirm_keyboard(moment_id: int) -> InlineKeyboardMarkup:
+    """Create keyboard for confirming moment deletion"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Да, удалить", callback_data=f"moment_delete_{moment_id}"),
+                InlineKeyboardButton(text="❌ Отмена", callback_data="moments_random"),
+            ],
+        ]
+    )
+    return keyboard
+
+
+def get_random_moment_keyboard(moment_id: int) -> InlineKeyboardMarkup:
+    """Create keyboard for random moment view with delete option"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🎲 Ещё случайный", callback_data="moments_random"),
+            ],
+            [
+                InlineKeyboardButton(text="🗑️ Удалить", callback_data=f"moment_delete_confirm_{moment_id}"),
+            ],
+            [
+                InlineKeyboardButton(text="📖 Все моменты", callback_data="menu_moments"),
+            ],
+            [
+                InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu"),
+            ],
+        ]
+    )
+    return keyboard
