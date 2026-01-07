@@ -1,7 +1,7 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Current Status (Session 116)
-- **Features Passing:** 107/107 (100%)
+## Current Status (Session 117)
+- **Features Passing:** 108/108 (100%)
 - **All features complete!**
 
 ## Project Overview
@@ -14,7 +14,8 @@ This is a Telegram bot called MINDSETHAPPYBOT that helps users capture and refle
 ## Running Infrastructure
 - Bot container: mindsethappybot (running)
 - PostgreSQL container: mindsethappybot-postgres (running, healthy)
-- Database has: 2 users, 4 moments
+- Admin panel: Node.js server on port 8080
+- Database has: 2 users, 4 moments, 4 scheduled notifications
 
 ## Key Features Implemented
 - User onboarding with timezone/language selection
@@ -24,14 +25,20 @@ This is a Telegram bot called MINDSETHAPPYBOT that helps users capture and refle
 - GDPR compliance (export/delete data)
 - Multi-language support (Russian)
 - Warm, supportive tone in bot responses
+- Admin panel with Users, Messages, Logs, Notifications, Feedback tabs
 
-## Session 116 Notes
-- Fresh context window verification
-- All 107 features passing
-- Bot and database containers running healthy
-- No uncommitted changes
-- Scheduler running every minute for notifications
+## Session 117 Notes
+- Completed Feature #108: Admin Messages Tab - Show Scheduled Messages
+- Added /api/messages endpoint combining conversations and scheduled_notifications
+- Updated Messages page with Scheduled Question filter and Status column
+- All 108 features now passing (100%)
+- Committed changes to git
 
-## What's Next
+### Files Modified:
+- admin/server.mjs - Added /api/messages endpoint
+- admin/static/app.js - Updated loadMessages() to use new API
+- admin/static/index.html - Added filter option and Status column
+
+## What is Next
 - All features complete! Project is in maintenance mode.
 - Future sessions can verify functionality continues to work.
