@@ -98,103 +98,212 @@ const topicKeywords = {
 };
 
 // Question templates for variety - each language has multiple formulations
-// No consecutive repetition allowed
+// Categories: main (daily questions), follow_up (after moment saved), return_inactive (for inactive users)
+// No consecutive repetition allowed within each category
 const questionTemplates = {
     ru: {
-        informal: [
-            "Что хорошего произошло?",
-            "Расскажи о чём-то приятном сегодня ✨",
-            "Чему ты сегодня порадовался(ась)?",
-            "Какой момент сегодня был особенным?",
-            "Что тебя сегодня улыбнуло? 😊",
-            "Поделись чем-то хорошим из сегодняшнего дня",
-            "Что принесло тебе радость сегодня?",
-            "Был ли сегодня момент, который хочется запомнить?",
-            "О чём хорошем можешь рассказать?",
-            "Что сегодня было здорово?"
-        ],
-        formal: [
-            "Что хорошего произошло?",
-            "Расскажите о чём-то приятном сегодня ✨",
-            "Чему Вы сегодня порадовались?",
-            "Какой момент сегодня был особенным?",
-            "Что Вас сегодня улыбнуло? 😊",
-            "Поделитесь чем-то хорошим из сегодняшнего дня",
-            "Что принесло Вам радость сегодня?",
-            "Был ли сегодня момент, который хочется запомнить?",
-            "О чём хорошем можете рассказать?",
-            "Что сегодня было здорово?"
-        ]
+        main: {
+            informal: [
+                "Что хорошего произошло?",
+                "Расскажи о чём-то приятном сегодня ✨",
+                "Чему ты сегодня порадовался(ась)?",
+                "Какой момент сегодня был особенным?",
+                "Что тебя сегодня улыбнуло? 😊",
+                "Поделись чем-то хорошим из сегодняшнего дня",
+                "Что принесло тебе радость сегодня?",
+                "Был ли сегодня момент, который хочется запомнить?",
+                "О чём хорошем можешь рассказать?",
+                "Что сегодня было здорово?"
+            ],
+            formal: [
+                "Что хорошего произошло?",
+                "Расскажите о чём-то приятном сегодня ✨",
+                "Чему Вы сегодня порадовались?",
+                "Какой момент сегодня был особенным?",
+                "Что Вас сегодня улыбнуло? 😊",
+                "Поделитесь чем-то хорошим из сегодняшнего дня",
+                "Что принесло Вам радость сегодня?",
+                "Был ли сегодня момент, который хочется запомнить?",
+                "О чём хорошем можете рассказать?",
+                "Что сегодня было здорово?"
+            ]
+        },
+        follow_up: {
+            informal: [
+                "Отлично! Есть ещё что-то хорошее? 🌟",
+                "Здорово! Хочешь добавить ещё один момент?",
+                "Прекрасно! Может, вспомнишь что-то ещё?",
+                "Замечательно! А что ещё порадовало?",
+                "Супер! Есть что-то ещё на сегодня? ✨"
+            ],
+            formal: [
+                "Отлично! Есть ещё что-то хорошее? 🌟",
+                "Здорово! Хотите добавить ещё один момент?",
+                "Прекрасно! Может, вспомните что-то ещё?",
+                "Замечательно! А что ещё порадовало?",
+                "Супер! Есть что-то ещё на сегодня? ✨"
+            ]
+        },
+        return_inactive: {
+            informal: [
+                "Привет! Давно не виделись 👋 Как у тебя дела?",
+                "С возвращением! 🌟 Расскажи, что хорошего произошло за это время?",
+                "Рады тебя видеть снова! Что нового и приятного?",
+                "Привет! ✨ Соскучились! Поделись чем-то хорошим?",
+                "Ух ты, давно тебя не было! Как жизнь? Что радует?"
+            ],
+            formal: [
+                "Здравствуйте! Давно не виделись 👋 Как Ваши дела?",
+                "С возвращением! 🌟 Расскажите, что хорошего произошло за это время?",
+                "Рады Вас видеть снова! Что нового и приятного?",
+                "Здравствуйте! ✨ Мы скучали! Поделитесь чем-то хорошим?",
+                "Давно Вас не было! Как жизнь? Что радует?"
+            ]
+        }
     },
     en: {
-        informal: [
-            "What good happened today?",
-            "Tell me about something nice today ✨",
-            "What made you happy today?",
-            "What moment was special today?",
-            "What made you smile today? 😊",
-            "Share something good from today",
-            "What brought you joy today?",
-            "Was there a moment worth remembering today?",
-            "What's something good you can share?",
-            "What was great today?"
-        ],
-        formal: [
-            "What good happened today?",
-            "Please tell me about something nice today ✨",
-            "What made you happy today?",
-            "What moment was special today?",
-            "What made you smile today? 😊",
-            "Please share something good from today",
-            "What brought you joy today?",
-            "Was there a moment worth remembering today?",
-            "What's something good you can share?",
-            "What was great today?"
-        ]
+        main: {
+            informal: [
+                "What good happened today?",
+                "Tell me about something nice today ✨",
+                "What made you happy today?",
+                "What moment was special today?",
+                "What made you smile today? 😊",
+                "Share something good from today",
+                "What brought you joy today?",
+                "Was there a moment worth remembering today?",
+                "What's something good you can share?",
+                "What was great today?"
+            ],
+            formal: [
+                "What good happened today?",
+                "Please tell me about something nice today ✨",
+                "What made you happy today?",
+                "What moment was special today?",
+                "What made you smile today? 😊",
+                "Please share something good from today",
+                "What brought you joy today?",
+                "Was there a moment worth remembering today?",
+                "What's something good you can share?",
+                "What was great today?"
+            ]
+        },
+        follow_up: {
+            informal: [
+                "Great! Anything else good to share? 🌟",
+                "Awesome! Want to add another moment?",
+                "Wonderful! Remember anything else?",
+                "Amazing! What else made you happy?",
+                "Super! Anything more for today? ✨"
+            ],
+            formal: [
+                "Great! Anything else good to share? 🌟",
+                "Wonderful! Would you like to add another moment?",
+                "Excellent! Do you remember anything else?",
+                "Amazing! What else made you happy?",
+                "Splendid! Anything more for today? ✨"
+            ]
+        },
+        return_inactive: {
+            informal: [
+                "Hey! Long time no see 👋 How are you doing?",
+                "Welcome back! 🌟 What good happened while you were away?",
+                "Great to see you again! What's new and nice?",
+                "Hi there! ✨ We missed you! Share something good?",
+                "Wow, it's been a while! How's life? What's making you happy?"
+            ],
+            formal: [
+                "Hello! It's been a while 👋 How are you doing?",
+                "Welcome back! 🌟 What good happened while you were away?",
+                "Great to see you again! What's new and nice?",
+                "Hello! ✨ We missed you! Please share something good?",
+                "It's been a while! How is life? What's making you happy?"
+            ]
+        }
     },
     uk: {
-        informal: [
-            "Що хорошого сталось?",
-            "Розкажи про щось приємне сьогодні ✨",
-            "Чому ти сьогодні порадувався(лась)?",
-            "Який момент сьогодні був особливим?",
-            "Що тебе сьогодні засміяло? 😊",
-            "Поділись чимось хорошим з сьогоднішнього дня",
-            "Що принесло тобі радість сьогодні?",
-            "Чи був сьогодні момент, який хочеться запам'ятати?",
-            "Про що хороше можеш розповісти?",
-            "Що сьогодні було класно?"
-        ],
-        formal: [
-            "Що хорошого сталось?",
-            "Розкажіть про щось приємне сьогодні ✨",
-            "Чому Ви сьогодні порадувались?",
-            "Який момент сьогодні був особливим?",
-            "Що Вас сьогодні засміяло? 😊",
-            "Поділіться чимось хорошим з сьогоднішнього дня",
-            "Що принесло Вам радість сьогодні?",
-            "Чи був сьогодні момент, який хочеться запам'ятати?",
-            "Про що хороше можете розповісти?",
-            "Що сьогодні було класно?"
-        ]
+        main: {
+            informal: [
+                "Що хорошого сталось?",
+                "Розкажи про щось приємне сьогодні ✨",
+                "Чому ти сьогодні порадувався(лась)?",
+                "Який момент сьогодні був особливим?",
+                "Що тебе сьогодні засміяло? 😊",
+                "Поділись чимось хорошим з сьогоднішнього дня",
+                "Що принесло тобі радість сьогодні?",
+                "Чи був сьогодні момент, який хочеться запам'ятати?",
+                "Про що хороше можеш розповісти?",
+                "Що сьогодні було класно?"
+            ],
+            formal: [
+                "Що хорошого сталось?",
+                "Розкажіть про щось приємне сьогодні ✨",
+                "Чому Ви сьогодні порадувались?",
+                "Який момент сьогодні був особливим?",
+                "Що Вас сьогодні засміяло? 😊",
+                "Поділіться чимось хорошим з сьогоднішнього дня",
+                "Що принесло Вам радість сьогодні?",
+                "Чи був сьогодні момент, який хочеться запам'ятати?",
+                "Про що хороше можете розповісти?",
+                "Що сьогодні було класно?"
+            ]
+        },
+        follow_up: {
+            informal: [
+                "Чудово! Є ще щось хороше? 🌟",
+                "Клас! Хочеш додати ще один момент?",
+                "Прекрасно! Може, згадаєш щось ще?",
+                "Чудово! А що ще порадувало?",
+                "Супер! Є щось ще на сьогодні? ✨"
+            ],
+            formal: [
+                "Чудово! Є ще щось хороше? 🌟",
+                "Класно! Хочете додати ще один момент?",
+                "Прекрасно! Може, згадаєте щось ще?",
+                "Чудово! А що ще порадувало?",
+                "Супер! Є щось ще на сьогодні? ✨"
+            ]
+        },
+        return_inactive: {
+            informal: [
+                "Привіт! Давно не бачились 👋 Як у тебе справи?",
+                "З поверненням! 🌟 Розкажи, що хорошого сталось за цей час?",
+                "Раді тебе бачити знову! Що нового і приємного?",
+                "Привіт! ✨ Скучили! Поділись чимось хорошим?",
+                "Ого, давно тебе не було! Як життя? Що радує?"
+            ],
+            formal: [
+                "Вітаю! Давно не бачились 👋 Як Ваші справи?",
+                "З поверненням! 🌟 Розкажіть, що хорошого сталось за цей час?",
+                "Раді Вас бачити знову! Що нового і приємного?",
+                "Вітаю! ✨ Ми скучили! Поділіться чимось хорошим?",
+                "Давно Вас не було! Як життя? Що радує?"
+            ]
+        }
     }
 };
 
-// Track last question shown to each user (to prevent repetition)
+// Track last question shown to each user by category (to prevent repetition)
 const lastUserQuestions = new Map();
 
 /**
  * Get a random question for user that doesn't repeat consecutively
  * @param {object} user - User object with language_code and formal_address
+ * @param {string} category - Question category: 'main', 'follow_up', or 'return_inactive'
  * @returns {string} A question formulation
  */
-function getRandomQuestion(user) {
+function getRandomQuestion(user, category = 'main') {
     const langCode = user.language_code?.startsWith('en') ? 'en' :
                      user.language_code?.startsWith('uk') ? 'uk' : 'ru';
     const addressType = user.formal_address ? 'formal' : 'informal';
 
-    const templates = questionTemplates[langCode]?.[addressType] || questionTemplates.ru.informal;
-    const lastQuestionIndex = lastUserQuestions.get(user.telegram_id);
+    // Get templates for the specified category
+    const templates = questionTemplates[langCode]?.[category]?.[addressType] ||
+                      questionTemplates.ru.main.informal;
+
+    // Create unique key for tracking per user per category
+    const trackingKey = `${user.telegram_id}_${category}`;
+    const lastQuestionIndex = lastUserQuestions.get(trackingKey);
 
     // Get a random index that's different from the last one
     let newIndex;
@@ -206,10 +315,37 @@ function getRandomQuestion(user) {
         } while (newIndex === lastQuestionIndex);
     }
 
-    // Remember this question index
-    lastUserQuestions.set(user.telegram_id, newIndex);
+    // Remember this question index for this category
+    lastUserQuestions.set(trackingKey, newIndex);
 
     return templates[newIndex];
+}
+
+/**
+ * Check if user has been inactive for a specified number of days
+ * @param {object} user - User object
+ * @param {number} days - Number of days to consider inactive
+ * @returns {boolean} True if user is inactive
+ */
+function isUserInactive(user, days = 3) {
+    if (!user.last_activity) return false;
+    const lastActivity = new Date(user.last_activity);
+    const daysSinceActivity = (Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24);
+    return daysSinceActivity >= days;
+}
+
+/**
+ * Get appropriate question for user based on their activity status
+ * @param {object} user - User object
+ * @returns {string} A question formulation
+ */
+function getQuestionForUser(user) {
+    // Use return_inactive questions for users who haven't interacted for 3+ days
+    if (isUserInactive(user, 3)) {
+        return getRandomQuestion(user, 'return_inactive');
+    }
+    // Default to main questions
+    return getRandomQuestion(user, 'main');
 }
 
 /**
@@ -993,14 +1129,9 @@ async function sendScheduledQuestion(user) {
     // Set user state to awaiting moment
     userStates.set(user.telegram_id, { state: 'adding_moment', question_asked_at: new Date() });
 
-    const questions = [
-        "Что хорошего случилось сегодня? ☀️",
-        "Какой момент порадовал тебя сегодня? 🌟",
-        "Расскажи о чём-то приятном, что произошло недавно 💝",
-        "Что вызвало у тебя улыбку сегодня? 😊",
-        "Какой маленький радостный момент ты заметил сегодня? ✨"
-    ];
-    const question = questions[Math.floor(Math.random() * questions.length)];
+    // Get appropriate question based on user's activity status
+    // Uses return_inactive category if user hasn't interacted for 3+ days
+    const question = getQuestionForUser(user);
 
     try {
         await sendMessage(user.telegram_id, question);
@@ -1479,13 +1610,172 @@ async function generateEmbedding(text) {
 }
 
 /**
+ * Download file from Telegram servers
+ * @param {string} fileId - Telegram file ID
+ * @returns {Promise<Buffer|null>} File buffer or null on error
+ */
+async function downloadTelegramFile(fileId) {
+    try {
+        // Get file path from Telegram
+        const fileInfoUrl = `${BASE_URL}/getFile?file_id=${fileId}`;
+        const fileInfoResponse = await fetch(fileInfoUrl);
+        const fileInfoData = await fileInfoResponse.json();
+
+        if (!fileInfoData.ok || !fileInfoData.result.file_path) {
+            console.error("Failed to get file info:", fileInfoData);
+            return null;
+        }
+
+        // Download file
+        const fileUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfoData.result.file_path}`;
+        const fileResponse = await fetch(fileUrl);
+        const fileBuffer = await fileResponse.buffer();
+
+        console.log(`✅ Downloaded file: ${fileInfoData.result.file_path} (${fileBuffer.length} bytes)`);
+        return fileBuffer;
+    } catch (error) {
+        console.error("Error downloading file:", error.message);
+        return null;
+    }
+}
+
+/**
+ * Transcribe voice message using OpenAI Whisper API
+ * @param {Buffer} audioBuffer - Audio file buffer
+ * @returns {Promise<string|null>} Transcribed text or null on error
+ */
+async function transcribeVoice(audioBuffer) {
+    if (!OPENAI_API_KEY) {
+        console.error("OpenAI API key not configured for voice transcription");
+        return null;
+    }
+
+    try {
+        const FormData = (await import('form-data')).default;
+        const formData = new FormData();
+        formData.append('file', audioBuffer, {
+            filename: 'voice.ogg',
+            contentType: 'audio/ogg'
+        });
+        formData.append('model', 'whisper-1');
+        formData.append('language', 'ru'); // Default to Russian
+
+        const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                ...formData.getHeaders()
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.text) {
+            console.log(`✅ Voice transcribed: "${data.text.substring(0, 50)}..."`);
+            return data.text;
+        }
+
+        console.error("Whisper API error:", data);
+        return null;
+    } catch (error) {
+        console.error("Error transcribing voice:", error.message);
+        return null;
+    }
+}
+
+/**
+ * Handle voice message - transcribe and save as moment
+ * @param {object} message - Telegram message object with voice
+ * @returns {Promise<boolean>} True if handled successfully
+ */
+async function handleVoiceMessage(message) {
+    const chatId = message.chat.id;
+    const user = getOrCreateUser(message.from);
+    const voice = message.voice;
+    const state = userStates.get(user.telegram_id);
+
+    // Only handle voice if user is in "adding moment" state or has completed onboarding
+    if (!user.onboarding_completed) {
+        await sendMessage(chatId, "Сначала завершите настройку бота с помощью /start");
+        return true;
+    }
+
+    // Show typing indicator while processing
+    const loadingIndicator = startLoadingIndicator(chatId, 'typing');
+    console.log(`🎤 Processing voice message for user ${user.telegram_id}, file_id: ${voice.file_id}`);
+
+    try {
+        // Download voice file
+        const audioBuffer = await downloadTelegramFile(voice.file_id);
+        if (!audioBuffer) {
+            loadingIndicator.stop();
+            await sendErrorMessage(chatId, 'voice_recognition', user.language_code);
+            return true;
+        }
+
+        // Transcribe voice
+        const transcribedText = await transcribeVoice(audioBuffer);
+        if (!transcribedText || transcribedText.trim().length === 0) {
+            loadingIndicator.stop();
+            await sendErrorMessage(chatId, 'voice_recognition', user.language_code);
+            return true;
+        }
+
+        // Generate embedding for the transcribed text
+        const embedding = await generateEmbedding(transcribedText);
+
+        // Save as moment with source_type 'voice' and store voice file ID
+        const newMoment = addMoment(user.telegram_id, transcribedText, embedding, 'voice');
+        newMoment.original_voice_file_id = voice.file_id;
+
+        loadingIndicator.stop();
+
+        // Track response time if user was asked a question
+        if (state && state.question_asked_at) {
+            const responseTimeMs = Date.now() - new Date(state.question_asked_at).getTime();
+            trackResponseTime(user, responseTimeMs);
+        }
+
+        userStates.delete(user.telegram_id);
+
+        const savedDate = formatDate(newMoment.created_at, user.language_code, true);
+
+        // Show follow-up question
+        const followUpQuestion = getRandomQuestion(user, 'follow_up');
+        const responseText = `✨ <b>Голосовое сообщение сохранено!</b>\n\n` +
+            `🎤 <i>"${escapeHtml(transcribedText)}"</i>\n\n` +
+            `📅 ${savedDate}\n\n` +
+            `${followUpQuestion}`;
+
+        const momentsCount = getUserMoments(user.telegram_id).length;
+        const keyboard = {
+            inline_keyboard: [
+                [{ text: "➕ Добавить ещё", callback_data: "moments_add" }],
+                [{ text: `📚 Мои моменты (${momentsCount})`, callback_data: "moments_view" }]
+            ]
+        };
+
+        await sendMessage(chatId, responseText, keyboard);
+        console.log(`✅ Voice moment saved for user ${user.telegram_id}: "${transcribedText.substring(0, 30)}..."`);
+        return true;
+    } catch (error) {
+        loadingIndicator.stop();
+        console.error("Error handling voice message:", error.message);
+        await sendErrorMessage(chatId, 'generic', user.language_code);
+        return true;
+    }
+}
+
+/**
  * Add a moment to user's history (with optional embedding)
  * @param {number} userId - User ID
  * @param {string} content - Moment content
  * @param {Array|null} embedding - Pre-generated embedding (optional)
+ * @param {string} sourceType - Source type: 'text' or 'voice'
  * @returns {object} The new moment object
  */
-function addMoment(userId, content, embedding = null) {
+function addMoment(userId, content, embedding = null, sourceType = 'text') {
     if (!moments.has(userId)) {
         moments.set(userId, []);
     }
@@ -1496,9 +1786,44 @@ function addMoment(userId, content, embedding = null) {
         content: content,
         topics: topics,
         embedding: embedding,
+        source_type: sourceType, // 'text' or 'voice'
         created_at: new Date()
     };
     userMoments.push(newMoment);
+
+    // Update user statistics when moment is created
+    const user = users.get(userId);
+    if (user) {
+        if (!user.statistics) {
+            user.statistics = {
+                current_streak: 0,
+                best_streak: 0,
+                total_moments: 0,
+                questions_sent: 0,
+                questions_answered: 0,
+                total_response_time_ms: 0,
+                response_count: 0,
+                average_response_time_seconds: 0
+            };
+        }
+
+        // Increment total moments count
+        user.statistics.total_moments = (user.statistics.total_moments || 0) + 1;
+
+        // Update last_activity date
+        user.last_activity = new Date();
+
+        // Update streak calculation
+        const streakData = calculateStreak(userMoments);
+        user.statistics.current_streak = streakData.currentStreak;
+        user.statistics.best_streak = Math.max(
+            user.statistics.best_streak || 0,
+            streakData.bestStreak
+        );
+
+        console.log(`📊 Updated stats for user ${userId}: total_moments=${user.statistics.total_moments}, streak=${user.statistics.current_streak}`);
+    }
+
     // Save data immediately after adding a moment
     saveDataToFile();
     console.log(`✅ Moment saved with topics: ${topics.join(', ')}${embedding ? ', embedding: ' + embedding.length + ' dims' : ''}`);
@@ -1607,6 +1932,7 @@ function getOrCreateUser(telegramUser) {
     if (!users.has(userId)) {
         users.set(userId, {
             telegram_id: userId,
+            username: telegramUser.username || null,
             first_name: telegramUser.first_name || "друг",
             language_code: telegramUser.language_code || "ru",
             formal_address: false,
@@ -1616,8 +1942,20 @@ function getOrCreateUser(telegramUser) {
             active_hours_end: "21:00",
             notification_interval_hours: 3,
             timezone: "UTC", // User's timezone (e.g., "UTC", "Europe/Moscow", "+03:00")
-            created_at: new Date()
+            created_at: new Date(),
+            // Initialize user statistics with default values
+            statistics: {
+                current_streak: 0,
+                best_streak: 0,
+                total_moments: 0,
+                questions_sent: 0,
+                questions_answered: 0,
+                total_response_time_ms: 0,
+                response_count: 0,
+                average_response_time_seconds: 0
+            }
         });
+        console.log(`✅ Created new user ${userId} with initialized statistics`);
         // Save data when new user is created
         saveDataToFile();
     }
@@ -3435,11 +3773,21 @@ async function handleTextMessage(message) {
             responseText += "⚠️ <i>Сообщение было сокращено до допустимой длины.</i>\n\n";
         }
 
-        responseText += "Спасибо, что делишься хорошим! 💝";
+        // Add follow-up question to encourage adding more moments
+        const followUpQuestion = getRandomQuestion(user, 'follow_up');
+        responseText += `${followUpQuestion}`;
 
-        await sendMessage(chatId, responseText,
-            getMomentsKeyboard(user.telegram_id, getUserMoments(user.telegram_id).length)
-        );
+        // Provide keyboard with option to add another moment
+        const momentsCount = getUserMoments(user.telegram_id).length;
+        const keyboard = {
+            inline_keyboard: [
+                [{ text: "➕ Добавить ещё", callback_data: "moments_add" }],
+                [{ text: `📚 Мои моменты (${momentsCount})`, callback_data: "moments_view" }],
+                [{ text: "📊 Статистика", callback_data: "stats" }]
+            ]
+        };
+
+        await sendMessage(chatId, responseText, keyboard);
         console.log(`✅ Moment saved for user ${user.telegram_id}: "${text.substring(0, 30)}..."${wasTruncated ? ' (truncated)' : ''}`);
         return true;
     }
@@ -3487,6 +3835,9 @@ async function processUpdate(update) {
                 console.error(`Handler error for "${text}":`, handlerError.message);
                 await sendErrorMessage(chatId, 'generic', user.language_code);
             }
+        } else if (update.message && update.message.voice) {
+            // Handle voice messages
+            await handleVoiceMessage(update.message);
         } else if (update.callback_query) {
         const callbackData = update.callback_query.data;
         const callbackId = update.callback_query.id;
