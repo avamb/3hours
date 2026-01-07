@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINDSETHAPPYBOT Admin Panel</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>MINDSETHAPPYBOT</h1>
+                <p>Admin Panel</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Login</button>
+                <div id="login-error" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-screen" class="screen">
+        <header class="header">
+            <div class="header-left">
+                <h1>MINDSETHAPPYBOT Admin</h1>
+            </div>
+            <div class="header-right">
+                <span id="health-status" class="health-badge">Checking...</span>
+                <button id="logout-btn" class="btn btn-secondary">Logout</button>
+            </div>
+        </header>
+
+        <nav class="sidebar">
+            <ul class="nav-menu">
+                <li><a href="#" data-page="overview" class="nav-link active">Overview</a></li>
+                <li><a href="#" data-page="users" class="nav-link">Users</a></li>
+                <li><a href="#" data-page="messages" class="nav-link">Messages</a></li>
+                <li><a href="#" data-page="logs" class="nav-link">Logs</a></li>
+                <li><a href="#" data-page="notifications" class="nav-link">Notifications</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <!-- Overview Page -->
+            <div id="page-overview" class="page active">
+                <h2>Dashboard Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">Users</div>
+                        <div class="stat-value" id="stat-total-users">-</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">24h</div>
+                        <div class="stat-value" id="stat-active-24h">-</div>
+                        <div class="stat-label">Active (24h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">7d</div>
+                        <div class="stat-value" id="stat-active-7d">-</div>
+                        <div class="stat-label">Active (7 days)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Moments</div>
+                        <div class="stat-value" id="stat-total-moments">-</div>
+                        <div class="stat-label">Total Moments</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Today</div>
+                        <div class="stat-value" id="stat-moments-today">-</div>
+                        <div class="stat-label">Moments Today</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Week</div>
+                        <div class="stat-value" id="stat-moments-week">-</div>
+                        <div class="stat-label">Moments This Week</div>
+                    </div>
+                </div>
+                <div class="recent-section">
+                    <h3>Recent Activity</h3>
+                    <div id="recent-activity" class="activity-list">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Page -->
+            <div id="page-users" class="page">
+                <h2>Users</h2>
+                <div class="toolbar">
+                    <input type="text" id="user-search" placeholder="Search users..." class="search-input">
+                    <button id="refresh-users" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Telegram ID</th>
+                                <th>Username</th>
+                                <th>Name</th>
+                                <th>Language</th>
+                                <th>Moments</th>
+                                <th>Streak</th>
+                                <th>Last Active</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="9" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="users-pagination"></div>
+            </div>
+
+            <!-- Messages Page -->
+            <div id="page-messages" class="page">
+                <h2>Messages</h2>
+                <div class="toolbar">
+                    <select id="message-type-filter" class="select-input">
+                        <option value="">All Types</option>
+                        <option value="user_response">User Response</option>
+                        <option value="bot_question">Bot Question</option>
+                        <option value="bot_reply">Bot Reply</option>
+                        <option value="free_dialog">Free Dialog</option>
+                    </select>
+                    <button id="refresh-messages" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="messages-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Type</th>
+                                <th>Content</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="5" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="messages-pagination"></div>
+            </div>
+
+            <!-- Logs Page -->
+            <div id="page-logs" class="page">
+                <h2>System Logs</h2>
+                <div class="toolbar">
+                    <select id="log-level-filter" class="select-input">
+                        <option value="">All Levels</option>
+                        <option value="ERROR">ERROR</option>
+                        <option value="WARNING">WARNING</option>
+                        <option value="INFO">INFO</option>
+                        <option value="DEBUG">DEBUG</option>
+                    </select>
+                    <button id="refresh-logs" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div class="logs-container" id="logs-container">
+                    <p class="loading">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Notifications Page -->
+            <div id="page-notifications" class="page">
+                <h2>Scheduled Notifications</h2>
+                <div class="toolbar">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="pending-only-filter">
+                        Pending Only
+                    </label>
+                    <button id="refresh-notifications" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="notifications-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Scheduled Time</th>
+                                <th>Status</th>
+                                <th>Sent At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="5" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- User Detail Modal -->
+            <div id="user-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>User Details</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body" id="user-modal-body">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
