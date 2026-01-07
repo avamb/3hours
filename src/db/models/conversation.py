@@ -21,7 +21,7 @@ class Conversation(Base):
     message_type: Mapped[str] = mapped_column(String(50), nullable=False)
     # Types: 'bot_question', 'user_response', 'free_dialog', 'bot_reply'
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
+    message_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column("metadata", JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
     # Relationships

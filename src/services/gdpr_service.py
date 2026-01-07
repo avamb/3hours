@@ -84,7 +84,7 @@ class GDPRService:
                 export_data["conversations"].append({
                     "message_type": conv.message_type,
                     "content": conv.content,
-                    "metadata": conv.metadata,
+                    "metadata": conv.message_metadata,
                     "created_at": conv.created_at.isoformat(),
                 })
 
