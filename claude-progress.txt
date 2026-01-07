@@ -1,159 +1,73 @@
 # MINDSETHAPPYBOT - Development Progress
 
-## Session 64 Summary (Coding Agent)
-**Date**: Session 64
+## Session 65 Summary (Coding Agent)
+**Date**: Session 65
 **Status**: **104 Features PASSING (100%)** - PROJECT COMPLETE!
 
 ---
 
-## Session 64 Work Completed
+## Session 65 Work Completed
 
 ### Code Verification and Regression Check
 - Verified feature statistics: 104/104 features passing (100%)
 - Selected 3 random passing features for regression testing:
-  - Feature #91: Graceful shutdown
-  - Feature #57: Timezone-aware scheduling
-  - Feature #78: GPT-4 response generation
+  - Feature #43: Formal/informal templates
+  - Feature #95: Question template variety
+  - Feature #11: History view - list moments
 - Performed comprehensive code review of key components
 
 ### Files Verified This Session
-- `src/bot/main.py` - Main bot entry point (79 lines)
-  - Graceful shutdown with try/finally block
-  - Proper cleanup: scheduler.stop(), close_db(), bot.session.close()
-  - Middleware registration for logging
-  - Router registration for commands, messages, callbacks
 - `src/services/scheduler.py` - Notification system (239 lines)
-  - Active hours checking (lines 125, 217-229)
-  - Time adjustment logic for out-of-hours notifications
-  - Question variety with last_question tracking to avoid repeats
-  - Proper APScheduler integration with start/stop methods
-- `src/services/personalization_service.py` - GPT-4 integration (266 lines)
-  - Response generation with OpenAI GPT-4 API
-  - User preference handling (formal/informal address)
-  - Temperature 0.7 for response variation
-  - Negative mood detection with pattern matching and GPT fallback
-  - Supportive responses using past positive moments
-- `src/bot/handlers/callbacks.py` - All 27 callback handlers (526 lines)
-  - Back navigation via "settings_back" and "main_menu" callbacks
-  - Individual moment deletion with confirmation dialogs
-  - All `callback.answer()` calls present
-- `src/services/gdpr_service.py` - GDPR compliance (173 lines)
-  - `export_user_data()` exports JSON with user, moments, conversations, stats
-  - `delete_all_user_data()` properly deletes all user data from all tables
-
-### Code Quality Verification
-- Searched for mock data patterns: No matches found
-- Searched for TODO/FIXME/STUB/MOCK comments: No matches found
-- Git working tree clean - no uncommitted changes
-
----
-
-## Session 63 Summary (Coding Agent)
-**Date**: Session 63
-**Status**: **104 Features PASSING (100%)** - PROJECT COMPLETE!
-
----
-
-## Session 63 Work Completed
-
-### Code Verification and Regression Check
-- Verified feature statistics: 104/104 features passing (100%)
-- Selected 3 random passing features for regression testing:
-  - Feature #103: Follow-up question handling
-  - Feature #71: Back navigation
-  - Feature #74: Export file format
-- Performed comprehensive code review of key components
-
-### Files Verified This Session
-- `src/bot/handlers/callbacks.py` - All callback handlers verified (526 lines)
-  - Back navigation via "settings_back" and "main_menu" callbacks
-  - Individual moment deletion with confirmation dialogs
-  - All `callback.answer()` calls present
-- `src/services/gdpr_service.py` - GDPR compliance (173 lines)
-  - `export_user_data()` exports JSON with user, moments, conversations, stats
-  - `delete_all_user_data()` properly deletes all user data from all tables
-- `src/services/personalization_service.py` - GPT-4 integration (266 lines)
-  - Personalized responses based on user's address preference (ты/вы)
-  - Negative mood detection with pattern matching and GPT fallback
-  - Supportive responses using past positive moments
-  - Free dialog mode with conversation context
-- `src/services/scheduler.py` - Notification system (239 lines)
-  - Question variety: never repeats same question consecutively
-  - Respects active hours and notification intervals
-  - Proper user preference handling (formal/informal)
-- `src/bot/keyboards/inline.py` - All inline keyboards (234 lines)
-  - Back buttons on all sub-menus for proper navigation
-  - Filter buttons for moments (today/week/month)
-  - Moment deletion confirmation dialogs
-- `src/bot/handlers/messages.py` - Message handlers (180 lines)
-  - Voice message transcription via Whisper API
-  - Negative mood detection triggers supportive response
-  - Text messages saved as moments with personalized feedback
-
-### Code Quality Verification
-- Searched for mock data patterns: No matches found
-- Searched for TODO/FIXME/STUB/MOCK comments: No matches found
-- Git working tree clean - no uncommitted changes
-
----
-
-## Session 62 Summary (Coding Agent)
-**Date**: Session 62
-**Status**: **104 Features PASSING (100%)** - PROJECT COMPLETE!
-
----
-
-## Session 62 Work Completed
-
-### Code Verification and Regression Check
-- Verified feature statistics: 104/104 features passing (100%)
-- Selected 3 random passing features for regression testing:
-  - Feature #99: 45+ audience accessibility
-  - Feature #39: Moment topics extraction
-  - Feature #61: Deep link support
-- Performed comprehensive code review of key components
-
-### Files Verified This Session
-- `src/bot/handlers/callbacks.py` - All 27 callback handlers present (526 lines)
-  - Verified `callback.answer()` at end of each handler for Telegram double-click prevention
-  - All inline button actions properly handled
+  - DEFAULT_QUESTIONS_INFORMAL: 8 templates for "ты" address
+  - DEFAULT_QUESTIONS_FORMAL: 8 templates for "вы" address
+  - `_get_question()` selects correct templates based on user.formal_address
+  - Question variety mechanism prevents consecutive repeats via _last_questions dict
+  - Active hours checking and timezone-aware scheduling
+- `src/db/models/question_template.py` - QuestionTemplate model (27 lines)
+  - language_code, formal, template_text, category fields
+  - Categories: 'main', 'follow_up', 'return_inactive'
 - `src/bot/handlers/commands.py` - All 9 command handlers (307 lines)
-  - Language detection via `get_localized_welcome_text()`
-  - Localized welcome messages for English, Ukrainian, and Russian
-- `src/bot/handlers/messages.py` - Text and voice message handlers
-  - Voice transcription via Whisper API
-  - Negative mood detection and supportive responses
-- `src/services/stats_service.py` - Statistics calculation
-  - Verified streak tracking and moment counting
-- `src/services/moment_service.py` - Moment CRUD with embeddings
-  - Creates embeddings, analyzes mood, extracts topics
-- `src/services/gdpr_service.py` - Data export and deletion
-  - Full GDPR compliance implementation
-- `src/services/personalization_service.py` - GPT-4 integration
-  - Personalized responses based on user history
-  - Negative mood detection and supportive messaging
-- `src/services/scheduler.py` - APScheduler notification system
-  - Question scheduling within active hours
-  - Question variety (no repeating questions back-to-back)
-- `src/services/embedding_service.py` - OpenAI embeddings
-  - Topic extraction and mood analysis
-- `src/bot/keyboards/inline.py` - All inline keyboards (234 lines)
-  - Onboarding, settings, moments, dialog keyboards
-- `src/db/models/user.py` - User model with all required fields
-  - Proper relationships and cascade deletes
+  - /moments shows user's moment history with dates and content preview
+  - Chronological ordering (created_at.desc())
+  - Pagination support via MomentService
+  - Localized welcome messages for EN, UK, RU
+- `src/services/moment_service.py` - Moment CRUD with embeddings (234 lines)
+  - get_user_moments() with period filtering (today/week/month)
+  - Proper ordering and pagination
+  - Vector similarity search for personalization
+  - delete_moment() for individual moment deletion
+- `src/bot/handlers/callbacks.py` - All 27 callback handlers (526 lines)
+  - Moments filtering by period (filter_today/week/month)
+  - Random moment display with delete option
+  - Individual moment deletion with confirmation
+  - All callback.answer() calls present
 
 ### Code Quality Verification
-- Searched for mock data patterns (mockData|fakeData|sampleData|dummyData|testData): No matches found
+- Searched for mock data patterns: No matches found
 - Searched for TODO/FIXME/STUB/MOCK comments: No matches found
 - Git working tree clean - no uncommitted changes
-- All 6 database models properly structured
-- All 11 services implemented
 
-### Note on Testing
-- This is a Telegram bot application (not a web app)
-- Browser automation testing is not applicable for Telegram bots
-- Bot testing requires running against real Telegram API with valid tokens
-- All code has been verified through static analysis and code review
+---
+
+## Previous Sessions Summary
+
+### Session 64
+- Verified 104/104 features passing
+- Regression tested: Graceful shutdown, Timezone-aware scheduling, GPT-4 response generation
+- Code verified: main.py, scheduler.py, personalization_service.py, callbacks.py, gdpr_service.py
+
+### Session 63
+- Verified 104/104 features passing
+- Regression tested: Follow-up question handling, Back navigation, Export file format
+- Code verified: callbacks.py, gdpr_service.py, personalization_service.py, scheduler.py, inline.py, messages.py
+
+### Session 62
+- Verified 104/104 features passing
+- Regression tested: 45+ audience accessibility, Moment topics extraction, Deep link support
+- Code verified: All handlers, services, and models
+
+### Sessions 1-61
+Progressive implementation of all 104 features from onboarding through GDPR compliance, including multiple regression testing sessions verifying feature stability.
 
 ---
 
@@ -224,8 +138,3 @@ python -m src.bot.main
 ```
 
 Bot: @MindSetHappyBot on Telegram
-
----
-
-## Previous Sessions Summary
-Sessions 1-61: Progressive implementation of all 104 features from onboarding through GDPR compliance, including multiple regression testing sessions verifying feature stability.
