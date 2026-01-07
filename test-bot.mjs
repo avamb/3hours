@@ -97,6 +97,168 @@ const topicKeywords = {
     }
 };
 
+// Question templates for variety - each language has multiple formulations
+// No consecutive repetition allowed
+const questionTemplates = {
+    ru: {
+        informal: [
+            "Что хорошего произошло?",
+            "Расскажи о чём-то приятном сегодня ✨",
+            "Чему ты сегодня порадовался(ась)?",
+            "Какой момент сегодня был особенным?",
+            "Что тебя сегодня улыбнуло? 😊",
+            "Поделись чем-то хорошим из сегодняшнего дня",
+            "Что принесло тебе радость сегодня?",
+            "Был ли сегодня момент, который хочется запомнить?",
+            "О чём хорошем можешь рассказать?",
+            "Что сегодня было здорово?"
+        ],
+        formal: [
+            "Что хорошего произошло?",
+            "Расскажите о чём-то приятном сегодня ✨",
+            "Чему Вы сегодня порадовались?",
+            "Какой момент сегодня был особенным?",
+            "Что Вас сегодня улыбнуло? 😊",
+            "Поделитесь чем-то хорошим из сегодняшнего дня",
+            "Что принесло Вам радость сегодня?",
+            "Был ли сегодня момент, который хочется запомнить?",
+            "О чём хорошем можете рассказать?",
+            "Что сегодня было здорово?"
+        ]
+    },
+    en: {
+        informal: [
+            "What good happened today?",
+            "Tell me about something nice today ✨",
+            "What made you happy today?",
+            "What moment was special today?",
+            "What made you smile today? 😊",
+            "Share something good from today",
+            "What brought you joy today?",
+            "Was there a moment worth remembering today?",
+            "What's something good you can share?",
+            "What was great today?"
+        ],
+        formal: [
+            "What good happened today?",
+            "Please tell me about something nice today ✨",
+            "What made you happy today?",
+            "What moment was special today?",
+            "What made you smile today? 😊",
+            "Please share something good from today",
+            "What brought you joy today?",
+            "Was there a moment worth remembering today?",
+            "What's something good you can share?",
+            "What was great today?"
+        ]
+    },
+    uk: {
+        informal: [
+            "Що хорошого сталось?",
+            "Розкажи про щось приємне сьогодні ✨",
+            "Чому ти сьогодні порадувався(лась)?",
+            "Який момент сьогодні був особливим?",
+            "Що тебе сьогодні засміяло? 😊",
+            "Поділись чимось хорошим з сьогоднішнього дня",
+            "Що принесло тобі радість сьогодні?",
+            "Чи був сьогодні момент, який хочеться запам'ятати?",
+            "Про що хороше можеш розповісти?",
+            "Що сьогодні було класно?"
+        ],
+        formal: [
+            "Що хорошого сталось?",
+            "Розкажіть про щось приємне сьогодні ✨",
+            "Чому Ви сьогодні порадувались?",
+            "Який момент сьогодні був особливим?",
+            "Що Вас сьогодні засміяло? 😊",
+            "Поділіться чимось хорошим з сьогоднішнього дня",
+            "Що принесло Вам радість сьогодні?",
+            "Чи був сьогодні момент, який хочеться запам'ятати?",
+            "Про що хороше можете розповісти?",
+            "Що сьогодні було класно?"
+        ]
+    }
+};
+
+// Track last question shown to each user (to prevent repetition)
+const lastUserQuestions = new Map();
+
+/**
+ * Get a random question for user that doesn't repeat consecutively
+ * @param {object} user - User object with language_code and formal_address
+ * @returns {string} A question formulation
+ */
+function getRandomQuestion(user) {
+    const langCode = user.language_code?.startsWith('en') ? 'en' :
+                     user.language_code?.startsWith('uk') ? 'uk' : 'ru';
+    const addressType = user.formal_address ? 'formal' : 'informal';
+
+    const templates = questionTemplates[langCode]?.[addressType] || questionTemplates.ru.informal;
+    const lastQuestionIndex = lastUserQuestions.get(user.telegram_id);
+
+    // Get a random index that's different from the last one
+    let newIndex;
+    if (templates.length === 1) {
+        newIndex = 0;
+    } else {
+        do {
+            newIndex = Math.floor(Math.random() * templates.length);
+        } while (newIndex === lastQuestionIndex);
+    }
+
+    // Remember this question index
+    lastUserQuestions.set(user.telegram_id, newIndex);
+
+    return templates[newIndex];
+}
+
+/**
+ * Check if current time is within user's active hours
+ * @param {object} user - User object with active_hours_start and active_hours_end
+ * @param {Date} [checkTime] - Optional time to check (defaults to current time)
+ * @returns {boolean} True if within active hours
+ */
+function isWithinActiveHours(user, checkTime = new Date()) {
+    const startParts = user.active_hours_start.split(':').map(Number);
+    const endParts = user.active_hours_end.split(':').map(Number);
+
+    const startMinutes = startParts[0] * 60 + (startParts[1] || 0);
+    const endMinutes = endParts[0] * 60 + (endParts[1] || 0);
+
+    const currentMinutes = checkTime.getHours() * 60 + checkTime.getMinutes();
+
+    // Handle normal case (e.g., 09:00 - 21:00)
+    if (startMinutes <= endMinutes) {
+        return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+    }
+
+    // Handle overnight case (e.g., 21:00 - 09:00) - though unusual for this app
+    return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+}
+
+/**
+ * Check if a scheduled notification should be sent based on active hours
+ * @param {object} user - User object
+ * @param {Date} [checkTime] - Optional time to check
+ * @returns {object} { shouldSend: boolean, reason: string }
+ */
+function shouldSendNotification(user, checkTime = new Date()) {
+    // Check if notifications are enabled
+    if (!user.notifications_enabled) {
+        return { shouldSend: false, reason: 'Notifications disabled' };
+    }
+
+    // Check active hours
+    if (!isWithinActiveHours(user, checkTime)) {
+        return {
+            shouldSend: false,
+            reason: `Outside active hours (${user.active_hours_start} - ${user.active_hours_end})`
+        };
+    }
+
+    return { shouldSend: true, reason: 'Within active hours' };
+}
+
 /**
  * Extract topics from moment content
  */
@@ -1038,9 +1200,10 @@ async function handleDeepLink(chatId, user, param) {
             console.log("Deep link action: Adding new moment");
             // Set user state to "adding moment"
             userStates.set(user.telegram_id, { state: 'adding_moment' });
+            const deepLinkQuestion = getRandomQuestion(user);
             await sendMessage(chatId,
                 "✨ <b>Добавление момента</b>\n\n" +
-                "Расскажи, что хорошего произошло? " +
+                deepLinkQuestion + " " +
                 "Просто напиши сообщение, и я сохраню его.\n\n" +
                 "💡 Можно отправить текст или голосовое сообщение.",
                 {
@@ -1458,6 +1621,12 @@ function getMomentsKeyboard(userId, totalMoments) {
     };
 
     if (totalMoments > 0) {
+        // Filter row
+        keyboard.inline_keyboard.push([
+            { text: "📅 Сегодня", callback_data: "moments_filter_today" },
+            { text: "📅 Неделя", callback_data: "moments_filter_week" },
+            { text: "📅 Месяц", callback_data: "moments_filter_month" }
+        ]);
         keyboard.inline_keyboard.push([
             { text: "🎲 Случайный момент", callback_data: "moments_random" }
         ]);
@@ -1475,6 +1644,37 @@ function getMomentsKeyboard(userId, totalMoments) {
     ]);
 
     return keyboard;
+}
+
+/**
+ * Filter moments by period
+ * @param {Array} moments - All user moments
+ * @param {string} period - 'today', 'week', or 'month'
+ * @returns {Array} Filtered moments
+ */
+function filterMomentsByPeriod(moments, period) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    let cutoffDate;
+    switch (period) {
+        case 'today':
+            cutoffDate = today;
+            break;
+        case 'week':
+            cutoffDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+        case 'month':
+            cutoffDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+        default:
+            return moments;
+    }
+
+    return moments.filter(m => {
+        const momentDate = new Date(m.created_at);
+        return momentDate >= cutoffDate;
+    });
 }
 
 /**
@@ -1781,9 +1981,11 @@ async function handleMomentsCallback(callback, action) {
         // Set user state to "adding moment"
         userStates.set(user.telegram_id, { state: 'adding_moment' });
 
+        // Use varied question formulation
+        const momentQuestion = getRandomQuestion(user);
         await editMessage(chatId, messageId,
             "✨ <b>Добавление момента</b>\n\n" +
-            "Расскажи, что хорошего произошло? " +
+            momentQuestion + " " +
             "Просто напиши сообщение, и я сохраню его.\n\n" +
             "💡 Можно отправить текст или голосовое сообщение.",
             {
@@ -1792,7 +1994,7 @@ async function handleMomentsCallback(callback, action) {
                 ]
             }
         );
-        console.log("✅ Prompted user to add moment");
+        console.log(`✅ Prompted user to add moment with question: "${momentQuestion}"`);
     } else if (action === "moments_cancel") {
         // Clear user state
         userStates.delete(user.telegram_id);
@@ -1889,6 +2091,65 @@ async function handleMomentsCallback(callback, action) {
             ]
         });
         console.log(`✅ Topic ${topicId} moments shown`);
+    } else if (action.startsWith("moments_filter_")) {
+        // Handle period filter
+        const period = action.replace("moments_filter_", "");
+        const filteredMoments = filterMomentsByPeriod(userMoments, period);
+
+        const periodLabels = {
+            today: "Сегодня",
+            week: "За неделю",
+            month: "За месяц"
+        };
+
+        if (filteredMoments.length === 0) {
+            await editMessage(chatId, messageId,
+                `📖 <b>Моменты: ${periodLabels[period]}</b>\n\n` +
+                "Нет моментов за выбранный период.",
+                {
+                    inline_keyboard: [
+                        [
+                            { text: "📅 Сегодня", callback_data: "moments_filter_today" },
+                            { text: "📅 Неделя", callback_data: "moments_filter_week" },
+                            { text: "📅 Месяц", callback_data: "moments_filter_month" }
+                        ],
+                        [{ text: "📖 Все моменты", callback_data: "menu_moments" }],
+                        [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
+                    ]
+                }
+            );
+            console.log(`✅ Filter ${period}: no moments`);
+            return;
+        }
+
+        // Show filtered moments (last 5, newest first)
+        const recentFiltered = filteredMoments.slice(-5).reverse();
+        let momentsText = `📖 <b>Моменты: ${periodLabels[period]}</b>\n\n`;
+
+        for (const moment of recentFiltered) {
+            const relativeDate = formatRelativeDate(moment.created_at, user.language_code);
+            const fullDate = formatDate(moment.created_at, user.language_code, true);
+            momentsText += `🌟 <i>${relativeDate}</i>\n`;
+            momentsText += `${escapeHtml(moment.content)}\n`;
+            momentsText += `<code>${fullDate}</code>\n\n`;
+        }
+
+        if (filteredMoments.length > 5) {
+            momentsText += `\n📚 Показано ${recentFiltered.length} из ${filteredMoments.length}`;
+        }
+
+        await editMessage(chatId, messageId, momentsText, {
+            inline_keyboard: [
+                [
+                    { text: "📅 Сегодня", callback_data: "moments_filter_today" },
+                    { text: "📅 Неделя", callback_data: "moments_filter_week" },
+                    { text: "📅 Месяц", callback_data: "moments_filter_month" }
+                ],
+                [{ text: "📖 Все моменты", callback_data: "menu_moments" }],
+                [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
+            ]
+        });
+        console.log(`✅ Filter ${period}: ${filteredMoments.length} moments`);
     }
 
     await answerCallback(callback.id);
