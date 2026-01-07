@@ -380,33 +380,39 @@ document.getElementById('user-modal').addEventListener('click', (e) => {
 async function loadMessages(offset = 0) {
     messagesOffset = offset;
     const tbody = document.querySelector('#messages-table tbody');
-    tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="loading">Loading...</td></tr>';
 
     try {
         const messageType = document.getElementById('message-type-filter').value;
         const params = new URLSearchParams({ limit: pageSize, offset });
         if (messageType) params.append('message_type', messageType);
 
-        const { conversations, total } = await api(`/conversations?${params}`);
+        const { messages, total } = await api(`/messages?${params}`);
 
-        if (conversations.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">No messages found</td></tr>';
+        if (messages.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="loading">No messages found</td></tr>';
         } else {
-            tbody.innerHTML = conversations.map(conv => `
+            tbody.innerHTML = messages.map(msg => {
+                const statusBadge = msg.status === 'pending'
+                    ? '<span class="status-badge pending">Pending</span>'
+                    : '<span class="status-badge sent">Sent</span>';
+                const content = msg.content || '';
+                return `
                 <tr>
-                    <td>${conv.id}</td>
-                    <td>${conv.username || `User #${conv.user_id}`}</td>
-                    <td><span class="activity-type ${conv.message_type}">${conv.message_type.replace('_', ' ')}</span></td>
-                    <td>${escapeHtml(conv.content.substring(0, 100))}${conv.content.length > 100 ? '...' : ''}</td>
-                    <td>${formatRelativeTime(conv.created_at)}</td>
+                    <td>${msg.id}</td>
+                    <td>${msg.username || `User #${msg.user_id}`}</td>
+                    <td><span class="activity-type ${msg.message_type}">${msg.message_type.replace(/_/g, ' ')}</span></td>
+                    <td>${escapeHtml(content.substring(0, 100))}${content.length > 100 ? '...' : ''}</td>
+                    <td>${statusBadge}</td>
+                    <td>${formatRelativeTime(msg.time)}</td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         renderPagination('messages-pagination', total, offset, pageSize, loadMessages);
     } catch (error) {
         console.error('Error loading messages:', error);
-        tbody.innerHTML = `<tr><td colspan="5" class="loading">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="loading">Error: ${error.message}</td></tr>`;
     }
 }
 

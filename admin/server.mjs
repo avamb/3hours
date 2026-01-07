@@ -378,6 +378,188 @@ const routes = {
         }
     },
 
+
+    // Messages (unified view combining conversations and scheduled notifications)
+    'GET /api/messages': async (req, res) => {
+        const query = parseQuery(req.url);
+        const limit = Math.min(parseInt(query.limit) || 50, 100);
+        const offset = parseInt(query.offset) || 0;
+        const messageType = query.message_type;
+        const userId = query.user_id ? parseInt(query.user_id) : null;
+
+        const client = await pool.connect();
+        try {
+            let messages = [];
+            let total = 0;
+
+            if (messageType && messageType !== 'scheduled_question') {
+                let whereClause = '1=1';
+                const params = [limit, offset];
+                let paramIndex = 3;
+
+                whereClause += ` AND c.message_type = $${paramIndex}`;
+                params.push(messageType);
+                paramIndex++;
+
+                if (userId) {
+                    whereClause += ` AND c.user_id = $${paramIndex}`;
+                    params.push(userId);
+                }
+
+                const result = await client.query(`
+                    SELECT c.id, c.user_id, u.telegram_id, u.username, u.first_name,
+                           c.message_type, c.content, c.created_at as time
+                    FROM conversations c
+                    JOIN users u ON c.user_id = u.id
+                    WHERE ${whereClause}
+                    ORDER BY c.created_at DESC
+                    LIMIT $1 OFFSET $2
+                `, params);
+
+                const countParams = [messageType];
+                let countParamIndex = 2;
+                let countWhere = 'message_type = $1';
+                if (userId) {
+                    countWhere += ` AND user_id = $${countParamIndex}`;
+                    countParams.push(userId);
+                }
+
+                const countResult = await client.query(
+                    `SELECT COUNT(*) FROM conversations WHERE ${countWhere}`,
+                    countParams
+                );
+
+                messages = result.rows.map(row => ({
+                    id: row.id,
+                    source: 'conversation',
+                    user_id: row.user_id,
+                    telegram_id: row.telegram_id?.toString(),
+                    username: row.username || row.first_name || `User #${row.user_id}`,
+                    message_type: row.message_type,
+                    content: row.content?.substring(0, 500) || '',
+                    time: row.time?.toISOString(),
+                    status: 'sent',
+                }));
+                total = parseInt(countResult.rows[0].count);
+            }
+            else if (messageType === 'scheduled_question') {
+                let whereClause = '1=1';
+                const params = [limit, offset];
+                let paramIndex = 3;
+
+                if (userId) {
+                    whereClause += ` AND n.user_id = $${paramIndex}`;
+                    params.push(userId);
+                }
+
+                const result = await client.query(`
+                    SELECT n.id, n.user_id, u.telegram_id, u.username, u.first_name,
+                           'scheduled_question' as message_type,
+                           COALESCE(q.template_text, 'Scheduled question') as content,
+                           n.scheduled_time as time, n.sent, n.sent_at
+                    FROM scheduled_notifications n
+                    JOIN users u ON n.user_id = u.id
+                    LEFT JOIN question_templates q ON n.question_template_id = q.id
+                    WHERE ${whereClause}
+                    ORDER BY n.scheduled_time DESC
+                    LIMIT $1 OFFSET $2
+                `, params);
+
+                const countParams = [];
+                let countWhere = '1=1';
+                if (userId) {
+                    countWhere = 'user_id = $1';
+                    countParams.push(userId);
+                }
+
+                const countResult = await client.query(
+                    `SELECT COUNT(*) FROM scheduled_notifications WHERE ${countWhere}`,
+                    countParams
+                );
+
+                messages = result.rows.map(row => ({
+                    id: row.id,
+                    source: 'scheduled',
+                    user_id: row.user_id,
+                    telegram_id: row.telegram_id?.toString(),
+                    username: row.username || row.first_name || `User #${row.user_id}`,
+                    message_type: row.message_type,
+                    content: row.content?.substring(0, 500) || 'Scheduled question',
+                    time: row.time?.toISOString(),
+                    status: row.sent ? 'sent' : 'pending',
+                    sent_at: row.sent_at?.toISOString(),
+                }));
+                total = parseInt(countResult.rows[0].count);
+            }
+            else {
+                const params = [limit, offset];
+                let userFilterConv = '';
+                let userFilterSched = '';
+
+                if (userId) {
+                    userFilterConv = 'AND c.user_id = $3';
+                    userFilterSched = 'AND n.user_id = $3';
+                    params.push(userId);
+                }
+
+                const result = await client.query(`
+                    SELECT * FROM (
+                        SELECT c.id, 'conversation' as source, c.user_id, u.telegram_id, u.username, u.first_name,
+                               c.message_type, c.content, c.created_at as time,
+                               'sent' as status, NULL::timestamp as sent_at
+                        FROM conversations c
+                        JOIN users u ON c.user_id = u.id
+                        WHERE 1=1 ${userFilterConv}
+
+                        UNION ALL
+
+                        SELECT n.id, 'scheduled' as source, n.user_id, u.telegram_id, u.username, u.first_name,
+                               'scheduled_question' as message_type,
+                               COALESCE(q.template_text, 'Scheduled question') as content,
+                               n.scheduled_time as time,
+                               CASE WHEN n.sent THEN 'sent' ELSE 'pending' END as status,
+                               n.sent_at
+                        FROM scheduled_notifications n
+                        JOIN users u ON n.user_id = u.id
+                        LEFT JOIN question_templates q ON n.question_template_id = q.id
+                        WHERE 1=1 ${userFilterSched}
+                    ) combined
+                    ORDER BY time DESC
+                    LIMIT $1 OFFSET $2
+                `, params);
+
+                let countQuery;
+                let countParams = [];
+                if (userId) {
+                    countQuery = `SELECT (SELECT COUNT(*) FROM conversations WHERE user_id = $1) + (SELECT COUNT(*) FROM scheduled_notifications WHERE user_id = $1) as total`;
+                    countParams = [userId];
+                } else {
+                    countQuery = `SELECT (SELECT COUNT(*) FROM conversations) + (SELECT COUNT(*) FROM scheduled_notifications) as total`;
+                }
+
+                const countResult = await client.query(countQuery, countParams);
+
+                messages = result.rows.map(row => ({
+                    id: row.id,
+                    source: row.source,
+                    user_id: row.user_id,
+                    telegram_id: row.telegram_id?.toString(),
+                    username: row.username || row.first_name || `User #${row.user_id}`,
+                    message_type: row.message_type,
+                    content: row.content?.substring(0, 500) || '',
+                    time: row.time?.toISOString(),
+                    status: row.status,
+                    sent_at: row.sent_at?.toISOString(),
+                }));
+                total = parseInt(countResult.rows[0].total);
+            }
+
+            sendJson(res, { messages, total });
+        } finally {
+            client.release();
+        }
+    },
+
     // System health
     'GET /api/system/health': async (req, res) => {
         let dbStatus = 'healthy';
