@@ -311,6 +311,52 @@ function groupMomentsByTopics(userMoments) {
 }
 
 /**
+ * Find semantically relevant moments based on topic matching
+ * This is a simplified version of vector search using keyword matching
+ * @param {string} query - User's message or search query
+ * @param {Array} userMoments - User's saved moments
+ * @returns {Array} Relevant moments sorted by relevance score
+ */
+function findRelevantMoments(query, userMoments) {
+    if (!userMoments || userMoments.length === 0) return [];
+
+    // Extract topics from query
+    const queryTopics = extractTopics(query);
+
+    // Score each moment based on topic overlap
+    const scoredMoments = userMoments.map(moment => {
+        const momentTopics = moment.topics || extractTopics(moment.content);
+        let score = 0;
+
+        // Score based on topic overlap
+        for (const topic of queryTopics) {
+            if (momentTopics.includes(topic)) {
+                score += 2; // Topic match
+            }
+        }
+
+        // Bonus for keyword matching in content
+        const queryLower = query.toLowerCase();
+        const contentLower = moment.content.toLowerCase();
+        const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3);
+
+        for (const word of queryWords) {
+            if (contentLower.includes(word)) {
+                score += 1;
+            }
+        }
+
+        return { moment, score };
+    });
+
+    // Filter moments with score > 0 and sort by score
+    return scoredMoments
+        .filter(sm => sm.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(sm => sm.moment);
+}
+
+/**
  * Generate a personalized dialog response using OpenAI GPT-4
  * Uses user's moment history to provide relevant context
  * @param {string} userMessage - User's message
@@ -386,10 +432,91 @@ ${historyContext}
 }
 
 /**
+ * Negative mood detection keywords
+ */
+const negativeMoodKeywords = [
+    // Russian negative phrases
+    'ничего хорошего', 'ничего не произошло', 'ничего', 'плохо', 'грустно', 'тоскливо',
+    'депрессия', 'уныние', 'тяжело', 'сложно', 'трудно', 'устал', 'устала', 'выгорание',
+    'не знаю', 'не могу', 'не хочу', 'всё плохо', 'все плохо', 'нет настроения',
+    'пустота', 'одиноко', 'одинок', 'скучно', 'безнадежно', 'бессмысленно',
+    // English negative phrases
+    'nothing good', 'nothing happened', 'nothing', 'bad', 'sad', 'depressed',
+    'tired', 'exhausted', 'burnout', 'lonely', 'empty', 'hopeless', 'meaningless',
+    "can't", "don't know", "don't want"
+];
+
+/**
+ * Detect if user's message indicates negative mood
+ * @param {string} message - User's message
+ * @returns {boolean} True if negative mood detected
+ */
+function detectNegativeMood(message) {
+    if (!message) return false;
+    const lowerMessage = message.toLowerCase().trim();
+
+    // Check for short negative responses
+    if (lowerMessage.length < 20 && ['нет', 'ничего', 'no', 'nothing', 'не'].includes(lowerMessage)) {
+        return true;
+    }
+
+    // Check for negative keywords
+    return negativeMoodKeywords.some(keyword => lowerMessage.includes(keyword.toLowerCase()));
+}
+
+/**
+ * Generate supportive response for negative mood with past moments
+ * @param {string} userMessage - User's message
+ * @param {object} user - User object
+ * @param {Array} userMoments - User's saved moments
+ * @returns {string} Supportive response
+ */
+function generateNegativeMoodResponse(userMessage, user, userMoments) {
+    const name = user.formal_address ? "Вы" : "ты";
+    const nameLC = name.toLowerCase();
+
+    // If user has moments, remind them of past good moments
+    if (userMoments.length > 0) {
+        // Try to find relevant moments first, fall back to random
+        const relevantMoments = findRelevantMoments(userMessage, userMoments);
+        const selectedMoment = relevantMoments.length > 0
+            ? relevantMoments[0]
+            : userMoments[Math.floor(Math.random() * userMoments.length)];
+
+        const randomMoment = selectedMoment;
+        const momentContent = randomMoment.content.length > 100
+            ? randomMoment.content.substring(0, 100) + "..."
+            : randomMoment.content;
+
+        const responses = [
+            `Я понимаю, что сейчас ${user.formal_address ? 'Вам' : 'тебе'} непросто. 💝\n\nНо помн${user.formal_address ? 'ите' : 'ишь'}, совсем недавно ${nameLC} ${user.formal_address ? 'писали' : 'писал(а)'}: "${momentContent}"\n\nХорошие моменты есть в ${user.formal_address ? 'Вашей' : 'твоей'} жизни, даже если сейчас их не видно. 🌟`,
+            `Бывают трудные дни, это нормально. 💙\n\nНо среди ${user.formal_address ? 'Ваших' : 'твоих'} радостных моментов есть такой:\n"${momentContent}"\n\nМожет, это напоминание поможет ${user.formal_address ? 'Вам' : 'тебе'} почувствовать себя лучше? ✨`,
+            `Я слышу ${nameLC}. Иногда хорошее сложно заметить. 🫂\n\nНо ${nameLC} же ${user.formal_address ? 'запомнили' : 'помнишь'} этот момент:\n"${momentContent}"\n\nТакие моменты доказывают, что радость возможна. Она вернётся. 💝`
+        ];
+
+        return responses[Math.floor(Math.random() * responses.length)];
+    }
+
+    // No moments yet - encourage without references
+    const responses = [
+        `Я понимаю, что сейчас ${user.formal_address ? 'Вам' : 'тебе'} непросто. 💝\n\nИногда хорошее сложно заметить. Но даже маленькие вещи имеют значение — вкусный кофе, улыбка прохожего, тёплое одеяло.\n\nМожет, попробу${user.formal_address ? 'ете' : 'ешь'} найти что-то такое? 🌟`,
+        `Бывают трудные дни, и это нормально. 💙\n\n${user.formal_address ? 'Ваши' : 'Твои'} чувства важны. Но даже в такие дни можно найти маленький лучик света.\n\nЧто первое приходит в голову, когда ${user.formal_address ? 'думаете' : 'думаешь'} о чём-то хорошем? ✨`
+    ];
+
+    return responses[Math.floor(Math.random() * responses.length)];
+}
+
+/**
  * Generate a fallback response when OpenAI is unavailable
  * Uses user's moments to provide personalized support
  */
 function generateFallbackDialogResponse(userMessage, user, userMoments) {
+    // Check for negative mood first
+    if (detectNegativeMood(userMessage)) {
+        console.log("🔍 Negative mood detected, generating supportive response");
+        return generateNegativeMoodResponse(userMessage, user, userMoments);
+    }
+
     const name = user.formal_address ? "Вы" : "ты";
 
     // Check if user has moments to reference
@@ -776,6 +903,92 @@ function formatRelativeDate(date, languageCode = 'ru') {
 }
 
 /**
+ * Calculate user's streak (consecutive days with at least one moment)
+ * @param {Array} userMoments - Array of user's moments
+ * @returns {Object} { currentStreak, bestStreak }
+ */
+function calculateStreak(userMoments) {
+    if (!userMoments || userMoments.length === 0) {
+        return { currentStreak: 0, bestStreak: 0 };
+    }
+
+    // Get unique days (as date strings) when moments were recorded
+    const momentDays = new Set();
+    for (const moment of userMoments) {
+        const date = new Date(moment.created_at);
+        const dayStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        momentDays.add(dayStr);
+    }
+
+    // Sort days
+    const sortedDays = Array.from(momentDays).sort();
+
+    if (sortedDays.length === 0) {
+        return { currentStreak: 0, bestStreak: 0 };
+    }
+
+    // Calculate streaks
+    let currentStreak = 0;
+    let bestStreak = 0;
+    let tempStreak = 1;
+
+    // Get today's date string
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    // Get yesterday's date string
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    // Calculate best streak by going through all days
+    for (let i = 1; i < sortedDays.length; i++) {
+        const prevDate = new Date(sortedDays[i - 1]);
+        const currDate = new Date(sortedDays[i]);
+
+        // Check if consecutive days
+        const diffMs = currDate - prevDate;
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+            tempStreak++;
+        } else {
+            if (tempStreak > bestStreak) {
+                bestStreak = tempStreak;
+            }
+            tempStreak = 1;
+        }
+    }
+
+    if (tempStreak > bestStreak) {
+        bestStreak = tempStreak;
+    }
+
+    // Calculate current streak (must include today or yesterday)
+    const lastDay = sortedDays[sortedDays.length - 1];
+
+    if (lastDay === todayStr || lastDay === yesterdayStr) {
+        // Count backwards from the last day
+        currentStreak = 1;
+        for (let i = sortedDays.length - 2; i >= 0; i--) {
+            const currDate = new Date(sortedDays[i + 1]);
+            const prevDate = new Date(sortedDays[i]);
+
+            const diffMs = currDate - prevDate;
+            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) {
+                currentStreak++;
+            } else {
+                break;
+            }
+        }
+    }
+
+    return { currentStreak, bestStreak };
+}
+
+/**
  * Add a moment to user's history
  */
 function addMoment(userId, content) {
@@ -794,6 +1007,37 @@ function addMoment(userId, content) {
     saveDataToFile();
     console.log(`✅ Moment saved with topics: ${topics.join(', ')}`);
     return userMoments[userMoments.length - 1];
+}
+
+/**
+ * Delete a specific moment by ID
+ * @param {number} userId - User ID
+ * @param {number} momentId - Moment ID to delete
+ * @returns {boolean} True if deleted, false if not found
+ */
+function deleteMoment(userId, momentId) {
+    const userMoments = moments.get(userId);
+    if (!userMoments) return false;
+
+    const index = userMoments.findIndex(m => m.id === momentId);
+    if (index === -1) return false;
+
+    userMoments.splice(index, 1);
+    saveDataToFile();
+    console.log(`✅ Moment ${momentId} deleted for user ${userId}`);
+    return true;
+}
+
+/**
+ * Get a specific moment by ID
+ * @param {number} userId - User ID
+ * @param {number} momentId - Moment ID
+ * @returns {object|null} Moment object or null if not found
+ */
+function getMomentById(userId, momentId) {
+    const userMoments = moments.get(userId);
+    if (!userMoments) return null;
+    return userMoments.find(m => m.id === momentId) || null;
 }
 
 /**
@@ -1531,6 +1775,7 @@ async function handleStatsCommand(message) {
     // Calculate stats
     const totalMoments = userMoments.length;
     const registrationDate = formatDate(user.created_at, user.language_code, false);
+    const { currentStreak, bestStreak } = calculateStreak(userMoments);
 
     // Find first and last moment dates
     let firstMomentDate = null;
@@ -1544,10 +1789,10 @@ async function handleStatsCommand(message) {
     // Build stats text
     let statsText = "📊 <b>Твоя статистика</b>\n\n";
     statsText += `🌟 Всего моментов: ${totalMoments}\n`;
-    statsText += "🔥 Текущий стрик: 0 дн.\n";
-    statsText += "🏆 Лучший стрик: 0 дн.\n";
-    statsText += "✉️ Отправлено вопросов: 0\n";
-    statsText += "✅ Отвечено: 0\n\n";
+    statsText += `🔥 Текущий стрик: ${currentStreak} дн.\n`;
+    statsText += `🏆 Лучший стрик: ${bestStreak} дн.\n`;
+    statsText += `✉️ Отправлено вопросов: ${user.statistics?.questions_sent || 0}\n`;
+    statsText += `✅ Отвечено: ${user.statistics?.questions_answered || 0}\n\n`;
 
     statsText += "📅 <b>Даты</b>\n";
     statsText += `📝 Регистрация: ${registrationDate}\n`;
@@ -2095,16 +2340,18 @@ async function handleMomentsCallback(callback, action) {
             "🎲 <b>Случайный момент</b>\n\n" +
             `🌟 <i>${relativeDate}</i>\n` +
             `${escapeHtml(randomMoment.content)}\n` +
-            `<code>${fullDate}</code>`,
+            `<code>${fullDate}</code>\n\n` +
+            `<i>ID: ${randomMoment.id}</i>`,
             {
                 inline_keyboard: [
                     [{ text: "🎲 Ещё один", callback_data: "moments_random" }],
+                    [{ text: "🗑️ Удалить", callback_data: `moment_delete_confirm_${randomMoment.id}` }],
                     [{ text: "📖 Все моменты", callback_data: "menu_moments" }],
                     [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
                 ]
             }
         );
-        console.log("✅ Random moment shown");
+        console.log(`✅ Random moment shown (ID: ${randomMoment.id})`);
     } else if (action === "moments_search") {
         // Set user state to "searching moments"
         userStates.set(user.telegram_id, { state: 'searching_moments' });
@@ -2276,6 +2523,63 @@ async function handleMomentsCallback(callback, action) {
             ]
         });
         console.log(`✅ Filter ${period}: ${filteredMoments.length} moments`);
+    } else if (action.startsWith("moment_delete_confirm_")) {
+        // Show delete confirmation dialog
+        const momentId = parseInt(action.replace("moment_delete_confirm_", ""));
+        const moment = getMomentById(user.telegram_id, momentId);
+
+        if (!moment) {
+            await answerCallback(callback.id, "Момент не найден");
+            return;
+        }
+
+        const preview = moment.content.substring(0, 50) + (moment.content.length > 50 ? "..." : "");
+
+        await editMessage(chatId, messageId,
+            "🗑️ <b>Удаление момента</b>\n\n" +
+            `Ты уверен, что хочешь удалить этот момент?\n\n` +
+            `<i>\"${escapeHtml(preview)}\"</i>\n\n` +
+            "⚠️ Это действие нельзя отменить.",
+            {
+                inline_keyboard: [
+                    [
+                        { text: "✅ Да, удалить", callback_data: `moment_delete_${momentId}` },
+                        { text: "❌ Отмена", callback_data: "moments_random" }
+                    ]
+                ]
+            }
+        );
+        console.log(`✅ Delete confirmation shown for moment ${momentId}`);
+    } else if (action.startsWith("moment_delete_") && !action.includes("confirm")) {
+        // Execute moment deletion
+        const momentId = parseInt(action.replace("moment_delete_", ""));
+        const success = deleteMoment(user.telegram_id, momentId);
+
+        if (success) {
+            await editMessage(chatId, messageId,
+                "✅ <b>Момент удалён</b>\n\n" +
+                "Момент был успешно удалён из твоей истории.",
+                {
+                    inline_keyboard: [
+                        [{ text: "📖 Мои моменты", callback_data: "menu_moments" }],
+                        [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
+                    ]
+                }
+            );
+            console.log(`✅ Moment ${momentId} deleted successfully`);
+        } else {
+            await editMessage(chatId, messageId,
+                "❌ <b>Ошибка</b>\n\n" +
+                "Не удалось удалить момент. Возможно, он уже был удалён.",
+                {
+                    inline_keyboard: [
+                        [{ text: "📖 Мои моменты", callback_data: "menu_moments" }],
+                        [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
+                    ]
+                }
+            );
+            console.log(`❌ Failed to delete moment ${momentId}`);
+        }
     }
 
     await answerCallback(callback.id);
