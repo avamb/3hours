@@ -48,6 +48,7 @@
                 <li><a href="#" data-page="messages" class="nav-link">Messages</a></li>
                 <li><a href="#" data-page="logs" class="nav-link">Logs</a></li>
                 <li><a href="#" data-page="notifications" class="nav-link">Notifications</a></li>
+                <li><a href="#" data-page="feedback" class="nav-link">Feedback</a></li>
             </ul>
         </nav>
 
@@ -200,6 +201,75 @@
                             <tr><td colspan="5" class="loading">Loading...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Feedback Page -->
+            <div id="page-feedback" class="page">
+                <h2>User Feedback</h2>
+                <div class="stats-grid feedback-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">💡</div>
+                        <div class="stat-value" id="stat-feedback-new">-</div>
+                        <div class="stat-label">New</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👀</div>
+                        <div class="stat-value" id="stat-feedback-reviewed">-</div>
+                        <div class="stat-label">Reviewed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-value" id="stat-feedback-implemented">-</div>
+                        <div class="stat-label">Implemented</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-value" id="stat-feedback-rejected">-</div>
+                        <div class="stat-label">Rejected</div>
+                    </div>
+                </div>
+                <div class="toolbar">
+                    <select id="feedback-status-filter" class="select-input">
+                        <option value="">All Statuses</option>
+                        <option value="new">New</option>
+                        <option value="reviewed">Reviewed</option>
+                        <option value="implemented">Implemented</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <button id="refresh-feedback" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="feedback-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Category</th>
+                                <th>Content</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="feedback-pagination"></div>
+            </div>
+
+            <!-- Feedback Detail Modal -->
+            <div id="feedback-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Feedback Details</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body" id="feedback-modal-body">
+                        <p class="loading">Loading...</p>
+                    </div>
                 </div>
             </div>
 

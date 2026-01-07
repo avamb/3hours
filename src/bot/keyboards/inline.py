@@ -231,3 +231,54 @@ def get_random_moment_keyboard(moment_id: int) -> InlineKeyboardMarkup:
         ]
     )
     return keyboard
+
+
+def get_feedback_category_keyboard() -> InlineKeyboardMarkup:
+    """Create keyboard for selecting feedback category"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="💡 Идея/предложение", callback_data="feedback_suggestion"),
+            ],
+            [
+                InlineKeyboardButton(text="🐛 Сообщить об ошибке", callback_data="feedback_bug"),
+            ],
+            [
+                InlineKeyboardButton(text="💬 Другое", callback_data="feedback_other"),
+            ],
+            [
+                InlineKeyboardButton(text="⬅️ Отмена", callback_data="feedback_cancel"),
+            ],
+        ]
+    )
+    return keyboard
+
+
+def get_feedback_confirm_keyboard() -> InlineKeyboardMarkup:
+    """Create keyboard for confirming feedback submission"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Отправить", callback_data="feedback_submit"),
+            ],
+            [
+                InlineKeyboardButton(text="❌ Отмена", callback_data="feedback_cancel"),
+            ],
+        ]
+    )
+    return keyboard
+
+
+def get_feedback_thanks_keyboard() -> InlineKeyboardMarkup:
+    """Create keyboard after feedback submission"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="💡 Предложить ещё", callback_data="feedback_new"),
+            ],
+            [
+                InlineKeyboardButton(text="⬅️ В меню", callback_data="main_menu"),
+            ],
+        ]
+    )
+    return keyboard

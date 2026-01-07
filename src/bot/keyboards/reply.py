@@ -11,6 +11,7 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
     Layout:
     [📖 Мои моменты] [📊 Статистика]
     [⚙️ Настройки] [💬 Поговорить]
+    [💡 Предложить идею]
     """
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
@@ -21,6 +22,9 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
             [
                 KeyboardButton(text="⚙️ Настройки"),
                 KeyboardButton(text="💬 Поговорить"),
+            ],
+            [
+                KeyboardButton(text="💡 Предложить идею"),
             ],
         ],
         resize_keyboard=True,

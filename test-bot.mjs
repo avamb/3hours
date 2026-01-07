@@ -3889,6 +3889,17 @@ async function processUpdate(update) {
             );
             await answerCallback(update.callback_query.id, "Вышли из диалога");
             console.log("✅ User exited free dialog mode");
+        } else if (callbackData === "exit_dialog") {
+            // Exit free dialog mode
+            userStates.delete(update.callback_query.from.id);
+            await editMessage(
+                update.callback_query.message.chat.id,
+                update.callback_query.message.message_id,
+                "✅ Вышли из режима диалога.\n\nИспользуй меню для навигации.",
+                getMainMenuInline()
+            );
+            await answerCallback(update.callback_query.id, "Вышли из диалога");
+            console.log("✅ User exited free dialog mode");
         } else if (callbackData.startsWith("stats_")) {
             await handleStatsFilterCallback(update.callback_query, callbackData);
         } else if (callbackData === "help") {

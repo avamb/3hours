@@ -110,6 +110,7 @@ async def handle_text_message(message: Message) -> None:
     Handle text messages
     - Could be a response to a question
     - Could be free dialog
+    - Could be feedback input
     - Could be any other text input
     """
     text = message.text.strip()
@@ -120,6 +121,11 @@ async def handle_text_message(message: Message) -> None:
             "🤔 Кажется, сообщение пустое. Расскажи что-нибудь хорошее!"
         )
         return
+
+    # Check if user is in feedback input mode
+    from src.bot.handlers.feedback import handle_feedback_text
+    if await handle_feedback_text(message):
+        return  # Feedback handled
 
     # Get user state to determine context
     from src.services.user_service import UserService

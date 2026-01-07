@@ -480,6 +480,149 @@ const routes = {
             client.release();
         }
     },
+
+    // Feedback list
+    'GET /api/feedback': async (req, res) => {
+        const query = parseQuery(req.url);
+        const limit = Math.min(parseInt(query.limit) || 50, 100);
+        const offset = parseInt(query.offset) || 0;
+        const status = query.status;
+
+        const client = await pool.connect();
+        try {
+            let whereClause = '1=1';
+            const params = [limit, offset];
+            let paramIndex = 3;
+
+            if (status) {
+                whereClause += ` AND f.status = $${paramIndex}`;
+                params.push(status);
+                paramIndex++;
+            }
+
+            const result = await client.query(`
+                SELECT
+                    f.id, f.user_id, u.telegram_id, u.username, u.first_name,
+                    f.content, f.category, f.status, f.admin_notes,
+                    f.reviewed_at, f.created_at
+                FROM feedback f
+                JOIN users u ON f.user_id = u.id
+                WHERE ${whereClause}
+                ORDER BY f.created_at DESC
+                LIMIT $1 OFFSET $2
+            `, params);
+
+            // Count query
+            const countParams = [];
+            let countWhere = '1=1';
+            let countParamIndex = 1;
+
+            if (status) {
+                countWhere += ` AND status = $${countParamIndex}`;
+                countParams.push(status);
+            }
+
+            const countResult = await client.query(
+                `SELECT COUNT(*) FROM feedback WHERE ${countWhere}`,
+                countParams
+            );
+
+            sendJson(res, {
+                feedback: result.rows.map(row => ({
+                    id: row.id,
+                    user_id: row.user_id,
+                    telegram_id: row.telegram_id?.toString(),
+                    username: row.username,
+                    first_name: row.first_name,
+                    content: row.content,
+                    category: row.category,
+                    status: row.status,
+                    admin_notes: row.admin_notes,
+                    reviewed_at: row.reviewed_at?.toISOString(),
+                    created_at: row.created_at?.toISOString(),
+                })),
+                total: parseInt(countResult.rows[0].count),
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Update feedback status
+    'POST /api/feedback/:id/status': async (req, res, params) => {
+        const feedbackId = parseInt(params.id);
+        const body = await parseBody(req);
+        const { status, admin_notes } = body;
+
+        if (!status || !['new', 'reviewed', 'implemented', 'rejected'].includes(status)) {
+            sendJson(res, { detail: 'Invalid status' }, 400);
+            return;
+        }
+
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                UPDATE feedback
+                SET status = $1, admin_notes = $2, reviewed_at = $3
+                WHERE id = $4
+                RETURNING *
+            `, [status, admin_notes || null, status !== 'new' ? new Date() : null, feedbackId]);
+
+            if (result.rows.length === 0) {
+                sendJson(res, { detail: 'Feedback not found' }, 404);
+                return;
+            }
+
+            sendJson(res, {
+                success: true,
+                feedback: {
+                    id: result.rows[0].id,
+                    status: result.rows[0].status,
+                    admin_notes: result.rows[0].admin_notes,
+                    reviewed_at: result.rows[0].reviewed_at?.toISOString(),
+                }
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Feedback stats
+    'GET /api/feedback/stats': async (req, res) => {
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE status = 'new') as new_count,
+                    COUNT(*) FILTER (WHERE status = 'reviewed') as reviewed_count,
+                    COUNT(*) FILTER (WHERE status = 'implemented') as implemented_count,
+                    COUNT(*) FILTER (WHERE status = 'rejected') as rejected_count,
+                    COUNT(*) FILTER (WHERE category = 'suggestion') as suggestions,
+                    COUNT(*) FILTER (WHERE category = 'bug') as bugs,
+                    COUNT(*) FILTER (WHERE category = 'other') as other
+                FROM feedback
+            `);
+
+            const stats = result.rows[0];
+            sendJson(res, {
+                total: parseInt(stats.total),
+                by_status: {
+                    new: parseInt(stats.new_count),
+                    reviewed: parseInt(stats.reviewed_count),
+                    implemented: parseInt(stats.implemented_count),
+                    rejected: parseInt(stats.rejected_count),
+                },
+                by_category: {
+                    suggestion: parseInt(stats.suggestions),
+                    bug: parseInt(stats.bugs),
+                    other: parseInt(stats.other),
+                }
+            });
+        } finally {
+            client.release();
+        }
+    },
 };
 
 // Match route with params

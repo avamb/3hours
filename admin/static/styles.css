@@ -673,6 +673,84 @@ body {
     color: var(--secondary-color);
 }
 
+/* Feedback Styles */
+.feedback-category {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.feedback-category.suggestion {
+    background: rgba(251, 191, 36, 0.1);
+    color: #d97706;
+}
+
+.feedback-category.bug {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.feedback-category.other {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+.feedback-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.feedback-status.new {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+.feedback-status.reviewed {
+    background: rgba(139, 92, 246, 0.1);
+    color: #7c3aed;
+}
+
+.feedback-status.implemented {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.feedback-status.rejected {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.feedback-content-box {
+    background: var(--bg-color);
+    padding: 16px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.textarea-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.textarea-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.feedback-stats .stat-card {
+    min-width: auto;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     #dashboard-screen {

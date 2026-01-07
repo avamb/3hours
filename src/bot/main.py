@@ -12,7 +12,7 @@ from aiogram.client.default import DefaultBotProperties
 
 from src.config import get_settings
 from src.db.database import init_db, close_db
-from src.bot.handlers import commands, messages, callbacks
+from src.bot.handlers import commands, messages, callbacks, feedback
 from src.bot.middlewares.logging import LoggingMiddleware
 from src.services.scheduler import NotificationScheduler
 
@@ -46,6 +46,7 @@ async def main() -> None:
 
     # Register routers
     dp.include_router(commands.router)
+    dp.include_router(feedback.router)  # Feedback router before messages for button handling
     dp.include_router(messages.router)
     dp.include_router(callbacks.router)
 

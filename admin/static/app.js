@@ -140,6 +140,9 @@ function navigateTo(page) {
         case 'notifications':
             loadNotifications();
             break;
+        case 'feedback':
+            loadFeedback();
+            break;
     }
 }
 
@@ -477,6 +480,166 @@ async function loadNotifications() {
 
 document.getElementById('pending-only-filter').addEventListener('change', loadNotifications);
 document.getElementById('refresh-notifications').addEventListener('click', loadNotifications);
+
+// Feedback Page
+let feedbackOffset = 0;
+
+async function loadFeedback(offset = 0) {
+    feedbackOffset = offset;
+
+    // Load stats
+    try {
+        const stats = await api('/feedback/stats');
+        document.getElementById('stat-feedback-new').textContent = stats.by_status.new;
+        document.getElementById('stat-feedback-reviewed').textContent = stats.by_status.reviewed;
+        document.getElementById('stat-feedback-implemented').textContent = stats.by_status.implemented;
+        document.getElementById('stat-feedback-rejected').textContent = stats.by_status.rejected;
+    } catch (error) {
+        console.error('Error loading feedback stats:', error);
+    }
+
+    // Load feedback list
+    const tbody = document.querySelector('#feedback-table tbody');
+    tbody.innerHTML = '<tr><td colspan="7" class="loading">Loading...</td></tr>';
+
+    try {
+        const status = document.getElementById('feedback-status-filter').value;
+        const params = new URLSearchParams({ limit: pageSize, offset });
+        if (status) params.append('status', status);
+
+        const { feedback, total } = await api(`/feedback?${params}`);
+
+        if (feedback.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">No feedback found</td></tr>';
+        } else {
+            tbody.innerHTML = feedback.map(f => `
+                <tr>
+                    <td>${f.id}</td>
+                    <td>${f.username || f.first_name || `User #${f.user_id}`}</td>
+                    <td><span class="feedback-category ${f.category}">${getCategoryLabel(f.category)}</span></td>
+                    <td>${escapeHtml(f.content.substring(0, 80))}${f.content.length > 80 ? '...' : ''}</td>
+                    <td><span class="feedback-status ${f.status}">${getStatusLabel(f.status)}</span></td>
+                    <td>${formatRelativeTime(f.created_at)}</td>
+                    <td class="actions">
+                        <button class="btn btn-primary btn-small" onclick="showFeedbackDetail(${f.id}, ${JSON.stringify(f).replace(/"/g, '&quot;')})">View</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        renderPagination('feedback-pagination', total, offset, pageSize, loadFeedback);
+    } catch (error) {
+        console.error('Error loading feedback:', error);
+        tbody.innerHTML = `<tr><td colspan="7" class="loading">Error: ${error.message}</td></tr>`;
+    }
+}
+
+function getCategoryLabel(category) {
+    const labels = {
+        'suggestion': '💡 Idea',
+        'bug': '🐛 Bug',
+        'other': '💬 Other'
+    };
+    return labels[category] || category;
+}
+
+function getStatusLabel(status) {
+    const labels = {
+        'new': 'New',
+        'reviewed': 'Reviewed',
+        'implemented': 'Implemented',
+        'rejected': 'Rejected'
+    };
+    return labels[status] || status;
+}
+
+async function showFeedbackDetail(feedbackId, feedbackData) {
+    const modal = document.getElementById('feedback-modal');
+    const modalBody = document.getElementById('feedback-modal-body');
+
+    modal.classList.add('active');
+
+    modalBody.innerHTML = `
+        <div class="feedback-detail">
+            <div class="detail-section">
+                <div class="user-detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">User</div>
+                        <div class="detail-value">${feedbackData.username || feedbackData.first_name || `User #${feedbackData.user_id}`}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Category</div>
+                        <div class="detail-value">${getCategoryLabel(feedbackData.category)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value"><span class="feedback-status ${feedbackData.status}">${getStatusLabel(feedbackData.status)}</span></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created</div>
+                        <div class="detail-value">${formatDate(feedbackData.created_at)}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-section">
+                <h4>Content</h4>
+                <div class="feedback-content-box">${escapeHtml(feedbackData.content)}</div>
+            </div>
+            <div class="detail-section">
+                <h4>Update Status</h4>
+                <div class="form-group">
+                    <select id="feedback-status-select" class="select-input">
+                        <option value="new" ${feedbackData.status === 'new' ? 'selected' : ''}>New</option>
+                        <option value="reviewed" ${feedbackData.status === 'reviewed' ? 'selected' : ''}>Reviewed</option>
+                        <option value="implemented" ${feedbackData.status === 'implemented' ? 'selected' : ''}>Implemented</option>
+                        <option value="rejected" ${feedbackData.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Admin Notes</label>
+                    <textarea id="feedback-admin-notes" class="textarea-input" rows="3">${feedbackData.admin_notes || ''}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="updateFeedbackStatus(${feedbackId})">Update Status</button>
+            </div>
+        </div>
+    `;
+}
+
+async function updateFeedbackStatus(feedbackId) {
+    const status = document.getElementById('feedback-status-select').value;
+    const adminNotes = document.getElementById('feedback-admin-notes').value;
+
+    try {
+        await api(`/feedback/${feedbackId}/status`, {
+            method: 'POST',
+            body: JSON.stringify({ status, admin_notes: adminNotes })
+        });
+
+        // Close modal and reload
+        document.getElementById('feedback-modal').classList.remove('active');
+        loadFeedback(feedbackOffset);
+    } catch (error) {
+        alert('Error updating feedback: ' + error.message);
+    }
+}
+
+// Feedback modal close handlers
+document.querySelector('#feedback-modal .modal-close')?.addEventListener('click', () => {
+    document.getElementById('feedback-modal').classList.remove('active');
+});
+
+document.getElementById('feedback-modal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+        e.currentTarget.classList.remove('active');
+    }
+});
+
+document.getElementById('feedback-status-filter')?.addEventListener('change', () => loadFeedback(0));
+document.getElementById('refresh-feedback')?.addEventListener('click', () => loadFeedback(feedbackOffset));
+
+// Make showFeedbackDetail globally accessible
+window.showFeedbackDetail = showFeedbackDetail;
+window.updateFeedbackStatus = updateFeedbackStatus;
 
 // Pagination helper
 function renderPagination(containerId, total, offset, limit, loadFn) {
