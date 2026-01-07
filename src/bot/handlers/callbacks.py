@@ -563,3 +563,58 @@ async def callback_question_skip(callback: CallbackQuery) -> None:
 async def callback_noop(callback: CallbackQuery) -> None:
     """Do nothing - for display-only buttons like page numbers"""
     await callback.answer()
+
+
+# Summary callbacks
+@router.callback_query(F.data == "summary_weekly")
+async def callback_summary_weekly(callback: CallbackQuery) -> None:
+    """Generate and show weekly summary"""
+    from src.services.summary_service import SummaryService
+
+    await callback.message.edit_text(
+        "⏳ Готовлю еженедельное саммари..."
+    )
+
+    summary_service = SummaryService()
+    summary = await summary_service.generate_weekly_summary(callback.from_user.id)
+
+    if summary:
+        await callback.message.edit_text(
+            summary,
+            reply_markup=get_main_menu_inline()
+        )
+    else:
+        await callback.message.edit_text(
+            "📅 Недостаточно моментов для еженедельного саммари.\n\n"
+            "Когда у тебя будет больше записей, я смогу создать красивый обзор! 🌟",
+            reply_markup=get_main_menu_inline()
+        )
+
+    await callback.answer()
+
+
+@router.callback_query(F.data == "summary_monthly")
+async def callback_summary_monthly(callback: CallbackQuery) -> None:
+    """Generate and show monthly summary"""
+    from src.services.summary_service import SummaryService
+
+    await callback.message.edit_text(
+        "⏳ Готовлю месячное саммари..."
+    )
+
+    summary_service = SummaryService()
+    summary = await summary_service.generate_monthly_summary(callback.from_user.id)
+
+    if summary:
+        await callback.message.edit_text(
+            summary,
+            reply_markup=get_main_menu_inline()
+        )
+    else:
+        await callback.message.edit_text(
+            "🗓 Недостаточно моментов для месячного саммари.\n\n"
+            "Когда у тебя будет больше записей, я смогу создать красивый обзор! 🌟",
+            reply_markup=get_main_menu_inline()
+        )
+
+    await callback.answer()

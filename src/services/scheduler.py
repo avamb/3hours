@@ -9,6 +9,7 @@ import random
 from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select, and_
 
 from src.db.database import get_session
@@ -72,6 +73,22 @@ class NotificationScheduler:
             self._schedule_user_notifications,
             trigger=IntervalTrigger(hours=1),
             id="schedule_notifications",
+            replace_existing=True,
+        )
+
+        # Add job to send weekly summaries (every Sunday at 10:00)
+        self.scheduler.add_job(
+            self._send_weekly_summaries,
+            trigger=CronTrigger(day_of_week='sun', hour=10, minute=0),
+            id="weekly_summaries",
+            replace_existing=True,
+        )
+
+        # Add job to send monthly summaries (first day of month at 10:00)
+        self.scheduler.add_job(
+            self._send_monthly_summaries,
+            trigger=CronTrigger(day=1, hour=10, minute=0),
+            id="monthly_summaries",
             replace_existing=True,
         )
 
@@ -298,3 +315,130 @@ class NotificationScheduler:
         session.add(notification)
 
         logger.info(f"Scheduled notification for user {user.telegram_id} at {next_time}")
+
+    async def _send_weekly_summaries(self) -> None:
+        """Send weekly summaries to all active users"""
+        logger.info("Starting weekly summary distribution")
+
+        from src.services.summary_service import SummaryService
+        summary_service = SummaryService()
+
+        async with get_session() as session:
+            # Get all users with notifications enabled and onboarding completed
+            result = await session.execute(
+                select(User).where(
+                    and_(
+                        User.notifications_enabled == True,
+                        User.onboarding_completed == True,
+                    )
+                )
+            )
+            users = result.scalars().all()
+
+            sent_count = 0
+            for user in users:
+                try:
+                    # Check if within active hours
+                    now = datetime.utcnow()
+                    current_time = now.time()
+
+                    if not (user.active_hours_start <= current_time <= user.active_hours_end):
+                        logger.debug(f"User {user.telegram_id} outside active hours, skipping weekly summary")
+                        continue
+
+                    # Generate summary
+                    summary = await summary_service.generate_weekly_summary(user.telegram_id)
+
+                    if summary:
+                        await self.bot.send_message(
+                            chat_id=user.telegram_id,
+                            text=summary,
+                        )
+                        sent_count += 1
+                        logger.info(f"Sent weekly summary to user {user.telegram_id}")
+
+                except Exception as e:
+                    logger.error(f"Failed to send weekly summary to {user.telegram_id}: {e}")
+
+        logger.info(f"Weekly summary distribution completed: {sent_count} summaries sent")
+
+    async def _send_monthly_summaries(self) -> None:
+        """Send monthly summaries to all active users"""
+        logger.info("Starting monthly summary distribution")
+
+        from src.services.summary_service import SummaryService
+        summary_service = SummaryService()
+
+        async with get_session() as session:
+            # Get all users with notifications enabled and onboarding completed
+            result = await session.execute(
+                select(User).where(
+                    and_(
+                        User.notifications_enabled == True,
+                        User.onboarding_completed == True,
+                    )
+                )
+            )
+            users = result.scalars().all()
+
+            sent_count = 0
+            for user in users:
+                try:
+                    # Check if within active hours
+                    now = datetime.utcnow()
+                    current_time = now.time()
+
+                    if not (user.active_hours_start <= current_time <= user.active_hours_end):
+                        logger.debug(f"User {user.telegram_id} outside active hours, skipping monthly summary")
+                        continue
+
+                    # Generate summary
+                    summary = await summary_service.generate_monthly_summary(user.telegram_id)
+
+                    if summary:
+                        await self.bot.send_message(
+                            chat_id=user.telegram_id,
+                            text=summary,
+                        )
+                        sent_count += 1
+                        logger.info(f"Sent monthly summary to user {user.telegram_id}")
+
+                except Exception as e:
+                    logger.error(f"Failed to send monthly summary to {user.telegram_id}: {e}")
+
+        logger.info(f"Monthly summary distribution completed: {sent_count} summaries sent")
+
+    async def send_summary_to_user(self, telegram_id: int, summary_type: str = "weekly") -> bool:
+        """
+        Manually send a summary to a specific user (for testing or on-demand)
+
+        Args:
+            telegram_id: The Telegram ID of the user
+            summary_type: "weekly" or "monthly"
+
+        Returns:
+            True if summary was sent successfully, False otherwise
+        """
+        try:
+            from src.services.summary_service import SummaryService
+            summary_service = SummaryService()
+
+            if summary_type == "weekly":
+                summary = await summary_service.generate_weekly_summary(telegram_id)
+            else:
+                summary = await summary_service.generate_monthly_summary(telegram_id)
+
+            if summary:
+                await self.bot.send_message(
+                    chat_id=telegram_id,
+                    text=summary,
+                )
+                logger.info(f"Sent {summary_type} summary to user {telegram_id}")
+                return True
+            else:
+                logger.info(f"No moments to summarize for user {telegram_id}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Failed to send {summary_type} summary to {telegram_id}: {e}")
+            return False

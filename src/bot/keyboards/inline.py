@@ -282,3 +282,21 @@ def get_feedback_thanks_keyboard() -> InlineKeyboardMarkup:
         ]
     )
     return keyboard
+
+
+def get_summary_keyboard() -> InlineKeyboardMarkup:
+    """Create keyboard for selecting summary type"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="📅 Еженедельное", callback_data="summary_weekly"),
+            ],
+            [
+                InlineKeyboardButton(text="🗓 Месячное", callback_data="summary_monthly"),
+            ],
+            [
+                InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu"),
+            ],
+        ]
+    )
+    return keyboard

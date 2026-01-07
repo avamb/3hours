@@ -304,3 +304,17 @@ async def cmd_delete_data(message: Message) -> None:
         "⚠️ <b>Это действие необратимо!</b>"
     )
     await message.answer(confirm_text, reply_markup=get_delete_confirmation_keyboard())
+
+
+@router.message(Command("summary"))
+async def cmd_summary(message: Message) -> None:
+    """Handle /summary command - get weekly or monthly summary of moments"""
+    from src.bot.keyboards.inline import get_summary_keyboard
+
+    summary_intro = (
+        "📊 <b>Саммари моментов</b>\n\n"
+        "Выбери тип саммари, который хочешь получить:\n\n"
+        "📅 <b>Еженедельное</b> — обзор хороших моментов за последнюю неделю\n"
+        "🗓 <b>Месячное</b> — итоги за последний месяц"
+    )
+    await message.answer(summary_intro, reply_markup=get_summary_keyboard())
