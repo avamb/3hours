@@ -44,6 +44,26 @@ async def callback_address_informal(callback: CallbackQuery) -> None:
     )
 
     await user_service.complete_onboarding(callback.from_user.id)
+
+    # Send first question immediately after onboarding
+    from src.services.scheduler import NotificationScheduler
+    scheduler = NotificationScheduler.get_instance()
+    logger.info(f"Attempting to send first question after onboarding for user {callback.from_user.id}, scheduler instance: {scheduler is not None}")
+    if scheduler:
+        try:
+            result = await scheduler.send_first_question_after_onboarding(callback.from_user.id)
+            logger.info(f"First question sent result for user {callback.from_user.id}: {result}")
+        except Exception as e:
+            logger.error(f"Failed to send first question after onboarding for user {callback.from_user.id}: {e}")
+    else:
+        # Fallback: create temporary scheduler with bot from callback
+        logger.warning(f"No scheduler instance available for user {callback.from_user.id}, using fallback")
+        try:
+            temp_scheduler = NotificationScheduler(callback.bot)
+            result = await temp_scheduler.send_first_question_after_onboarding(callback.from_user.id)
+            logger.info(f"First question sent via fallback for user {callback.from_user.id}: {result}")
+        except Exception as e:
+            logger.error(f"Fallback failed to send first question for user {callback.from_user.id}: {e}")
     await callback.answer()
 
 
@@ -68,6 +88,26 @@ async def callback_address_formal(callback: CallbackQuery) -> None:
     )
 
     await user_service.complete_onboarding(callback.from_user.id)
+
+    # Send first question immediately after onboarding
+    from src.services.scheduler import NotificationScheduler
+    scheduler = NotificationScheduler.get_instance()
+    logger.info(f"Attempting to send first question after onboarding for user {callback.from_user.id}, scheduler instance: {scheduler is not None}")
+    if scheduler:
+        try:
+            result = await scheduler.send_first_question_after_onboarding(callback.from_user.id)
+            logger.info(f"First question sent result for user {callback.from_user.id}: {result}")
+        except Exception as e:
+            logger.error(f"Failed to send first question after onboarding for user {callback.from_user.id}: {e}")
+    else:
+        # Fallback: create temporary scheduler with bot from callback
+        logger.warning(f"No scheduler instance available for user {callback.from_user.id}, using fallback")
+        try:
+            temp_scheduler = NotificationScheduler(callback.bot)
+            result = await temp_scheduler.send_first_question_after_onboarding(callback.from_user.id)
+            logger.info(f"First question sent via fallback for user {callback.from_user.id}: {result}")
+        except Exception as e:
+            logger.error(f"Fallback failed to send first question for user {callback.from_user.id}: {e}")
     await callback.answer()
 
 
