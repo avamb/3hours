@@ -1,66 +1,62 @@
 # MINDSETHAPPYBOT - Development Progress
 
-## Session 71 Summary (Coding Agent)
-**Date**: Session 71
+## Session 72 Summary (Coding Agent)
+**Date**: Session 72
 **Status**: **104 Features PASSING (100%)** - PROJECT COMPLETE!
 
 ---
 
-## Session 71 Work Completed
+## Session 72 Work Completed
 
 ### Code Verification and Regression Check
 - Verified feature statistics: 104/104 features passing (100%)
 - Selected 3 random passing features for regression testing:
-  - Feature #48: Emoji usage in messages
-  - Feature #83: Supportive but not pushy tone
-  - Feature #82: Warm and friendly tone
-- Performed comprehensive code review of key components
+  - Feature #80: Language detection on start
+  - Feature #22: Toggle address form ты/вы
+  - Feature #34: Whisper transcription error handling
 
 ### Regression Test Results
 
-#### Feature #48: Emoji usage in messages VERIFIED
-- commands.py: Uses all required emojis consistently
-  - 🌟 for positive moments (lines 145, 189, 196, 218)
-  - 📖 for history (lines 187, 192)
-  - 📊 for statistics (lines 211, 216)
-  - ⚙️ for settings (line 163)
-  - 🔥 for streaks (line 219)
-  - 💝 for support (lines 81, 242)
-- callbacks.py: Same emoji patterns maintained
-- Additional emojis: 👋, ✨, 😊, 🏆, ✅, 📈, etc.
+#### Feature #80: Language detection on start VERIFIED
+- user_service.py (line 41): `language_code=telegram_user.language_code or "ru"`
+- Language is properly captured from Telegram user settings
+- commands.py: `get_localized_welcome_text()` and `get_localized_welcome_back_text()` use language_code
+- Supports Russian (default), English, and Ukrainian
 
-#### Feature #83: Supportive but not pushy tone VERIFIED
-- Skip question: "👍 Хорошо, пропустим этот вопрос. До скорой встречи! 😊" - gentle, no guilt
-- personalization_service.py: System prompts explicitly say "Будь тёплым, но не навязчивым"
-- Dialog mode explicitly states: "НЕ навязывай решения"
-- States user makes their own decisions
+#### Feature #22: Toggle address form ты/вы VERIFIED
+- callbacks.py (lines 23-71): `address_informal` and `address_formal` handlers
+- callbacks.py (lines 144-152): `settings_address` callback shows keyboard
+- user_service.py (lines 63-103): `update_user_settings()` properly updates `formal_address`
+- personalization_service.py (line 43): Uses `formal_address` to adjust tone
+- User model has `formal_address: Mapped[bool]` field
 
-#### Feature #82: Warm and friendly tone VERIFIED
-- All system prompts use warm language: "тёплый и поддерживающий", "тёплый и эмпатичный"
-- personalization_service.py: Multiple instances of warm tone specification
-- Fallback messages maintain warm tone: "Понимаю тебя. Бывают разные дни. Я здесь..."
-- No cold or robotic responses found
+#### Feature #34: Whisper transcription error handling VERIFIED
+- speech_service.py: Returns `None` on any exception (lines 42-73)
+- messages.py (lines 64-73): Checks for `None` or empty transcription
+- Shows friendly error: "😔 Не удалось распознать голос. Попробуй ещё раз или напиши текстом."
+- Additional try/catch wraps entire voice processing with graceful error message
 
 ### Code Quality Verification
 - Searched for mock data patterns: No matches found
 - Searched for TODO/FIXME/STUB/MOCK comments: No matches found
+- One comment contains "placeholder" but refers to image URL description (not mock data)
 - Git working tree clean - no uncommitted changes
 
 ---
 
 ## Previous Sessions Summary
 
+### Session 71
+- Verified 104/104 features passing
+- Regression tested: Emoji usage, Supportive tone, Warm tone
+- All code quality checks passed
+
 ### Session 70
 - Verified 104/104 features passing
 - Regression tested: Moment topics extraction, Voice message recording, Success message confirmation
 - All code quality checks passed
 
-### Session 69
-- Verified 104/104 features passing
-- Regression tested: Notification opt-out, Settings menu, Deep link support
-- All code quality checks passed
-
-### Sessions 1-68
+### Sessions 1-69
 Progressive implementation of all 104 features from onboarding through GDPR compliance.
 
 ---
@@ -92,7 +88,7 @@ Progressive implementation of all 104 features from onboarding through GDPR comp
 - /export_data - GDPR data export
 - /delete_data - GDPR data deletion
 
-### Callback Handlers (27)
+### Callback Handlers (27+)
 All callback handlers implemented for:
 - Onboarding: address selection (informal/formal)
 - Settings: hours, interval, address form, notifications, reset
