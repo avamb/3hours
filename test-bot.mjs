@@ -1612,15 +1612,36 @@ async function handleMomentsCommand(message) {
     console.log(`✅ Moments message sent (${userMoments.length} moments)`);
 }
 
+// Page size for moments pagination
+const MOMENTS_PAGE_SIZE = 5;
+
 /**
  * Get moments keyboard with navigation
+ * @param {number} userId - User ID
+ * @param {number} totalMoments - Total number of moments
+ * @param {number} [currentPage=0] - Current page (0-indexed)
  */
-function getMomentsKeyboard(userId, totalMoments) {
+function getMomentsKeyboard(userId, totalMoments, currentPage = 0) {
     const keyboard = {
         inline_keyboard: []
     };
 
+    const totalPages = Math.ceil(totalMoments / MOMENTS_PAGE_SIZE);
+
     if (totalMoments > 0) {
+        // Pagination row (only if more than one page)
+        if (totalPages > 1) {
+            const paginationRow = [];
+            if (currentPage > 0) {
+                paginationRow.push({ text: "◀️ Назад", callback_data: `moments_page_${currentPage - 1}` });
+            }
+            paginationRow.push({ text: `📄 ${currentPage + 1}/${totalPages}`, callback_data: "moments_page_info" });
+            if (currentPage < totalPages - 1) {
+                paginationRow.push({ text: "Вперёд ▶️", callback_data: `moments_page_${currentPage + 1}` });
+            }
+            keyboard.inline_keyboard.push(paginationRow);
+        }
+
         // Filter row
         keyboard.inline_keyboard.push([
             { text: "📅 Сегодня", callback_data: "moments_filter_today" },
@@ -1628,7 +1649,8 @@ function getMomentsKeyboard(userId, totalMoments) {
             { text: "📅 Месяц", callback_data: "moments_filter_month" }
         ]);
         keyboard.inline_keyboard.push([
-            { text: "🎲 Случайный момент", callback_data: "moments_random" }
+            { text: "🔍 Поиск", callback_data: "moments_search" },
+            { text: "🎲 Случайный", callback_data: "moments_random" }
         ]);
         keyboard.inline_keyboard.push([
             { text: "📂 По темам", callback_data: "moments_by_topics" }
@@ -1644,6 +1666,47 @@ function getMomentsKeyboard(userId, totalMoments) {
     ]);
 
     return keyboard;
+}
+
+/**
+ * Generate moments page text
+ * @param {Array} userMoments - All user moments
+ * @param {number} page - Page number (0-indexed)
+ * @param {string} languageCode - User's language code
+ * @returns {object} { text, momentsOnPage, totalPages }
+ */
+function generateMomentsPageText(userMoments, page, languageCode) {
+    const totalMoments = userMoments.length;
+    const totalPages = Math.ceil(totalMoments / MOMENTS_PAGE_SIZE);
+
+    // Calculate slice indices for paginated moments (newest first)
+    // We reverse, then slice by page
+    const reversedMoments = [...userMoments].reverse();
+    const startIdx = page * MOMENTS_PAGE_SIZE;
+    const endIdx = startIdx + MOMENTS_PAGE_SIZE;
+    const pageMoments = reversedMoments.slice(startIdx, endIdx);
+
+    let momentsText = "📖 <b>Твои радостные моменты</b>\n\n";
+
+    for (const moment of pageMoments) {
+        const relativeDate = formatRelativeDate(moment.created_at, languageCode);
+        const fullDate = formatDate(moment.created_at, languageCode, true);
+        momentsText += `🌟 <i>${relativeDate}</i>\n`;
+        momentsText += `${escapeHtml(moment.content)}\n`;
+        momentsText += `<code>${fullDate}</code>\n\n`;
+    }
+
+    if (totalPages > 1) {
+        momentsText += `\n📚 Страница ${page + 1} из ${totalPages} (всего: ${totalMoments})`;
+    } else if (totalMoments > 0) {
+        momentsText += `\n📚 Всего моментов: ${totalMoments}`;
+    }
+
+    return {
+        text: momentsText,
+        momentsOnPage: pageMoments.length,
+        totalPages: totalPages
+    };
 }
 
 /**
@@ -1674,6 +1737,23 @@ function filterMomentsByPeriod(moments, period) {
     return moments.filter(m => {
         const momentDate = new Date(m.created_at);
         return momentDate >= cutoffDate;
+    });
+}
+
+/**
+ * Search moments by text content
+ * @param {Array} moments - All user moments
+ * @param {string} query - Search query (case-insensitive)
+ * @returns {Array} Matching moments
+ */
+function searchMoments(moments, query) {
+    if (!query || query.trim().length === 0) {
+        return [];
+    }
+    const lowerQuery = query.toLowerCase().trim();
+    return moments.filter(m => {
+        const content = (m.content || '').toLowerCase();
+        return content.includes(lowerQuery);
     });
 }
 
@@ -2025,6 +2105,52 @@ async function handleMomentsCallback(callback, action) {
             }
         );
         console.log("✅ Random moment shown");
+    } else if (action === "moments_search") {
+        // Set user state to "searching moments"
+        userStates.set(user.telegram_id, { state: 'searching_moments' });
+
+        await editMessage(chatId, messageId,
+            "🔍 <b>Поиск по моментам</b>\n\n" +
+            "Введи текст для поиска в своих моментах.\n\n" +
+            "💡 Поиск не чувствителен к регистру.",
+            {
+                inline_keyboard: [
+                    [{ text: "❌ Отмена", callback_data: "moments_search_cancel" }]
+                ]
+            }
+        );
+        console.log("✅ Search mode activated");
+    } else if (action === "moments_search_cancel") {
+        // Clear search state
+        userStates.delete(user.telegram_id);
+
+        // Return to moments view
+        await handleMomentsCommand({ chat: { id: chatId }, from: callback.from });
+    } else if (action.startsWith("moments_page_")) {
+        // Handle pagination
+        const pageStr = action.replace("moments_page_", "");
+
+        // Handle "info" button (does nothing, just shows current page)
+        if (pageStr === "info") {
+            await answerCallback(callback.id);
+            return;
+        }
+
+        const page = parseInt(pageStr);
+        if (isNaN(page) || page < 0) {
+            await answerCallback(callback.id, "Неверная страница");
+            return;
+        }
+
+        const { text, totalPages } = generateMomentsPageText(userMoments, page, user.language_code);
+
+        if (page >= totalPages) {
+            await answerCallback(callback.id, "Это последняя страница");
+            return;
+        }
+
+        await editMessage(chatId, messageId, text, getMomentsKeyboard(user.telegram_id, userMoments.length, page));
+        console.log(`✅ Moments page ${page + 1}/${totalPages} shown`);
     } else if (action === "moments_by_topics") {
         if (userMoments.length === 0) {
             await answerCallback(callback.id, "У тебя пока нет моментов");
@@ -2188,6 +2314,60 @@ async function handleTextMessage(message) {
             ]
         });
 
+        return true;
+    }
+
+    // Handle search mode
+    if (state && state.state === 'searching_moments') {
+        console.log(`Processing search query from user ${user.telegram_id}: "${text}"`);
+
+        // Clear search state
+        userStates.delete(user.telegram_id);
+
+        const userMoments = getUserMoments(user.telegram_id);
+        const searchResults = searchMoments(userMoments, text);
+
+        if (searchResults.length === 0) {
+            await sendMessage(chatId,
+                `🔍 <b>Результаты поиска: "${escapeHtml(text)}"</b>\n\n` +
+                "Ничего не найдено. Попробуй другой запрос.",
+                {
+                    inline_keyboard: [
+                        [{ text: "🔍 Новый поиск", callback_data: "moments_search" }],
+                        [{ text: "📖 Все моменты", callback_data: "menu_moments" }],
+                        [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
+                    ]
+                }
+            );
+            console.log(`✅ Search "${text}": no results`);
+            return true;
+        }
+
+        // Show search results (max 5)
+        const displayResults = searchResults.slice(-5).reverse();
+        let resultsText = `🔍 <b>Результаты поиска: "${escapeHtml(text)}"</b>\n\n`;
+        resultsText += `Найдено: ${searchResults.length}\n\n`;
+
+        for (const moment of displayResults) {
+            const relativeDate = formatRelativeDate(moment.created_at, user.language_code);
+            const fullDate = formatDate(moment.created_at, user.language_code, true);
+            resultsText += `🌟 <i>${relativeDate}</i>\n`;
+            resultsText += `${escapeHtml(moment.content)}\n`;
+            resultsText += `<code>${fullDate}</code>\n\n`;
+        }
+
+        if (searchResults.length > 5) {
+            resultsText += `\n📚 Показано ${displayResults.length} из ${searchResults.length}`;
+        }
+
+        await sendMessage(chatId, resultsText, {
+            inline_keyboard: [
+                [{ text: "🔍 Новый поиск", callback_data: "moments_search" }],
+                [{ text: "📖 Все моменты", callback_data: "menu_moments" }],
+                [{ text: "⬅️ Главное меню", callback_data: "main_menu" }]
+            ]
+        });
+        console.log(`✅ Search "${text}": ${searchResults.length} results`);
         return true;
     }
 
