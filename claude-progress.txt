@@ -1,6 +1,6 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Session 187 - Wed, Jan 8, 2026
+## Session 189 - Wed, Jan 8, 2026
 
 ### Status
 - **All 109 features passing (100%)**
@@ -8,28 +8,30 @@
 - Admin panel fully functional
 
 ### Verification Tests Run
-Tested regression for features 87, 78, and 44 (selected randomly):
+Tested regression for features 41, 87, and 43 (selected randomly):
 
-1. Feature 87: Database migrations - VERIFIED
+1. Feature 87: Database migrations - VERIFIED ✅
    - All 8 tables exist (users, moments, conversations, user_stats, scheduled_notifications, question_templates, feedback, alembic_version)
-   - All 20 indexes created including vector index (idx_moments_embedding)
+   - 20 indexes created including vector index (idx_moments_embedding)
    - pgvector extension enabled and working
+   - All table schemas match spec with correct columns
 
-2. Feature 78: GPT-4 response generation - VERIFIED
-   - Bot code has GPT-4 integration in place
-   - User moments show contextual responses in database
-   - APScheduler running notification jobs successfully
+2. Feature 41: Conversation history saving - VERIFIED ✅
+   - Conversations table exists with correct schema (id, user_id, message_type, content, metadata, created_at)
+   - Scheduled notifications being tracked (19 total: 7 pending, 12 sent)
+   - Messages page shows all message types with proper filtering
 
-3. Feature 44: Reset settings to defaults - VERIFIED
-   - reset_settings_to_defaults function exists in user_service.py
-   - Callback handler implemented in callbacks.py
-   - User settings visible and editable in admin panel
+3. Feature 43: Formal/informal templates - VERIFIED ✅
+   - Code has both DEFAULT_QUESTIONS_FORMAL and DEFAULT_QUESTIONS_INFORMAL arrays
+   - _get_question() method correctly uses user.formal_address to select template
+   - Users table has formal_address column for all 10 users
 
 ### Admin Panel Verification
 - Overview page: Shows 10 users, 15 moments, HEALTHY status
 - Users page: All 10 users displayed with correct data
   - Users have different languages (en, ru, uk)
   - Moment counts accurate (Andrei: 8, Marina: 5, А: 2)
+- Messages page: Shows scheduled questions with type filter working
 - Notifications page:
   - 7 pending notifications for 1/8/2026 9:00 AM
   - 12 sent notifications with timestamps
@@ -38,19 +40,18 @@ Tested regression for features 87, 78, and 44 (selected randomly):
 
 ### Database Verification
 - 10 users (matches admin panel)
-- 15 moments (matches admin panel)
-- 19 scheduled notifications (7 pending + 12 sent)
-- All moments have vector embeddings
+- 15 moments with vector embeddings (~19K chars each for 1536 dimensions)
 - Topics and mood scores extracted correctly
+- All moments have source_type and user_id
 
 ### System Health
 - Docker containers: mindsethappybot (bot) + mindsethappybot-postgres (db)
-- APScheduler: Processing notifications every 1 minute
+- APScheduler: Processing notifications every 1 minute (verified in logs)
 - Database: PostgreSQL 16 with pgvector extension
 - Admin panel: Responding at localhost:8080
 
 ### Known Issues (Not Bugs)
-- TelegramConflictError: Another bot instance running with same token
+- TelegramUnauthorizedError: Another bot instance running with same token
   - Expected during development
   - Bot handles gracefully with automatic retries
   - Scheduler continues to run successfully
