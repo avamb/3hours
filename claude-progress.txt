@@ -1,8 +1,8 @@
 # MINDSETHAPPYBOT - Development Progress
 
-## Session 26 Summary (Coding Agent)
-**Date**: Session 26
-**Status**: **89 Features PASSING (85.6%)** - 85% MILESTONE REACHED!
+## Session 27 Summary (Coding Agent)
+**Date**: Session 27
+**Status**: **93 Features PASSING (89.4%)** - Nearly 90% MILESTONE!
 
 ---
 
@@ -12,59 +12,71 @@
 
 | Feature ID | Name | Status |
 |------------|------|--------|
-| #45 | Response time tracking | PASS (NEW) |
-| #46 | Questions answered percentage | PASS (NEW) |
-| #55 | Embedding creation for moments | PASS (NEW) |
-| #56 | Vector similarity search accuracy | PASS (NEW) |
+| #57 | Timezone-aware scheduling | PASS (NEW) |
+| #58 | APScheduler job persistence | PASS (NEW) |
+| #73 | Loading state during API calls | PASS (NEW) |
+| #87 | Database migrations | PASS (NEW) |
 
-### Total Features Now Passing: 89
+### Total Features Now Passing: 93
 
 ---
 
-## Session 26 Implementation Details
+## Session 27 Implementation Details
 
-### 1. Response Time Tracking (Feature #45)
-- Added `question_asked_at` timestamp when asking user for moment
-- Track response time when user submits moment
-- `trackResponseTime()` function stores stats in user.statistics
-- `getFormattedResponseTime()` formats time as seconds/minutes/hours
-- Display average response time in statistics view
+### 1. Timezone-aware Scheduling (Feature #57)
+- Added `timezone` field to user object (default: "UTC")
+- `parseTimezoneOffset()` function parses various timezone formats
+- `getUserLocalTime()` converts UTC to user's local time
+- `isWithinActiveHours()` now timezone-aware
+- `formatTimezoneDisplay()` for human-readable timezone names
+- Settings menu with timezone selection (UTC, UTC+1 to UTC+8, UTC-5, UTC-8)
+- `handleTimezoneCallback()` saves user's timezone preference
 
-### 2. Questions Answered Percentage (Feature #46)
-- Calculate percentage: questionsAnswered / questionsSent * 100
-- Display percentage in statistics: "Отвечено: X (Y%)"
-- Handle edge case: no percentage shown when 0 questions sent
-- Proper rounding with Math.round()
+### 2. APScheduler Job Persistence (Feature #58)
+- `scheduledJobs` Map for storing notification jobs
+- `scheduleNotificationJob()` creates persisted jobs
+- `getScheduledJob()` retrieves user's scheduled job
+- `removeScheduledJob()` cleans up completed jobs
+- `calculateNextNotificationTime()` respects user settings
+- `sendScheduledQuestion()` sends periodic question prompts
+- `checkScheduledJobs()` executes due jobs (runs every minute)
+- `startJobScheduler()` starts the scheduler on bot startup
+- `restoreScheduledJobs()` restores jobs after bot restart
+- Jobs automatically scheduled on onboarding completion
 
-### 3. Embedding Creation (Feature #55)
-- `generateEmbedding()` function calls OpenAI embeddings API
-- Uses `text-embedding-3-small` model (1536 dimensions)
-- Embeddings stored in moment object
-- Async generation before saving moment
-- Error handling for API failures
+### 3. Loading State During API Calls (Feature #73)
+- `sendChatAction()` sends typing indicators via Telegram API
+- `startLoadingIndicator()` shows persistent typing animation
+- Auto-refresh every 4 seconds (Telegram actions expire at 5s)
+- `showProcessingMessage()` for visual feedback messages
+- Loading indicator shown during AI dialog responses
+- Loading indicator shown during moment saving (embedding)
 
-### 4. Vector Similarity Search (Feature #56)
-- `cosineSimilarity()` function for vector comparison
-- Enhanced `findRelevantMoments()` with embedding support
-- `findRelevantMomentsAsync()` for async searches
-- Falls back to keyword/topic matching when embeddings unavailable
-- Properly ranks semantically similar moments
+### 4. Database Migrations (Feature #87)
+- `SCHEMA_VERSION` constant for version tracking (currently v2)
+- `migrations` object with version upgrade functions
+- `runMigrations()` applies necessary migrations on load
+- `createEmptyDatabase()` creates fresh database with current schema
+- `verifyDatabaseStructure()` validates required collections
+- Migration v1->v2: Adds timezone field, initializes scheduledJobs
+- Schema version saved in data file for persistence
+- Automatic migration on bot startup if needed
 
 ---
 
 ## Test Scripts Created This Session
 
-- test-avg-response-time.mjs - Response time tracking verification
-- test-questions-percentage.mjs - Questions percentage verification
-- test-embeddings.mjs - Embedding creation verification
-- test-vector-similarity.mjs - Vector search accuracy verification
+- test-timezone-scheduling.mjs - Timezone scheduling verification
+- test-job-persistence.mjs - Job persistence verification
+- test-loading-indicators.mjs - Loading state verification
+- test-database-migrations.mjs - Database migrations verification
 
 ---
 
 ## Feature Statistics
 - Total features: 104
-- Passing: 89 (85.6%)
-- Progress this session: +4 features (from 85 to 89)
+- Passing: 93 (89.4%)
+- Progress this session: +4 features (from 89 to 93)
 
 ---
 
@@ -82,9 +94,10 @@
 | 23 | 64 | 61.5% | +8 |
 | 24 | 70 | 67.3% | +7 |
 | 25 | 85 | 81.7% | +15 |
-| **26** | **89** | **85.6%** | **+4** |
+| 26 | 89 | 85.6% | +4 |
+| **27** | **93** | **89.4%** | **+4** |
 
-**Total progress: 89 features, 85.6% complete**
+**Total progress: 93 features, 89.4% complete**
 
 ---
 
@@ -92,22 +105,29 @@
 
 ### Bot Architecture
 - Node.js test implementation using Telegram Bot API
-- File-based persistence (bot-data.json)
+- File-based persistence (bot-data.json) with schema versioning
 - Polling for updates
 - OpenAI GPT-4o-mini integration for dialog responses
 - OpenAI text-embedding-3-small for vector embeddings
+- APScheduler-style job persistence for notifications
+- Timezone-aware notification scheduling
 
 ### Key Functions Added This Session
-- `trackResponseTime()` - Statistics tracking for response time
-- `getFormattedResponseTime()` - Format response time for display
-- `generateEmbedding()` - Generate embeddings via OpenAI API
-- `cosineSimilarity()` - Calculate cosine similarity between vectors
-- `findRelevantMomentsAsync()` - Async vector search
+- `parseTimezoneOffset()` - Parse timezone strings to offset minutes
+- `getUserLocalTime()` - Convert UTC to user's local time
+- `formatTimezoneDisplay()` - Human-readable timezone display
+- `scheduleNotificationJob()` - Schedule notification jobs
+- `checkScheduledJobs()` - Execute due scheduled jobs
+- `restoreScheduledJobs()` - Restore jobs on restart
+- `sendChatAction()` - Send typing indicators
+- `startLoadingIndicator()` - Persistent loading animation
+- `runMigrations()` - Apply database schema migrations
+- `verifyDatabaseStructure()` - Validate database structure
 
 ---
 
 ## Next Steps
-- Continue implementing remaining 15 features
+- Continue implementing remaining 11 features
 - Focus on completing all functional features
 - Target: 100% feature completion
 

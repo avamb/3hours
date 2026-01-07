@@ -213,8 +213,54 @@ function getRandomQuestion(user) {
 }
 
 /**
- * Check if current time is within user's active hours
- * @param {object} user - User object with active_hours_start and active_hours_end
+ * Parse timezone offset from string
+ * @param {string} timezone - Timezone string (e.g., "UTC", "+03:00", "-05:00", "Europe/Moscow")
+ * @returns {number} Offset in minutes from UTC
+ */
+function parseTimezoneOffset(timezone) {
+    if (!timezone || timezone === 'UTC' || timezone === 'Z') {
+        return 0;
+    }
+
+    // Handle offset format: "+03:00", "-05:00", "+3", "-5"
+    const offsetMatch = timezone.match(/^([+-])(\d{1,2}):?(\d{2})?$/);
+    if (offsetMatch) {
+        const sign = offsetMatch[1] === '+' ? 1 : -1;
+        const hours = parseInt(offsetMatch[2]);
+        const minutes = parseInt(offsetMatch[3] || '0');
+        return sign * (hours * 60 + minutes);
+    }
+
+    // Handle named timezones (simplified mapping for common ones)
+    const timezoneOffsets = {
+        'Europe/Moscow': 180,      // UTC+3
+        'Europe/Berlin': 60,       // UTC+1
+        'Europe/London': 0,        // UTC
+        'America/New_York': -300,  // UTC-5
+        'America/Los_Angeles': -480, // UTC-8
+        'Asia/Tokyo': 540,         // UTC+9
+        'Asia/Dubai': 240,         // UTC+4
+        'Australia/Sydney': 600    // UTC+10
+    };
+
+    return timezoneOffsets[timezone] || 0;
+}
+
+/**
+ * Get current time in user's timezone
+ * @param {object} user - User object with timezone field
+ * @param {Date} [utcTime] - Optional UTC time (defaults to current time)
+ * @returns {Date} Time adjusted to user's timezone
+ */
+function getUserLocalTime(user, utcTime = new Date()) {
+    const offsetMinutes = parseTimezoneOffset(user.timezone || 'UTC');
+    const userTime = new Date(utcTime.getTime() + offsetMinutes * 60 * 1000);
+    return userTime;
+}
+
+/**
+ * Check if current time is within user's active hours (timezone-aware)
+ * @param {object} user - User object with active_hours_start, active_hours_end, and timezone
  * @param {Date} [checkTime] - Optional time to check (defaults to current time)
  * @returns {boolean} True if within active hours
  */
@@ -225,7 +271,9 @@ function isWithinActiveHours(user, checkTime = new Date()) {
     const startMinutes = startParts[0] * 60 + (startParts[1] || 0);
     const endMinutes = endParts[0] * 60 + (endParts[1] || 0);
 
-    const currentMinutes = checkTime.getHours() * 60 + checkTime.getMinutes();
+    // Get user's local time
+    const userLocalTime = getUserLocalTime(user, checkTime);
+    const currentMinutes = userLocalTime.getUTCHours() * 60 + userLocalTime.getUTCMinutes();
 
     // Handle normal case (e.g., 09:00 - 21:00)
     if (startMinutes <= endMinutes) {
@@ -234,6 +282,38 @@ function isWithinActiveHours(user, checkTime = new Date()) {
 
     // Handle overnight case (e.g., 21:00 - 09:00) - though unusual for this app
     return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+}
+
+/**
+ * Format timezone for display in settings
+ * @param {string} timezone - Timezone string (e.g., "UTC", "+03:00", "Europe/Moscow")
+ * @returns {string} Human-readable timezone display
+ */
+function formatTimezoneDisplay(timezone) {
+    if (!timezone || timezone === 'UTC' || timezone === 'Z') {
+        return 'UTC (по умолчанию)';
+    }
+
+    // Handle offset format (e.g., "+03:00", "-05:00")
+    const offsetMatch = timezone.match(/^([+-])(\d{1,2}):?(\d{2})?$/);
+    if (offsetMatch) {
+        const sign = offsetMatch[1];
+        const hours = offsetMatch[2].padStart(2, '0');
+        const minutes = offsetMatch[3] || '00';
+        return `UTC${sign}${hours}:${minutes}`;
+    }
+
+    // Handle named timezones with display names
+    const timezoneNames = {
+        'Europe/Moscow': 'Москва (UTC+3)',
+        'Europe/Kiev': 'Киев (UTC+2)',
+        'Europe/London': 'Лондон (UTC+0)',
+        'America/New_York': 'Нью-Йорк (UTC-5)',
+        'America/Los_Angeles': 'Лос-Анджелес (UTC-8)',
+        'Asia/Tokyo': 'Токио (UTC+9)'
+    };
+
+    return timezoneNames[timezone] || timezone;
 }
 
 /**
@@ -613,11 +693,109 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const DATA_FILE = join(__dirname, 'bot-data.json');
 
+// Current schema version - increment when making schema changes
+const SCHEMA_VERSION = 2;
+
+// Migration definitions: version -> migration function
+const migrations = {
+    // Version 1 -> 2: Add timezone and scheduledJobs
+    1: (data) => {
+        console.log('📦 Running migration v1 -> v2: Adding timezone and scheduledJobs');
+
+        // Add timezone field to all users
+        if (data.users) {
+            for (const userId of Object.keys(data.users)) {
+                if (!data.users[userId].timezone) {
+                    data.users[userId].timezone = 'UTC';
+                }
+            }
+        }
+
+        // Initialize scheduledJobs if not present
+        if (!data.scheduledJobs) {
+            data.scheduledJobs = {};
+        }
+
+        return data;
+    },
+    // Version 2 -> 3: Reserved for future migrations
+    // 2: (data) => { ... }
+};
+
+/**
+ * Run all necessary migrations to bring data to current schema version
+ * @param {object} data - The loaded data object
+ * @returns {object} The migrated data object
+ */
+function runMigrations(data) {
+    const currentVersion = data.schemaVersion || 1;
+
+    if (currentVersion >= SCHEMA_VERSION) {
+        console.log(`📦 Schema is up to date (v${currentVersion})`);
+        return data;
+    }
+
+    console.log(`📦 Schema migration needed: v${currentVersion} -> v${SCHEMA_VERSION}`);
+
+    let migratedData = { ...data };
+
+    for (let version = currentVersion; version < SCHEMA_VERSION; version++) {
+        if (migrations[version]) {
+            migratedData = migrations[version](migratedData);
+            migratedData.schemaVersion = version + 1;
+            console.log(`✅ Migration v${version} -> v${version + 1} completed`);
+        }
+    }
+
+    return migratedData;
+}
+
+/**
+ * Create a new empty database with the current schema
+ * @returns {object} A new data object with the current schema
+ */
+function createEmptyDatabase() {
+    return {
+        schemaVersion: SCHEMA_VERSION,
+        users: {},
+        moments: {},
+        scheduledJobs: {},
+        createdAt: new Date().toISOString()
+    };
+}
+
+/**
+ * Verify database structure has all required tables (collections)
+ * @param {object} data - The data object to verify
+ * @returns {object} Verification results
+ */
+function verifyDatabaseStructure(data) {
+    const requiredTables = ['users', 'moments', 'scheduledJobs'];
+    const results = {
+        valid: true,
+        tables: {},
+        schemaVersion: data.schemaVersion || 1
+    };
+
+    for (const table of requiredTables) {
+        const exists = data[table] !== undefined;
+        results.tables[table] = exists;
+        if (!exists) {
+            results.valid = false;
+        }
+    }
+
+    return results;
+}
+
 // Simple in-memory user storage for testing
 const users = new Map();
 
 // In-memory moments storage for testing
 const moments = new Map();
+
+// Scheduled notification jobs (persisted)
+const scheduledJobs = new Map();
 
 // User states for conversation flow (not persisted - session only)
 const userStates = new Map();
@@ -628,7 +806,23 @@ const userStates = new Map();
 function loadDataFromFile() {
     try {
         if (existsSync(DATA_FILE)) {
-            const data = JSON.parse(readFileSync(DATA_FILE, 'utf8'));
+            let data = JSON.parse(readFileSync(DATA_FILE, 'utf8'));
+
+            // Run migrations if needed
+            const wasVersion = data.schemaVersion || 1;
+            data = runMigrations(data);
+
+            // Verify database structure
+            const verification = verifyDatabaseStructure(data);
+            if (!verification.valid) {
+                console.warn(`⚠️ Database structure incomplete:`, verification.tables);
+            }
+
+            // If migrations were run, save the updated data
+            if ((data.schemaVersion || 1) > wasVersion) {
+                writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+                console.log(`💾 Migrated data saved to file`);
+            }
 
             // Load users
             if (data.users) {
@@ -651,9 +845,24 @@ function loadDataFromFile() {
                 }
             }
 
-            console.log(`📁 Loaded data: ${users.size} users, ${[...moments.values()].flat().length} moments`);
+            // Load scheduled jobs
+            if (data.scheduledJobs) {
+                for (const [key, value] of Object.entries(data.scheduledJobs)) {
+                    // Convert date strings back to Date objects
+                    scheduledJobs.set(parseInt(key), {
+                        ...value,
+                        scheduledAt: new Date(value.scheduledAt),
+                        nextRunAt: new Date(value.nextRunAt)
+                    });
+                }
+            }
+
+            console.log(`📁 Loaded data: ${users.size} users, ${[...moments.values()].flat().length} moments, ${scheduledJobs.size} scheduled jobs (schema v${data.schemaVersion || 1})`);
         } else {
-            console.log(`📁 No existing data file found, starting fresh`);
+            // Create new database with current schema
+            const newDb = createEmptyDatabase();
+            writeFileSync(DATA_FILE, JSON.stringify(newDb, null, 2), 'utf8');
+            console.log(`📁 Created new data file with schema v${SCHEMA_VERSION}`);
         }
     } catch (error) {
         console.error(`⚠️ Error loading data file: ${error.message}`);
@@ -666,12 +875,14 @@ function loadDataFromFile() {
 function saveDataToFile() {
     try {
         const data = {
+            schemaVersion: SCHEMA_VERSION,
             users: Object.fromEntries(users),
             moments: Object.fromEntries(moments),
+            scheduledJobs: Object.fromEntries(scheduledJobs),
             savedAt: new Date().toISOString()
         };
         writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-        console.log(`💾 Data saved: ${users.size} users, ${[...moments.values()].flat().length} moments`);
+        console.log(`💾 Data saved: ${users.size} users, ${[...moments.values()].flat().length} moments, ${scheduledJobs.size} jobs`);
     } catch (error) {
         console.error(`⚠️ Error saving data file: ${error.message}`);
     }
@@ -689,8 +900,191 @@ function startAutoSave() {
     console.log(`⏰ Auto-save enabled (every 30 seconds)`);
 }
 
+/**
+ * Schedule a notification job for a user
+ * @param {number} userId - The user's Telegram ID
+ * @param {Date} nextRunAt - When to send the notification
+ * @param {string} jobType - Type of job ('question' for periodic questions)
+ */
+function scheduleNotificationJob(userId, nextRunAt, jobType = 'question') {
+    const job = {
+        userId: userId,
+        jobType: jobType,
+        scheduledAt: new Date(),
+        nextRunAt: nextRunAt,
+        status: 'scheduled'
+    };
+    scheduledJobs.set(userId, job);
+    saveDataToFile();
+    console.log(`📅 Scheduled ${jobType} job for user ${userId} at ${nextRunAt.toISOString()}`);
+    return job;
+}
+
+/**
+ * Get the next scheduled job for a user
+ * @param {number} userId - The user's Telegram ID
+ * @returns {object|null} The scheduled job or null
+ */
+function getScheduledJob(userId) {
+    return scheduledJobs.get(userId) || null;
+}
+
+/**
+ * Remove a scheduled job for a user
+ * @param {number} userId - The user's Telegram ID
+ */
+function removeScheduledJob(userId) {
+    if (scheduledJobs.has(userId)) {
+        scheduledJobs.delete(userId);
+        saveDataToFile();
+        console.log(`🗑️ Removed scheduled job for user ${userId}`);
+    }
+}
+
+/**
+ * Calculate next notification time based on user settings
+ * @param {object} user - User object with notification settings
+ * @returns {Date} The next notification time
+ */
+function calculateNextNotificationTime(user) {
+    const now = new Date();
+    const intervalMs = (user.notification_interval_hours || 3) * 60 * 60 * 1000;
+    let nextTime = new Date(now.getTime() + intervalMs);
+
+    // Ensure notification is within active hours
+    const userLocalNext = getUserLocalTime(user, nextTime);
+    const startParts = user.active_hours_start.split(':').map(Number);
+    const endParts = user.active_hours_end.split(':').map(Number);
+    const startMinutes = startParts[0] * 60 + (startParts[1] || 0);
+    const endMinutes = endParts[0] * 60 + (endParts[1] || 0);
+    const nextMinutes = userLocalNext.getUTCHours() * 60 + userLocalNext.getUTCMinutes();
+
+    // If outside active hours, schedule for start of next active period
+    if (nextMinutes < startMinutes || nextMinutes >= endMinutes) {
+        // Schedule for tomorrow's start time
+        const offsetMinutes = parseTimezoneOffset(user.timezone || 'UTC');
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        tomorrow.setUTCHours(startParts[0], startParts[1] || 0, 0, 0);
+        // Adjust from user's local time back to UTC
+        nextTime = new Date(tomorrow.getTime() - offsetMinutes * 60 * 1000);
+    }
+
+    return nextTime;
+}
+
+/**
+ * Send a scheduled question to a user
+ * @param {object} user - User object
+ */
+async function sendScheduledQuestion(user) {
+    if (!user.notifications_enabled || !user.onboarding_completed) {
+        return;
+    }
+
+    if (!isWithinActiveHours(user)) {
+        console.log(`⏰ User ${user.telegram_id} is outside active hours, skipping notification`);
+        return;
+    }
+
+    // Increment questions sent counter
+    if (!user.statistics) user.statistics = {};
+    user.statistics.questions_sent = (user.statistics.questions_sent || 0) + 1;
+
+    // Set user state to awaiting moment
+    userStates.set(user.telegram_id, { state: 'adding_moment', question_asked_at: new Date() });
+
+    const questions = [
+        "Что хорошего случилось сегодня? ☀️",
+        "Какой момент порадовал тебя сегодня? 🌟",
+        "Расскажи о чём-то приятном, что произошло недавно 💝",
+        "Что вызвало у тебя улыбку сегодня? 😊",
+        "Какой маленький радостный момент ты заметил сегодня? ✨"
+    ];
+    const question = questions[Math.floor(Math.random() * questions.length)];
+
+    try {
+        await sendMessage(user.telegram_id, question);
+        console.log(`📤 Sent scheduled question to user ${user.telegram_id}`);
+
+        // Schedule next notification
+        const nextTime = calculateNextNotificationTime(user);
+        scheduleNotificationJob(user.telegram_id, nextTime, 'question');
+    } catch (error) {
+        console.error(`❌ Failed to send scheduled question to user ${user.telegram_id}:`, error.message);
+    }
+}
+
+/**
+ * Check and execute due scheduled jobs
+ */
+async function checkScheduledJobs() {
+    const now = new Date();
+
+    for (const [userId, job] of scheduledJobs.entries()) {
+        if (job.status === 'scheduled' && job.nextRunAt <= now) {
+            const user = users.get(userId);
+            if (user) {
+                console.log(`⏰ Executing scheduled job for user ${userId}`);
+                job.status = 'executing';
+                await sendScheduledQuestion(user);
+            } else {
+                // User no longer exists, remove job
+                removeScheduledJob(userId);
+            }
+        }
+    }
+}
+
+/**
+ * Start the job scheduler (checks every minute)
+ */
+function startJobScheduler() {
+    // Check immediately on startup
+    checkScheduledJobs();
+
+    // Then check every minute
+    setInterval(checkScheduledJobs, 60000);
+    console.log(`⏰ Job scheduler started (checking every minute)`);
+}
+
+/**
+ * Restore scheduled jobs on bot restart
+ */
+function restoreScheduledJobs() {
+    const now = new Date();
+    let restored = 0;
+    let rescheduled = 0;
+
+    for (const [userId, job] of scheduledJobs.entries()) {
+        const user = users.get(userId);
+        if (!user) {
+            // User no longer exists, remove job
+            scheduledJobs.delete(userId);
+            continue;
+        }
+
+        // If job was missed (nextRunAt is in the past), reschedule
+        if (job.nextRunAt <= now) {
+            const nextTime = calculateNextNotificationTime(user);
+            job.nextRunAt = nextTime;
+            job.status = 'scheduled';
+            rescheduled++;
+        } else {
+            restored++;
+        }
+    }
+
+    if (restored > 0 || rescheduled > 0) {
+        saveDataToFile();
+        console.log(`📅 Jobs restored: ${restored} pending, ${rescheduled} rescheduled`);
+    }
+}
+
 // Load data on startup
 loadDataFromFile();
+
+// Restore scheduled jobs after loading data
+restoreScheduledJobs();
 
 // Double-submit prevention: Track processing callbacks
 const processingCallbacks = new Map();
@@ -1221,6 +1615,7 @@ function getOrCreateUser(telegramUser) {
             active_hours_start: "09:00",
             active_hours_end: "21:00",
             notification_interval_hours: 3,
+            timezone: "UTC", // User's timezone (e.g., "UTC", "Europe/Moscow", "+03:00")
             created_at: new Date()
         });
         // Save data when new user is created
@@ -1413,6 +1808,81 @@ async function answerCallback(callbackQueryId, text = "") {
     return await response.json();
 }
 
+/**
+ * Send chat action (typing indicator, etc.)
+ * @param {number} chatId - The chat ID
+ * @param {string} action - The action: 'typing', 'upload_voice', 'record_voice', 'upload_document', etc.
+ */
+async function sendChatAction(chatId, action = 'typing') {
+    const url = `${BASE_URL}/sendChatAction`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: chatId,
+            action: action
+        })
+    });
+    return await response.json();
+}
+
+/**
+ * Show loading indicator and return a function to clear it
+ * @param {number} chatId - The chat ID
+ * @param {string} action - The chat action to show
+ * @returns {object} Object with interval ID for clearing
+ */
+function startLoadingIndicator(chatId, action = 'typing') {
+    // Send initial action
+    sendChatAction(chatId, action);
+
+    // Telegram chat actions expire after 5 seconds, so we repeat every 4 seconds
+    const intervalId = setInterval(() => {
+        sendChatAction(chatId, action);
+    }, 4000);
+
+    return {
+        intervalId,
+        stop: () => {
+            clearInterval(intervalId);
+            console.log(`⏹️ Stopped loading indicator for chat ${chatId}`);
+        }
+    };
+}
+
+/**
+ * Show processing message and update it when done
+ * @param {number} chatId - The chat ID
+ * @param {string} processingMessage - Message to show during processing
+ * @returns {Promise<object>} Message object with update function
+ */
+async function showProcessingMessage(chatId, processingMessage = "⏳ Обрабатываю...") {
+    const result = await sendMessage(chatId, processingMessage);
+    const messageId = result.result?.message_id;
+
+    return {
+        messageId,
+        update: async (newText) => {
+            if (messageId) {
+                return await editMessage(chatId, messageId, newText);
+            }
+        },
+        delete: async () => {
+            if (messageId) {
+                const url = `${BASE_URL}/deleteMessage`;
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        message_id: messageId
+                    })
+                });
+            }
+        }
+    };
+}
+
 // Keyboard generators
 function getOnboardingKeyboard() {
     return {
@@ -1456,6 +1926,7 @@ function getSettingsKeyboard() {
         inline_keyboard: [
             [{ text: "🕐 Активные часы", callback_data: "settings_hours" }],
             [{ text: "⏰ Интервал", callback_data: "settings_interval" }],
+            [{ text: "🌐 Часовой пояс", callback_data: "settings_timezone" }],
             [{ text: "🗣 Форма обращения", callback_data: "settings_address" }],
             [{ text: "🔔 Уведомления", callback_data: "settings_notifications" }],
             [{ text: "🌍 Язык", callback_data: "settings_language" }],
@@ -1528,6 +1999,33 @@ function getLanguageKeyboard() {
             [{ text: "🇷🇺 Русский", callback_data: "lang_ru" }],
             [{ text: "🇬🇧 English", callback_data: "lang_en" }],
             [{ text: "🇺🇦 Українська", callback_data: "lang_uk" }],
+            [{ text: "⬅️ Назад", callback_data: "settings_back" }]
+        ]
+    };
+}
+
+function getTimezoneKeyboard() {
+    return {
+        inline_keyboard: [
+            [
+                { text: "UTC", callback_data: "tz_UTC" },
+                { text: "UTC+1", callback_data: "tz_+01:00" },
+                { text: "UTC+2", callback_data: "tz_+02:00" }
+            ],
+            [
+                { text: "UTC+3 (МСК)", callback_data: "tz_+03:00" },
+                { text: "UTC+4", callback_data: "tz_+04:00" },
+                { text: "UTC+5", callback_data: "tz_+05:00" }
+            ],
+            [
+                { text: "UTC+6", callback_data: "tz_+06:00" },
+                { text: "UTC+7", callback_data: "tz_+07:00" },
+                { text: "UTC+8", callback_data: "tz_+08:00" }
+            ],
+            [
+                { text: "UTC-5 (NY)", callback_data: "tz_-05:00" },
+                { text: "UTC-8 (LA)", callback_data: "tz_-08:00" }
+            ],
             [{ text: "⬅️ Назад", callback_data: "settings_back" }]
         ]
     };
@@ -2188,6 +2686,11 @@ async function handleAddressCallback(callback, formal) {
     user.onboarding_completed = true;
     saveDataToFile(); // Persist settings change
 
+    // Schedule first notification for this user
+    const nextNotificationTime = calculateNextNotificationTime(user);
+    scheduleNotificationJob(user.telegram_id, nextNotificationTime, 'question');
+    console.log(`📅 First notification scheduled for user ${user.telegram_id}`);
+
     console.log(`\n=== Processing address selection ===`);
     console.log(`User: ${user.first_name} selected ${formal ? 'formal (вы)' : 'informal (ты)'}`);
 
@@ -2335,11 +2838,20 @@ async function handleSettingsCallback(callback, action) {
                 getLanguageKeyboard()
             );
             break;
+        case "settings_timezone":
+            await editMessage(chatId, messageId,
+                "🌐 <b>Часовой пояс</b>\n\n" +
+                `Текущее значение: ${formatTimezoneDisplay(user.timezone || 'UTC')}\n\n` +
+                "Выберите ваш часовой пояс:",
+                getTimezoneKeyboard()
+            );
+            break;
         case "settings_reset":
             user.active_hours_start = "09:00";
             user.active_hours_end = "21:00";
             user.notification_interval_hours = 3;
             user.notifications_enabled = true;
+            user.timezone = "UTC";
             saveDataToFile(); // Persist settings change
             console.log("✅ Settings reset to defaults");
             await showSettings(chatId, messageId, user);
@@ -2361,10 +2873,12 @@ async function showSettings(chatId, messageId, user) {
         'en': 'English',
         'uk': 'Українська'
     };
+    const timezoneDisplay = formatTimezoneDisplay(user.timezone || 'UTC');
     const settingsText = (
         "⚙️ <b>Настройки</b>\n\n" +
         `🕐 Активные часы: ${user.active_hours_start} - ${user.active_hours_end}\n` +
         `⏰ Интервал: каждые ${user.notification_interval_hours} ч.\n` +
+        `🌐 Часовой пояс: ${timezoneDisplay}\n` +
         `🗣 Обращение: ${user.formal_address ? 'на «вы»' : 'на «ты»'}\n` +
         `🔔 Уведомления: ${user.notifications_enabled ? 'включены' : 'выключены'}\n` +
         `🌍 Язык: ${languageNames[user.language_code] || user.language_code}\n`
@@ -2448,6 +2962,24 @@ async function handleLanguageCallback(callback, action) {
     // Show updated settings
     await showSettings(chatId, messageId, user);
     await answerCallback(callback.id, "✅ Язык сохранён!");
+}
+
+/**
+ * Handle timezone selection
+ */
+async function handleTimezoneCallback(callback, action) {
+    const chatId = callback.message.chat.id;
+    const messageId = callback.message.message_id;
+    const user = getOrCreateUser(callback.from);
+
+    const timezone = action.replace("tz_", "");
+    user.timezone = timezone;
+    saveDataToFile(); // Persist settings change
+    console.log(`✅ Timezone set to: ${timezone}`);
+
+    // Show updated settings
+    await showSettings(chatId, messageId, user);
+    await answerCallback(callback.id, "✅ Часовой пояс сохранён!");
 }
 
 /**
@@ -2774,11 +3306,18 @@ async function handleTextMessage(message) {
     if (state && state.state === 'free_dialog') {
         console.log(`Processing dialog message from user ${user.telegram_id}`);
 
+        // Show loading indicator during AI response generation
+        const loadingIndicator = startLoadingIndicator(chatId, 'typing');
+        console.log(`⏳ Started loading indicator for dialog response`);
+
         // Get user's moments for context
         const userMoments = getUserMoments(user.telegram_id);
 
         // Try to generate AI response
         let response = await generateDialogResponse(text, user, userMoments);
+
+        // Stop loading indicator
+        loadingIndicator.stop();
 
         // Fall back to template-based response if AI fails
         if (!response) {
@@ -2874,7 +3413,11 @@ async function handleTextMessage(message) {
             console.log(`⏱️ Response time: ${Math.round(responseTimeMs / 1000)}s`);
         }
 
-        // Generate embedding for the moment (async but don't block response)
+        // Show loading indicator during embedding generation
+        await sendChatAction(chatId, 'typing');
+        console.log(`⏳ Started loading indicator for moment saving`);
+
+        // Generate embedding for the moment
         const embedding = await generateEmbedding(text);
 
         // Save the moment (with potentially truncated text and embedding)
@@ -2978,6 +3521,8 @@ async function processUpdate(update) {
             await handleIntervalCallback(update.callback_query, callbackData);
         } else if (callbackData.startsWith("lang_")) {
             await handleLanguageCallback(update.callback_query, callbackData);
+        } else if (callbackData.startsWith("tz_")) {
+            await handleTimezoneCallback(update.callback_query, callbackData);
         } else if (callbackData === "address_change_informal" || callbackData === "address_change_formal") {
             await handleAddressChangeCallback(update.callback_query, callbackData === "address_change_formal");
         } else if (callbackData.startsWith("moments_")) {
@@ -3089,6 +3634,9 @@ async function main() {
 
     // Start auto-save for persistence
     startAutoSave();
+
+    // Start the job scheduler for notifications
+    startJobScheduler();
 
     // Save data on graceful shutdown
     process.on('SIGINT', () => {
