@@ -311,38 +311,71 @@ function groupMomentsByTopics(userMoments) {
 }
 
 /**
- * Find semantically relevant moments based on topic matching
- * This is a simplified version of vector search using keyword matching
+ * Calculate cosine similarity between two vectors
+ * @param {Array} vecA - First vector
+ * @param {Array} vecB - Second vector
+ * @returns {number} Cosine similarity (between -1 and 1)
+ */
+function cosineSimilarity(vecA, vecB) {
+    if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
+
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+
+    for (let i = 0; i < vecA.length; i++) {
+        dotProduct += vecA[i] * vecB[i];
+        normA += vecA[i] * vecA[i];
+        normB += vecB[i] * vecB[i];
+    }
+
+    if (normA === 0 || normB === 0) return 0;
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+/**
+ * Find semantically relevant moments using vector similarity and topic matching
+ * Uses embeddings for accurate semantic search, falls back to keyword matching
  * @param {string} query - User's message or search query
  * @param {Array} userMoments - User's saved moments
+ * @param {Array|null} queryEmbedding - Pre-computed embedding for query (optional)
  * @returns {Array} Relevant moments sorted by relevance score
  */
-function findRelevantMoments(query, userMoments) {
+function findRelevantMoments(query, userMoments, queryEmbedding = null) {
     if (!userMoments || userMoments.length === 0) return [];
 
-    // Extract topics from query
-    const queryTopics = extractTopics(query);
+    // Check if we have embeddings available
+    const hasEmbeddings = queryEmbedding && userMoments.some(m => m.embedding);
 
-    // Score each moment based on topic overlap
+    // Score each moment
     const scoredMoments = userMoments.map(moment => {
-        const momentTopics = moment.topics || extractTopics(moment.content);
         let score = 0;
 
-        // Score based on topic overlap
+        // Vector similarity (primary scoring if embeddings available)
+        if (hasEmbeddings && moment.embedding && queryEmbedding) {
+            const similarity = cosineSimilarity(queryEmbedding, moment.embedding);
+            // Convert similarity (-1 to 1) to score (0 to 10)
+            score = (similarity + 1) * 5;
+        }
+
+        // Topic-based scoring (fallback or boost)
+        const queryTopics = extractTopics(query);
+        const momentTopics = moment.topics || extractTopics(moment.content);
+
         for (const topic of queryTopics) {
             if (momentTopics.includes(topic)) {
-                score += 2; // Topic match
+                score += hasEmbeddings ? 1 : 2; // Smaller boost when using embeddings
             }
         }
 
-        // Bonus for keyword matching in content
+        // Keyword matching (fallback or boost)
         const queryLower = query.toLowerCase();
         const contentLower = moment.content.toLowerCase();
         const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3);
 
         for (const word of queryWords) {
             if (contentLower.includes(word)) {
-                score += 1;
+                score += hasEmbeddings ? 0.5 : 1; // Smaller boost when using embeddings
             }
         }
 
@@ -354,6 +387,31 @@ function findRelevantMoments(query, userMoments) {
         .filter(sm => sm.score > 0)
         .sort((a, b) => b.score - a.score)
         .map(sm => sm.moment);
+}
+
+/**
+ * Find semantically relevant moments using vector search (async version)
+ * Generates embedding for query and uses cosine similarity
+ * @param {string} query - User's message or search query
+ * @param {Array} userMoments - User's saved moments
+ * @returns {Promise<Array>} Relevant moments sorted by relevance score
+ */
+async function findRelevantMomentsAsync(query, userMoments) {
+    if (!userMoments || userMoments.length === 0) return [];
+
+    // Check if any moments have embeddings
+    const hasEmbeddings = userMoments.some(m => m.embedding);
+
+    if (hasEmbeddings) {
+        // Generate embedding for the query
+        const queryEmbedding = await generateEmbedding(query);
+        if (queryEmbedding) {
+            return findRelevantMoments(query, userMoments, queryEmbedding);
+        }
+    }
+
+    // Fall back to keyword-based matching
+    return findRelevantMoments(query, userMoments);
 }
 
 /**
@@ -989,24 +1047,68 @@ function calculateStreak(userMoments) {
 }
 
 /**
- * Add a moment to user's history
+ * Generate embedding for text using OpenAI API
+ * @param {string} text - Text to generate embedding for
+ * @returns {Array|null} Embedding array (1536 dimensions) or null on error
  */
-function addMoment(userId, content) {
+async function generateEmbedding(text) {
+    try {
+        const response = await fetch('https://api.openai.com/v1/embeddings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'text-embedding-3-small',
+                input: text
+            })
+        });
+
+        if (!response.ok) {
+            console.error(`Embedding API error: ${response.status}`);
+            return null;
+        }
+
+        const data = await response.json();
+        if (data.data && data.data[0] && data.data[0].embedding) {
+            const embedding = data.data[0].embedding;
+            console.log(`✅ Embedding generated: ${embedding.length} dimensions`);
+            return embedding;
+        }
+
+        return null;
+    } catch (error) {
+        console.error("Error generating embedding:", error.message);
+        return null;
+    }
+}
+
+/**
+ * Add a moment to user's history (with optional embedding)
+ * @param {number} userId - User ID
+ * @param {string} content - Moment content
+ * @param {Array|null} embedding - Pre-generated embedding (optional)
+ * @returns {object} The new moment object
+ */
+function addMoment(userId, content, embedding = null) {
     if (!moments.has(userId)) {
         moments.set(userId, []);
     }
     const userMoments = moments.get(userId);
     const topics = extractTopics(content);
-    userMoments.push({
+    const newMoment = {
         id: userMoments.length + 1,
         content: content,
         topics: topics,
+        embedding: embedding,
         created_at: new Date()
-    });
+    };
+    userMoments.push(newMoment);
     // Save data immediately after adding a moment
     saveDataToFile();
-    console.log(`✅ Moment saved with topics: ${topics.join(', ')}`);
-    return userMoments[userMoments.length - 1];
+    console.log(`✅ Moment saved with topics: ${topics.join(', ')}${embedding ? ', embedding: ' + embedding.length + ' dims' : ''}`);
+    return newMoment;
 }
 
 /**
@@ -1026,6 +1128,62 @@ function deleteMoment(userId, momentId) {
     saveDataToFile();
     console.log(`✅ Moment ${momentId} deleted for user ${userId}`);
     return true;
+}
+
+/**
+ * Track response time for statistics
+ * @param {object} user - User object
+ * @param {number} responseTimeMs - Response time in milliseconds
+ */
+function trackResponseTime(user, responseTimeMs) {
+    if (!user.statistics) {
+        user.statistics = {};
+    }
+
+    // Initialize response time tracking if not exists
+    if (!user.statistics.total_response_time_ms) {
+        user.statistics.total_response_time_ms = 0;
+    }
+    if (!user.statistics.response_count) {
+        user.statistics.response_count = 0;
+    }
+
+    // Add this response time to the totals
+    user.statistics.total_response_time_ms += responseTimeMs;
+    user.statistics.response_count += 1;
+
+    // Calculate average (in seconds for display)
+    user.statistics.average_response_time_seconds = Math.round(
+        user.statistics.total_response_time_ms / user.statistics.response_count / 1000
+    );
+
+    // Save the updated user data
+    saveDataToFile();
+}
+
+/**
+ * Get average response time formatted for display
+ * @param {object} user - User object
+ * @returns {string} Formatted average response time
+ */
+function getFormattedResponseTime(user) {
+    if (!user.statistics?.response_count || user.statistics.response_count === 0) {
+        return null;
+    }
+
+    const avgSeconds = user.statistics.average_response_time_seconds || 0;
+
+    if (avgSeconds < 60) {
+        return `${avgSeconds} сек.`;
+    } else if (avgSeconds < 3600) {
+        const minutes = Math.floor(avgSeconds / 60);
+        const seconds = avgSeconds % 60;
+        return seconds > 0 ? `${minutes} мин. ${seconds} сек.` : `${minutes} мин.`;
+    } else {
+        const hours = Math.floor(avgSeconds / 3600);
+        const minutes = Math.floor((avgSeconds % 3600) / 60);
+        return minutes > 0 ? `${hours} ч. ${minutes} мин.` : `${hours} ч.`;
+    }
 }
 
 /**
@@ -1442,8 +1600,8 @@ async function handleDeepLink(chatId, user, param) {
         case 'add':
         case 'moment':
             console.log("Deep link action: Adding new moment");
-            // Set user state to "adding moment"
-            userStates.set(user.telegram_id, { state: 'adding_moment' });
+            // Set user state to "adding moment" with timestamp for response time tracking
+            userStates.set(user.telegram_id, { state: 'adding_moment', question_asked_at: new Date() });
             const deepLinkQuestion = getRandomQuestion(user);
             await sendMessage(chatId,
                 "✨ <b>Добавление момента</b>\n\n" +
@@ -1791,8 +1949,24 @@ async function handleStatsCommand(message) {
     statsText += `🌟 Всего моментов: ${totalMoments}\n`;
     statsText += `🔥 Текущий стрик: ${currentStreak} дн.\n`;
     statsText += `🏆 Лучший стрик: ${bestStreak} дн.\n`;
-    statsText += `✉️ Отправлено вопросов: ${user.statistics?.questions_sent || 0}\n`;
-    statsText += `✅ Отвечено: ${user.statistics?.questions_answered || 0}\n\n`;
+    const questionsSent = user.statistics?.questions_sent || 0;
+    const questionsAnswered = user.statistics?.questions_answered || 0;
+    statsText += `✉️ Отправлено вопросов: ${questionsSent}\n`;
+    statsText += `✅ Отвечено: ${questionsAnswered}`;
+
+    // Add percentage if questions were sent
+    if (questionsSent > 0) {
+        const answerPercentage = Math.round((questionsAnswered / questionsSent) * 100);
+        statsText += ` (${answerPercentage}%)`;
+    }
+    statsText += "\n";
+
+    // Add average response time if tracked
+    const avgResponseTime = getFormattedResponseTime(user);
+    if (avgResponseTime) {
+        statsText += `⏱️ Среднее время ответа: ${avgResponseTime}\n`;
+    }
+    statsText += "\n";
 
     statsText += "📅 <b>Даты</b>\n";
     statsText += `📝 Регистрация: ${registrationDate}\n`;
@@ -2303,8 +2477,8 @@ async function handleMomentsCallback(callback, action) {
     const userMoments = getUserMoments(user.telegram_id);
 
     if (action === "moments_add") {
-        // Set user state to "adding moment"
-        userStates.set(user.telegram_id, { state: 'adding_moment' });
+        // Set user state to "adding moment" with timestamp for response time tracking
+        userStates.set(user.telegram_id, { state: 'adding_moment', question_asked_at: new Date() });
 
         // Use varied question formulation
         const momentQuestion = getRandomQuestion(user);
@@ -2691,8 +2865,20 @@ async function handleTextMessage(message) {
             wasTruncated = true;
         }
 
-        // Save the moment (with potentially truncated text)
-        const newMoment = addMoment(user.telegram_id, text);
+        // Calculate response time if question was asked at a known time
+        let responseTimeMs = null;
+        if (state.question_asked_at) {
+            responseTimeMs = new Date() - new Date(state.question_asked_at);
+            // Track response time in user statistics
+            trackResponseTime(user, responseTimeMs);
+            console.log(`⏱️ Response time: ${Math.round(responseTimeMs / 1000)}s`);
+        }
+
+        // Generate embedding for the moment (async but don't block response)
+        const embedding = await generateEmbedding(text);
+
+        // Save the moment (with potentially truncated text and embedding)
+        const newMoment = addMoment(user.telegram_id, text, embedding);
         userStates.delete(user.telegram_id);
 
         const savedDate = formatDate(newMoment.created_at, user.language_code, true);
