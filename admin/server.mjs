@@ -20,6 +20,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 // Parse database URL
 const dbConfig = new URL(DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://'));
+const dbConfigSafe = new URL(dbConfig.toString());
+if (dbConfigSafe.password) dbConfigSafe.password = '****';
 const pool = new pg.Pool({
     host: dbConfig.hostname,
     port: parseInt(dbConfig.port) || 5432,
@@ -893,7 +895,7 @@ const server = http.createServer(async (req, res) => {
 // Start server - bind to 0.0.0.0 for Docker/Dokploy compatibility
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Admin panel running at http://0.0.0.0:${PORT}`);
-    console.log(`Database: ${DATABASE_URL}`);
+    console.log(`Database: ${dbConfigSafe.toString()}`);
 });
 
 // Graceful shutdown
