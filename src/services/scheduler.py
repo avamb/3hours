@@ -3,8 +3,9 @@ MINDSETHAPPYBOT - Notification scheduler
 Manages periodic question delivery using APScheduler
 """
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 import random
+import re
 
 from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -12,11 +13,85 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select, and_
 
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
 from src.db.database import get_session
 from src.db.models import User, ScheduledNotification, QuestionTemplate
 from src.bot.keyboards.inline import get_question_keyboard
 
 logger = logging.getLogger(__name__)
+
+
+def parse_timezone(tz_str: str) -> dt_timezone | ZoneInfo:
+    """
+    Parse timezone string to timezone object.
+
+    Supports:
+    - IANA timezone names (e.g., "Europe/Moscow", "America/New_York")
+    - UTC offset format (e.g., "+03:00", "-05:00", "+0300", "-0500")
+    - "UTC" string
+
+    Returns:
+        timezone object (datetime.timezone for offsets, ZoneInfo for IANA names)
+    """
+    if not tz_str or tz_str == "UTC":
+        return dt_timezone.utc
+
+    # Try to parse as offset format (+03:00, -05:00, +0300, -0500)
+    offset_match = re.match(r'^([+-])(\d{2}):?(\d{2})$', tz_str)
+    if offset_match:
+        sign = 1 if offset_match.group(1) == '+' else -1
+        hours = int(offset_match.group(2))
+        minutes = int(offset_match.group(3))
+        offset = timedelta(hours=hours, minutes=minutes) * sign
+        return dt_timezone(offset)
+
+    # Try as IANA timezone name
+    try:
+        return ZoneInfo(tz_str)
+    except Exception:
+        logger.warning(f"Unknown timezone: {tz_str}, falling back to UTC")
+        return dt_timezone.utc
+
+
+def get_user_local_now(user_timezone: str) -> datetime:
+    """Get current time in user's timezone (aware datetime)"""
+    tz = parse_timezone(user_timezone)
+    return datetime.now(tz)
+
+
+def convert_to_utc(dt: datetime, user_timezone: str) -> datetime:
+    """Convert a naive or aware datetime to UTC"""
+    tz = parse_timezone(user_timezone)
+
+    if dt.tzinfo is None:
+        # Assume dt is in user's timezone if naive
+        dt = dt.replace(tzinfo=tz)
+
+    return dt.astimezone(dt_timezone.utc)
+
+
+def is_within_active_hours(user: 'User') -> bool:
+    """
+    Check if current time in user's timezone is within their active hours.
+    Uses timezone-aware comparison.
+    """
+    user_now = get_user_local_now(user.timezone)
+    user_local_time = user_now.time()
+
+    result = user.active_hours_start <= user_local_time <= user.active_hours_end
+
+    logger.debug(
+        f"Active hours check for user {user.telegram_id}: "
+        f"tz={user.timezone}, local_now={user_local_time}, "
+        f"active_range=[{user.active_hours_start}-{user.active_hours_end}], "
+        f"in_range={result}"
+    )
+
+    return result
 
 # Default question templates for Russian
 DEFAULT_QUESTIONS_INFORMAL = [
@@ -105,7 +180,8 @@ class NotificationScheduler:
 
     async def _process_notifications(self) -> None:
         """Process pending notifications that are due"""
-        now = datetime.utcnow()
+        # Use UTC-aware datetime, then convert to naive for DB comparison
+        utc_now = datetime.now(dt_timezone.utc).replace(tzinfo=None)
 
         async with get_session() as session:
             # Find unsent notifications that are due
@@ -114,7 +190,7 @@ class NotificationScheduler:
                 .where(
                     and_(
                         ScheduledNotification.sent == False,
-                        ScheduledNotification.scheduled_time <= now,
+                        ScheduledNotification.scheduled_time <= utc_now,
                     )
                 )
                 .limit(50)
@@ -125,7 +201,7 @@ class NotificationScheduler:
                 try:
                     await self._send_notification(notification)
                     notification.sent = True
-                    notification.sent_at = datetime.utcnow()
+                    notification.sent_at = datetime.now(dt_timezone.utc).replace(tzinfo=None)
                 except Exception as e:
                     logger.error(f"Failed to send notification {notification.id}: {e}")
 
@@ -143,12 +219,9 @@ class NotificationScheduler:
             if not user or not user.notifications_enabled:
                 return
 
-            # Check if within active hours
-            now = datetime.utcnow()
-            current_time = now.time()
-
-            if not (user.active_hours_start <= current_time <= user.active_hours_end):
-                # Outside active hours, reschedule
+            # Check if within active hours (timezone-aware)
+            if not is_within_active_hours(user):
+                # Outside active hours, skipping this notification
                 logger.debug(f"User {user.telegram_id} outside active hours, skipping")
                 return
 
@@ -268,8 +341,8 @@ class NotificationScheduler:
         session,
         user: User,
     ) -> None:
-        """Schedule next notification for a specific user"""
-        now = datetime.utcnow()
+        """Schedule next notification for a specific user (timezone-aware)"""
+        utc_now = datetime.now(dt_timezone.utc)
 
         # Check if there's already a pending notification
         result = await session.execute(
@@ -278,7 +351,7 @@ class NotificationScheduler:
                 and_(
                     ScheduledNotification.user_id == user.id,
                     ScheduledNotification.sent == False,
-                    ScheduledNotification.scheduled_time > now,
+                    ScheduledNotification.scheduled_time > utc_now.replace(tzinfo=None),
                 )
             )
             .limit(1)
@@ -289,32 +362,50 @@ class NotificationScheduler:
             # Already has a scheduled notification
             return
 
-        # Calculate next notification time
-        next_time = now + timedelta(hours=user.notification_interval_hours)
+        # Get user's current local time
+        user_tz = parse_timezone(user.timezone)
+        user_local_now = datetime.now(user_tz)
 
-        # Ensure it's within active hours
-        if next_time.time() < user.active_hours_start:
-            # Set to start of active hours
-            next_time = next_time.replace(
+        # Calculate next notification time in user's local timezone
+        next_time_local = user_local_now + timedelta(hours=user.notification_interval_hours)
+
+        # Ensure it's within active hours (in user's local time)
+        if next_time_local.time() < user.active_hours_start:
+            # Set to start of active hours (same day)
+            next_time_local = next_time_local.replace(
                 hour=user.active_hours_start.hour,
                 minute=user.active_hours_start.minute,
+                second=0,
+                microsecond=0,
             )
-        elif next_time.time() > user.active_hours_end:
-            # Schedule for next day
-            next_time = next_time + timedelta(days=1)
-            next_time = next_time.replace(
+        elif next_time_local.time() > user.active_hours_end:
+            # Schedule for next day at start of active hours
+            next_time_local = next_time_local + timedelta(days=1)
+            next_time_local = next_time_local.replace(
                 hour=user.active_hours_start.hour,
                 minute=user.active_hours_start.minute,
+                second=0,
+                microsecond=0,
             )
+
+        # Convert to UTC for storage (naive datetime for DB compatibility)
+        next_time_utc = next_time_local.astimezone(dt_timezone.utc).replace(tzinfo=None)
 
         # Create notification
         notification = ScheduledNotification(
             user_id=user.id,
-            scheduled_time=next_time,
+            scheduled_time=next_time_utc,
         )
         session.add(notification)
 
-        logger.info(f"Scheduled notification for user {user.telegram_id} at {next_time}")
+        # Detailed logging
+        logger.info(
+            f"Scheduled notification for user {user.telegram_id}: "
+            f"tz={user.timezone}, local_now={user_local_now.strftime('%Y-%m-%d %H:%M %Z')}, "
+            f"utc_now={utc_now.strftime('%Y-%m-%d %H:%M %Z')}, "
+            f"next_local={next_time_local.strftime('%Y-%m-%d %H:%M %Z')}, "
+            f"next_utc={next_time_utc.strftime('%Y-%m-%d %H:%M')}"
+        )
 
     async def _send_weekly_summaries(self) -> None:
         """Send weekly summaries to all active users"""
@@ -338,11 +429,8 @@ class NotificationScheduler:
             sent_count = 0
             for user in users:
                 try:
-                    # Check if within active hours
-                    now = datetime.utcnow()
-                    current_time = now.time()
-
-                    if not (user.active_hours_start <= current_time <= user.active_hours_end):
+                    # Check if within active hours (timezone-aware)
+                    if not is_within_active_hours(user):
                         logger.debug(f"User {user.telegram_id} outside active hours, skipping weekly summary")
                         continue
 
@@ -384,11 +472,8 @@ class NotificationScheduler:
             sent_count = 0
             for user in users:
                 try:
-                    # Check if within active hours
-                    now = datetime.utcnow()
-                    current_time = now.time()
-
-                    if not (user.active_hours_start <= current_time <= user.active_hours_end):
+                    # Check if within active hours (timezone-aware)
+                    if not is_within_active_hours(user):
                         logger.debug(f"User {user.telegram_id} outside active hours, skipping monthly summary")
                         continue
 
