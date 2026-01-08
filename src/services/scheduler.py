@@ -151,19 +151,12 @@ class NotificationScheduler:
             replace_existing=True,
         )
 
-        # Add job to send weekly summaries (every Sunday at 10:00)
+        # Check hourly for users who should receive weekly/monthly summaries
+        # (timezone-aware: sends at 10:00 in each user's local timezone)
         self.scheduler.add_job(
-            self._send_weekly_summaries,
-            trigger=CronTrigger(day_of_week='sun', hour=10, minute=0),
-            id="weekly_summaries",
-            replace_existing=True,
-        )
-
-        # Add job to send monthly summaries (first day of month at 10:00)
-        self.scheduler.add_job(
-            self._send_monthly_summaries,
-            trigger=CronTrigger(day=1, hour=10, minute=0),
-            id="monthly_summaries",
+            self._check_summary_delivery,
+            trigger=IntervalTrigger(hours=1),
+            id="summary_delivery_check",
             replace_existing=True,
         )
 
@@ -407,9 +400,17 @@ class NotificationScheduler:
             f"next_utc={next_time_utc.strftime('%Y-%m-%d %H:%M')}"
         )
 
-    async def _send_weekly_summaries(self) -> None:
-        """Send weekly summaries to all active users"""
-        logger.info("Starting weekly summary distribution")
+    async def _check_summary_delivery(self) -> None:
+        """
+        Check which users should receive weekly/monthly summaries based on their local timezone.
+
+        This runs hourly and checks each user's local time:
+        - Weekly summary: Sunday at 10:00 local time
+        - Monthly summary: 1st of month at 10:00 local time
+
+        Only sends if user is within their active hours.
+        """
+        logger.debug("Checking for summary delivery...")
 
         from src.services.summary_service import SummaryService
         summary_service = SummaryService()
@@ -426,72 +427,79 @@ class NotificationScheduler:
             )
             users = result.scalars().all()
 
-            sent_count = 0
+            weekly_count = 0
+            monthly_count = 0
+
             for user in users:
                 try:
-                    # Check if within active hours (timezone-aware)
-                    if not is_within_active_hours(user):
-                        logger.debug(f"User {user.telegram_id} outside active hours, skipping weekly summary")
+                    # Get user's local time
+                    user_local_now = get_user_local_now(user.timezone)
+                    local_hour = user_local_now.hour
+                    local_day_of_week = user_local_now.weekday()  # 0=Monday, 6=Sunday
+                    local_day_of_month = user_local_now.day
+
+                    # Check if it's around 10:00 local time (between 10:00 and 10:59)
+                    is_delivery_hour = local_hour == 10
+
+                    if not is_delivery_hour:
                         continue
 
-                    # Generate summary
-                    summary = await summary_service.generate_weekly_summary(user.telegram_id)
-
-                    if summary:
-                        await self.bot.send_message(
-                            chat_id=user.telegram_id,
-                            text=summary,
+                    # Check if within active hours
+                    if not is_within_active_hours(user):
+                        logger.debug(
+                            f"User {user.telegram_id} at 10:00 local but outside active hours, skipping"
                         )
-                        sent_count += 1
-                        logger.info(f"Sent weekly summary to user {user.telegram_id}")
+                        continue
+
+                    # Weekly summary: Sunday (weekday() == 6)
+                    if local_day_of_week == 6:
+                        summary = await summary_service.generate_weekly_summary(user.telegram_id)
+                        if summary:
+                            await self.bot.send_message(
+                                chat_id=user.telegram_id,
+                                text=summary,
+                            )
+                            weekly_count += 1
+                            logger.info(
+                                f"Sent weekly summary to user {user.telegram_id} "
+                                f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                            )
+
+                    # Monthly summary: 1st of month
+                    if local_day_of_month == 1:
+                        summary = await summary_service.generate_monthly_summary(user.telegram_id)
+                        if summary:
+                            await self.bot.send_message(
+                                chat_id=user.telegram_id,
+                                text=summary,
+                            )
+                            monthly_count += 1
+                            logger.info(
+                                f"Sent monthly summary to user {user.telegram_id} "
+                                f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                            )
 
                 except Exception as e:
-                    logger.error(f"Failed to send weekly summary to {user.telegram_id}: {e}")
+                    logger.error(f"Failed to send summary to {user.telegram_id}: {e}")
 
-        logger.info(f"Weekly summary distribution completed: {sent_count} summaries sent")
+            if weekly_count > 0 or monthly_count > 0:
+                logger.info(f"Summary delivery check: {weekly_count} weekly, {monthly_count} monthly summaries sent")
+
+    async def _send_weekly_summaries(self) -> None:
+        """
+        DEPRECATED: Use _check_summary_delivery for timezone-aware delivery.
+        Kept for backwards compatibility / manual triggering.
+        """
+        logger.info("Starting weekly summary distribution (legacy method)")
+        await self._check_summary_delivery()
 
     async def _send_monthly_summaries(self) -> None:
-        """Send monthly summaries to all active users"""
-        logger.info("Starting monthly summary distribution")
-
-        from src.services.summary_service import SummaryService
-        summary_service = SummaryService()
-
-        async with get_session() as session:
-            # Get all users with notifications enabled and onboarding completed
-            result = await session.execute(
-                select(User).where(
-                    and_(
-                        User.notifications_enabled == True,
-                        User.onboarding_completed == True,
-                    )
-                )
-            )
-            users = result.scalars().all()
-
-            sent_count = 0
-            for user in users:
-                try:
-                    # Check if within active hours (timezone-aware)
-                    if not is_within_active_hours(user):
-                        logger.debug(f"User {user.telegram_id} outside active hours, skipping monthly summary")
-                        continue
-
-                    # Generate summary
-                    summary = await summary_service.generate_monthly_summary(user.telegram_id)
-
-                    if summary:
-                        await self.bot.send_message(
-                            chat_id=user.telegram_id,
-                            text=summary,
-                        )
-                        sent_count += 1
-                        logger.info(f"Sent monthly summary to user {user.telegram_id}")
-
-                except Exception as e:
-                    logger.error(f"Failed to send monthly summary to {user.telegram_id}: {e}")
-
-        logger.info(f"Monthly summary distribution completed: {sent_count} summaries sent")
+        """
+        DEPRECATED: Use _check_summary_delivery for timezone-aware delivery.
+        Kept for backwards compatibility / manual triggering.
+        """
+        logger.info("Starting monthly summary distribution (legacy method)")
+        await self._check_summary_delivery()
 
     async def send_summary_to_user(self, telegram_id: int, summary_type: str = "weekly") -> bool:
         """
