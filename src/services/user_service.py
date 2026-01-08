@@ -3,16 +3,56 @@ MINDSETHAPPYBOT - User service
 Business logic for user management
 """
 import logging
+import re
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from aiogram.types import User as TelegramUser
-from sqlalchemy import select
+from sqlalchemy import select, and_, delete
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 from src.db.database import get_session
-from src.db.models import User, UserStats
+from src.db.models import User, UserStats, ScheduledNotification
 
 logger = logging.getLogger(__name__)
+
+
+def validate_timezone(tz_str: str) -> bool:
+    """
+    Validate timezone string format.
+
+    Supports:
+    - IANA timezone names (e.g., "Europe/Moscow", "America/New_York")
+    - UTC offset format (e.g., "+03:00", "-05:00", "+0300", "-0500")
+    - "UTC" string
+
+    Returns:
+        True if valid, False otherwise
+    """
+    if not tz_str:
+        return False
+
+    if tz_str == "UTC":
+        return True
+
+    # Check offset format (+03:00, -05:00, +0300, -0500)
+    offset_match = re.match(r'^([+-])(\d{2}):?(\d{2})$', tz_str)
+    if offset_match:
+        hours = int(offset_match.group(2))
+        minutes = int(offset_match.group(3))
+        # Validate reasonable offset range (-12:00 to +14:00)
+        return hours <= 14 and minutes < 60
+
+    # Try as IANA timezone name
+    try:
+        ZoneInfo(tz_str)
+        return True
+    except Exception:
+        return False
 
 
 class UserService:
@@ -106,7 +146,28 @@ class UserService:
                 user.language_code = language_code
 
             if timezone is not None:
+                # Validate timezone format
+                if not validate_timezone(timezone):
+                    logger.warning(f"Invalid timezone format: {timezone}")
+                    raise ValueError(f"Invalid timezone: {timezone}")
+
+                old_timezone = user.timezone
                 user.timezone = timezone
+
+                # If timezone changed, delete pending notifications so they get rescheduled
+                if old_timezone != timezone:
+                    logger.info(
+                        f"Timezone changed for user {telegram_id}: {old_timezone} -> {timezone}, "
+                        "deleting pending notifications for reschedule"
+                    )
+                    await session.execute(
+                        delete(ScheduledNotification).where(
+                            and_(
+                                ScheduledNotification.user_id == user.id,
+                                ScheduledNotification.sent == False,
+                            )
+                        )
+                    )
 
             user.updated_at = datetime.utcnow()
             await session.commit()
