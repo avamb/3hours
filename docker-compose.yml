@@ -9,7 +9,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # Use compose-time interpolation (works reliably in Dokploy) and stays correct when POSTGRES_* are overridden.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mindsethappybot}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,7 +25,9 @@ services:
         condition: service_healthy
     environment:
       - PORT=8080
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mindsethappybot
+      # Use POSTGRES_* vars for credentials/dbname (common Dokploy setup).
+      # If you use external Postgres, override POSTGRES_HOST/POSTGRES_PORT too.
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-mindsethappybot}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     ports:
@@ -47,7 +50,9 @@ services:
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/mindsethappybot
+      # Use POSTGRES_* vars for credentials/dbname (common Dokploy setup).
+      # If you use external Postgres, override POSTGRES_HOST/POSTGRES_PORT too.
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-mindsethappybot}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     restart: unless-stopped
 
