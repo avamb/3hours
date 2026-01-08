@@ -24,49 +24,48 @@ wait_for_postgres() {
 import socket
 import sys
 try:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(1)
-    result = sock.connect_ex(('$DB_HOST', $DB_PORT))
-    sock.close()
-    sys.exit(0 if result == 0 else 1)
-except:
+    # Robust TCP probe (IPv4/IPv6, uses getaddrinfo)
+    with socket.create_connection(('$DB_HOST', int($DB_PORT)), timeout=1):
+        pass
+    sys.exit(0)
+except Exception:
     sys.exit(1)
 " 2>/dev/null; then
-            echo "PostgreSQL is ready!"
+            echo \"PostgreSQL is ready!\"
             return 0
         fi
 
-        echo "Attempt $attempt/$max_attempts: PostgreSQL not ready, waiting..."
+        echo \"Attempt $attempt/$max_attempts: PostgreSQL not ready, waiting...\"
         sleep 2
         attempt=$((attempt + 1))
     done
 
-    echo "ERROR: PostgreSQL did not become ready in time"
+    echo \"ERROR: PostgreSQL did not become ready in time\"
     exit 1
 }
 
 # Function to run migrations
 run_migrations() {
-    echo "Running database migrations..."
+    echo \"Running database migrations...\"
     python -m alembic upgrade head
-    echo "Migrations completed successfully!"
+    echo \"Migrations completed successfully!\"
 }
 
 # Main logic
-case "${1:-bot}" in
-    "bot")
+case \"${1:-bot}\" in
+    \"bot\")
         wait_for_postgres
         run_migrations
-        echo "Starting bot..."
+        echo \"Starting bot...\"
         exec python -m src.bot.main
         ;;
-    "migrate")
+    \"migrate\")
         wait_for_postgres
         run_migrations
-        echo "Migration-only mode completed."
+        echo \"Migration-only mode completed.\"
         ;;
     *)
         # Pass through any other command
-        exec "$@"
+        exec \"$@\"
         ;;
 esac
