@@ -9,12 +9,17 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     healthcheck:
-      # Use compose-time interpolation (works reliably in Dokploy) and stays correct when POSTGRES_* are overridden.
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mindsethappybot}"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mindsethappybot}
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      dokploy-network:
+        aliases:
+          - postgres
 
   admin:
     build:
@@ -25,20 +30,42 @@ services:
         condition: service_healthy
     environment:
       - PORT=8080
-      # Use POSTGRES_* vars for credentials/dbname (common Dokploy setup).
-      # If you use external Postgres, override POSTGRES_HOST/POSTGRES_PORT too.
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-mindsethappybot}
+      # Можно переопределить DATABASE_URL в Dokploy, иначе соберётся из POSTGRES_*
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-mindsethappybot}}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     ports:
       - "8080"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8080/health
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
     restart: unless-stopped
+    labels:
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-32-web.rule=Host(`mindsethappybot-3hours-efm68q-2a8ea9-78-46-176-249.traefik.me`)
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-32-web.entrypoints=web
+      - traefik.http.services.mindsethappybot-3hours-efm68q-32-web.loadbalancer.server.port=8080
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-32-web.service=mindsethappybot-3hours-efm68q-32-web
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-31-web.rule=Host(`3hours.andreevmaster.com`)
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-31-web.entrypoints=web
+      - traefik.http.services.mindsethappybot-3hours-efm68q-31-web.loadbalancer.server.port=8080
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-31-web.service=mindsethappybot-3hours-efm68q-31-web
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-31-web.middlewares=redirect-to-https@file
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-31-websecure.rule=Host(`3hours.andreevmaster.com`)
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-31-websecure.entrypoints=websecure
+      - traefik.http.services.mindsethappybot-3hours-efm68q-31-websecure.loadbalancer.server.port=8080
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-31-websecure.service=mindsethappybot-3hours-efm68q-31-websecure
+      - traefik.http.routers.mindsethappybot-3hours-efm68q-31-websecure.tls.certresolver=letsencrypt
+      - traefik.enable=true
+    networks:
+      - dokploy-network
 
   bot:
     build:
@@ -50,11 +77,16 @@ services:
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      # Use POSTGRES_* vars for credentials/dbname (common Dokploy setup).
-      # If you use external Postgres, override POSTGRES_HOST/POSTGRES_PORT too.
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-mindsethappybot}
+      # Можно переопределить DATABASE_URL в Dokploy, иначе соберётся из POSTGRES_*
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-mindsethappybot}}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     restart: unless-stopped
+    networks:
+      - dokploy-network
 
 volumes:
-  postgres_data:
+  postgres_data: null
+
+networks:
+  dokploy-network:
+    external: true
