@@ -1,13 +1,10 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: mindsethappybot-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-mindsethappybot}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
@@ -22,7 +19,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mindsethappybot-migrate
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,7 +34,6 @@ services:
     build:
       context: ./admin
       dockerfile: Dockerfile
-    container_name: mindsethappybot-admin
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,7 +44,7 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mindsethappybot
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
-    expose:
+    ports:
       - "8080"
     restart: unless-stopped
 
@@ -57,7 +52,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mindsethappybot
     depends_on:
       postgres:
         condition: service_healthy
