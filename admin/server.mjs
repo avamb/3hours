@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuration
-const PORT = process.env.ADMIN_PORT || 8080;
+const PORT = process.env.PORT || 8080;
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/mindsethappybot';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
@@ -881,9 +881,9 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
-// Start server
-server.listen(PORT, () => {
-    console.log(`Admin panel running at http://localhost:${PORT}`);
+// Start server - bind to 0.0.0.0 for Docker/Dokploy compatibility
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Admin panel running at http://0.0.0.0:${PORT}`);
     console.log(`Database: ${DATABASE_URL}`);
 });
 
