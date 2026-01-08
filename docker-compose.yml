@@ -29,6 +29,12 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     ports:
       - "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
   bot:

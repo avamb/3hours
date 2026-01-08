@@ -560,7 +560,16 @@ const routes = {
         }
     },
 
-    // System health
+    // Lightweight health check (no DB call) - for container healthcheck
+    'GET /health': async (req, res) => {
+        sendJson(res, {
+            status: 'ok',
+            service: 'admin',
+            timestamp: new Date().toISOString(),
+        });
+    },
+
+    // System health (with DB check)
     'GET /api/system/health': async (req, res) => {
         let dbStatus = 'healthy';
         try {
