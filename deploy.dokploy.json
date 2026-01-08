@@ -1,0 +1,36 @@
+{
+  "$schema": "https://dokploy.com/schemas/deploy.json",
+  "name": "mindsethappybot",
+  "description": "Telegram bot for positive mindset development",
+  "services": {
+    "admin": {
+      "routable": true,
+      "internal_port": 8080,
+      "port_env_var": "PORT",
+      "healthcheck_path": "/health"
+    },
+    "bot": {
+      "routable": false
+    },
+    "postgres": {
+      "routable": false,
+      "persistent": true
+    }
+  },
+  "environment_variables": {
+    "required": [
+      "TELEGRAM_BOT_TOKEN",
+      "OPENAI_API_KEY"
+    ],
+    "optional": [
+      "POSTGRES_USER",
+      "POSTGRES_PASSWORD",
+      "POSTGRES_DB",
+      "DATABASE_URL",
+      "ADMIN_USERNAME",
+      "ADMIN_PASSWORD",
+      "LOG_LEVEL",
+      "PORT"
+    ]
+  }
+}
