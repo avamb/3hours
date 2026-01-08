@@ -15,21 +15,6 @@ services:
       retries: 5
     restart: unless-stopped
 
-  migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/mindsethappybot
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    command: ["python", "-m", "alembic", "upgrade", "head"]
-    restart: "no"
-
   admin:
     build:
       context: ./admin
@@ -37,8 +22,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
     environment:
       - PORT=8080
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mindsethappybot
@@ -55,8 +38,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}

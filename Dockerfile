@@ -27,5 +27,10 @@ COPY src/ ./src/
 COPY alembic.ini .
 COPY alembic/ ./alembic/
 
-# Run the bot
-CMD ["python", "-m", "src.bot.main"]
+# Copy entrypoint script
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Use entrypoint for migrations and startup
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["bot"]
