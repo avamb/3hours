@@ -83,3 +83,12 @@ assistant.db
 .claude_assistant_settings.json
 .claude_mcp.json
 .claude_settings.json
+
+# Node.js
+node_modules/
+app/node_modules/
+
+# Frontend build / backups
+*.bak
+*.bak2
+

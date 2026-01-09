@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINDSETHAPPYBOT Admin Panel</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>MINDSETHAPPYBOT</h1>
+                <p>Admin Panel</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Login</button>
+                <div id="login-error" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-screen" class="screen">
+        <header class="header">
+            <div class="header-left">
+                <h1>MINDSETHAPPYBOT Admin</h1>
+            </div>
+            <div class="header-right">
+                <span id="health-status" class="health-badge">Checking...</span>
+                <button id="logout-btn" class="btn btn-secondary">Logout</button>
+            </div>
+        </header>
+
+        <nav class="sidebar">
+            <ul class="nav-menu">
+                <li><a href="#" data-page="overview" class="nav-link active">Overview</a></li>
+                <li><a href="#" data-page="users" class="nav-link">Users</a></li>
+                <li><a href="#" data-page="moments" class="nav-link">Moments</a></li>
+                <li><a href="#" data-page="knowledge" class="nav-link">Knowledge Base</a></li>
+                <li><a href="#" data-page="templates" class="nav-link">Templates</a></li>
+                <li><a href="#" data-page="dialogs" class="nav-link">Dialogs</a></li>
+                <li><a href="#" data-page="messages" class="nav-link">Messages</a></li>
+                <li><a href="#" data-page="analytics" class="nav-link">Analytics</a></li>
+                <li><a href="#" data-page="logs" class="nav-link">Logs</a></li>
+                <li><a href="#" data-page="notifications" class="nav-link">Notifications</a></li>
+                <li><a href="#" data-page="feedback" class="nav-link">Feedback</a></li>
+                <li><a href="#" data-page="settings" class="nav-link">Settings</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <!-- Overview Page -->
+            <div id="page-overview" class="page active">
+                <h2>Dashboard Overview</h2>
+
+                <!-- System Status Cards -->
+                <div class="system-status-grid">
+                    <div class="status-card">
+                        <div class="status-card-header">
+                            <span class="status-card-title">🗄️ Database</span>
+                            <span id="status-db" class="status-indicator">Checking...</span>
+                        </div>
+                        <div class="status-card-detail" id="status-db-detail">-</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-card-header">
+                            <span class="status-card-title">🤖 Bot</span>
+                            <span id="status-bot" class="status-indicator">Checking...</span>
+                        </div>
+                        <div class="status-card-detail" id="status-bot-detail">-</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-card-header">
+                            <span class="status-card-title">🧠 OpenAI</span>
+                            <span id="status-openai" class="status-indicator">Checking...</span>
+                        </div>
+                        <div class="status-card-detail" id="status-openai-detail">API status</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">Users</div>
+                        <div class="stat-value" id="stat-total-users">-</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">24h</div>
+                        <div class="stat-value" id="stat-active-24h">-</div>
+                        <div class="stat-label">Active (24h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">7d</div>
+                        <div class="stat-value" id="stat-active-7d">-</div>
+                        <div class="stat-label">Active (7 days)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Moments</div>
+                        <div class="stat-value" id="stat-total-moments">-</div>
+                        <div class="stat-label">Total Moments</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Today</div>
+                        <div class="stat-value" id="stat-moments-today">-</div>
+                        <div class="stat-label">Moments Today</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Week</div>
+                        <div class="stat-value" id="stat-moments-week">-</div>
+                        <div class="stat-label">Moments This Week</div>
+                    </div>
+                </div>
+                <div class="recent-section">
+                    <h3>Recent Activity</h3>
+                    <div id="recent-activity" class="activity-list">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Page -->
+            <div id="page-users" class="page">
+                <h2>Users</h2>
+                <div class="toolbar">
+                    <input type="text" id="user-search" placeholder="Search users..." class="search-input">
+                    <button id="refresh-users" class="btn btn-secondary">Refresh</button>
+                    <button id="export-users" class="btn btn-secondary">📥 Export CSV</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Telegram ID</th>
+                                <th>Username</th>
+                                <th>Name</th>
+                                <th>Language</th>
+                                <th>Moments</th>
+                                <th>Streak</th>
+                                <th>Last Active</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="9" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="users-pagination"></div>
+            </div>
+
+            <!-- Dialogs Page -->
+            <div id="page-dialogs" class="page">
+                <div class="page-header">
+                    <h2>User Dialogs</h2>
+                    <div class="page-header-actions">
+                        <button id="export-dialogs-csv" class="btn btn-secondary">📥 Export CSV</button>
+                        <button id="export-dialogs-json" class="btn btn-secondary">📥 Export JSON</button>
+                    </div>
+                </div>
+                <div class="dialogs-layout">
+                    <!-- Left panel - Users list -->
+                    <div class="dialogs-users-panel">
+                        <div class="toolbar">
+                            <input type="text" id="dialog-user-search" placeholder="Search users..." class="search-input">
+                        </div>
+                        <div class="dialogs-users-list" id="dialogs-users-list">
+                            <p class="loading">Loading...</p>
+                        </div>
+                    </div>
+                    <!-- Right panel - Dialog messages -->
+                    <div class="dialogs-messages-panel">
+                        <div class="dialogs-header" id="dialogs-header">
+                            <span class="dialogs-user-name">Select a user to view dialog</span>
+                        </div>
+                        <div class="dialogs-filters">
+                            <select id="dialog-message-type-filter" class="select-input select-small">
+                                <option value="">All Types</option>
+                                <option value="user_response">User Response</option>
+                                <option value="bot_question">Bot Question</option>
+                                <option value="bot_reply">Bot Reply</option>
+                                <option value="free_dialog">Free Dialog</option>
+                                <option value="scheduled_question">Scheduled Question</option>
+                            </select>
+                            <input type="text" id="dialog-text-search" placeholder="Search in dialog..." class="search-input search-small">
+                        </div>
+                        <div class="dialogs-messages" id="dialogs-messages">
+                            <p class="loading">Select a user from the list to view their dialog history</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moments Page -->
+            <div id="page-moments" class="page">
+                <h2>Happy Moments</h2>
+                <!-- Stats cards -->
+                <div class="stats-grid moments-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">Total</div>
+                        <div class="stat-value" id="moments-stat-total">-</div>
+                        <div class="stat-label">Total Moments</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Week</div>
+                        <div class="stat-value" id="moments-stat-week">-</div>
+                        <div class="stat-label">This Week</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Mood</div>
+                        <div class="stat-value" id="moments-stat-mood">-</div>
+                        <div class="stat-label">Avg Mood</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Users</div>
+                        <div class="stat-value" id="moments-stat-users">-</div>
+                        <div class="stat-label">Unique Users</div>
+                    </div>
+                </div>
+                <!-- Topics Cloud -->
+                <div class="topics-section">
+                    <h3>Topics Cloud</h3>
+                    <div class="topics-cloud" id="topics-cloud">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+                <!-- Filters -->
+                <div class="toolbar">
+                    <select id="moments-user-filter" class="select-input">
+                        <option value="">All Users</option>
+                    </select>
+                    <input type="date" id="moments-date-from" class="date-input" placeholder="From date">
+                    <input type="date" id="moments-date-to" class="date-input" placeholder="To date">
+                    <select id="moments-mood-filter" class="select-input">
+                        <option value="">All Moods</option>
+                        <option value="0.8-1">Very Positive (0.8+)</option>
+                        <option value="0.6-0.8">Positive (0.6-0.8)</option>
+                        <option value="0.4-0.6">Neutral (0.4-0.6)</option>
+                        <option value="0-0.4">Negative (< 0.4)</option>
+                    </select>
+                    <button id="moments-export-btn" class="btn btn-secondary">Export CSV</button>
+                    <button id="refresh-moments" class="btn btn-secondary">Refresh</button>
+                </div>
+                <!-- Moments Table -->
+                <div class="table-container">
+                    <table class="data-table" id="moments-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Content</th>
+                                <th>Source</th>
+                                <th>Mood</th>
+                                <th>Topics</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="moments-pagination"></div>
+            </div>
+
+            <!-- Knowledge Base Page -->
+            <div id="page-knowledge" class="page">
+                <h2>Knowledge Base</h2>
+                <!-- Stats cards -->
+                <div class="stats-grid knowledge-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">Total</div>
+                        <div class="stat-value" id="kb-stat-total">-</div>
+                        <div class="stat-label">Total Items</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Indexed</div>
+                        <div class="stat-value" id="kb-stat-indexed">-</div>
+                        <div class="stat-label">Ready</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Pending</div>
+                        <div class="stat-value" id="kb-stat-pending">-</div>
+                        <div class="stat-label">Processing</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">Chunks</div>
+                        <div class="stat-value" id="kb-stat-chunks">-</div>
+                        <div class="stat-label">Total Chunks</div>
+                    </div>
+                </div>
+                <!-- Upload Form -->
+                <div class="upload-section">
+                    <h3>Upload New Material</h3>
+                    <form id="kb-upload-form" class="upload-form" enctype="multipart/form-data">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="kb-title">Title</label>
+                                <input type="text" id="kb-title" name="title" class="form-input" placeholder="Document title">
+                            </div>
+                            <div class="form-group">
+                                <label for="kb-category">Category</label>
+                                <input type="text" id="kb-category" name="category" class="form-input" placeholder="e.g., FAQ, Guide">
+                            </div>
+                            <div class="form-group">
+                                <label for="kb-tags">Tags (comma-separated)</label>
+                                <input type="text" id="kb-tags" name="tags" class="form-input" placeholder="tag1, tag2, tag3">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group file-group">
+                                <label for="kb-file">File (TXT, PDF, MD)</label>
+                                <input type="file" id="kb-file" name="file" accept=".txt,.pdf,.md" class="form-input file-input">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </div>
+                        <div id="kb-upload-status" class="upload-status"></div>
+                    </form>
+                </div>
+                <!-- Filters -->
+                <div class="toolbar">
+                    <select id="kb-status-filter" class="select-input">
+                        <option value="">All Statuses</option>
+                        <option value="indexed">Indexed</option>
+                        <option value="pending">Pending</option>
+                        <option value="error">Error</option>
+                    </select>
+                    <button id="refresh-knowledge" class="btn btn-secondary">Refresh</button>
+                </div>
+                <!-- Knowledge Base Table -->
+                <div class="table-container">
+                    <table class="data-table" id="knowledge-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Chunks</th>
+                                <th>Usage</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="9" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="knowledge-pagination"></div>
+            </div>
+
+            <!-- Templates Page -->
+            <div id="page-templates" class="page">
+                <h2>Message Templates</h2>
+                <!-- Create/Edit Form -->
+                <div class="template-form-section">
+                    <h3 id="template-form-title">Create New Template</h3>
+                    <form id="template-form" class="template-form">
+                        <input type="hidden" id="template-edit-id" value="">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="template-text">Template Text</label>
+                                <textarea id="template-text" name="template_text" class="form-input template-textarea" rows="3" placeholder="Enter template text with optional {name} placeholder..." required></textarea>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="template-language">Language</label>
+                                <select id="template-language" name="language_code" class="select-input">
+                                    <option value="ru">Russian (ru)</option>
+                                    <option value="en">English (en)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="template-category">Category</label>
+                                <input type="text" id="template-category" name="category" class="form-input" placeholder="e.g., general, morning, evening" value="general">
+                            </div>
+                            <div class="form-group">
+                                <label for="template-formal">
+                                    <input type="checkbox" id="template-formal" name="formal"> Formal (Вы)
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="template-active">
+                                    <input type="checkbox" id="template-active" name="is_active" checked> Active
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="template-submit-btn">Create</button>
+                            <button type="button" class="btn btn-secondary" id="template-cancel-btn" style="display: none;">Cancel</button>
+                        </div>
+                    </form>
+                    <!-- Preview -->
+                    <div class="template-preview">
+                        <h4>Preview:</h4>
+                        <div id="template-preview-text" class="preview-box">Enter text to see preview...</div>
+                    </div>
+                </div>
+                <!-- Filters -->
+                <div class="toolbar">
+                    <select id="templates-language-filter" class="select-input">
+                        <option value="">All Languages</option>
+                        <option value="ru">Russian</option>
+                        <option value="en">English</option>
+                    </select>
+                    <select id="templates-category-filter" class="select-input">
+                        <option value="">All Categories</option>
+                    </select>
+                    <button id="refresh-templates" class="btn btn-secondary">Refresh</button>
+                </div>
+                <!-- Templates Table -->
+                <div class="table-container">
+                    <table class="data-table" id="templates-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Template Text</th>
+                                <th>Language</th>
+                                <th>Formal</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="templates-pagination"></div>
+            </div>
+
+            <!-- Messages Page -->
+            <div id="page-messages" class="page">
+                <h2>Messages</h2>
+                <div class="toolbar">
+                    <select id="message-type-filter" class="select-input">
+                        <option value="">All Types</option>
+                        <option value="user_response">User Response</option>
+                        <option value="bot_question">Bot Question</option>
+                        <option value="bot_reply">Bot Reply</option>
+                        <option value="free_dialog">Free Dialog</option>
+                        <option value="scheduled_question">Scheduled Question</option>
+                    </select>
+                    <button id="refresh-messages" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="messages-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Type</th>
+                                <th>Content</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="messages-pagination"></div>
+            </div>
+
+            <!-- Logs Page -->
+            <div id="page-logs" class="page">
+                <h2>System Logs</h2>
+                <!-- Stats -->
+                <div class="stats-grid logs-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">🔴</div>
+                        <div class="stat-value" id="logs-stat-errors">-</div>
+                        <div class="stat-label">Errors (24h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🟡</div>
+                        <div class="stat-value" id="logs-stat-warnings">-</div>
+                        <div class="stat-label">Warnings (24h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔵</div>
+                        <div class="stat-value" id="logs-stat-info">-</div>
+                        <div class="stat-label">Info (24h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-value" id="logs-stat-total">-</div>
+                        <div class="stat-label">Total Logs</div>
+                    </div>
+                </div>
+                <!-- Filters -->
+                <div class="toolbar">
+                    <select id="log-level-filter" class="select-input">
+                        <option value="">All Levels</option>
+                        <option value="ERROR">ERROR</option>
+                        <option value="WARNING">WARNING</option>
+                        <option value="INFO">INFO</option>
+                        <option value="DEBUG">DEBUG</option>
+                    </select>
+                    <select id="log-source-filter" class="select-input">
+                        <option value="">All Sources</option>
+                    </select>
+                    <input type="date" id="log-date-from" class="date-input" placeholder="From date">
+                    <input type="date" id="log-date-to" class="date-input" placeholder="To date">
+                    <button id="refresh-logs" class="btn btn-secondary">Refresh</button>
+                </div>
+                <!-- Logs Container -->
+                <div class="logs-container" id="logs-container">
+                    <p class="loading">Loading...</p>
+                </div>
+                <div class="pagination" id="logs-pagination"></div>
+            </div>
+
+            <!-- Notifications Page -->
+            <div id="page-notifications" class="page">
+                <h2>Scheduled Notifications</h2>
+                <div class="toolbar">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="pending-only-filter">
+                        Pending Only
+                    </label>
+                    <button id="refresh-notifications" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="notifications-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Scheduled Time</th>
+                                <th>Status</th>
+                                <th>Sent At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="5" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Feedback Page -->
+            <div id="page-feedback" class="page">
+                <h2>User Feedback</h2>
+                <div class="stats-grid feedback-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">💡</div>
+                        <div class="stat-value" id="stat-feedback-new">-</div>
+                        <div class="stat-label">New</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👀</div>
+                        <div class="stat-value" id="stat-feedback-reviewed">-</div>
+                        <div class="stat-label">Reviewed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-value" id="stat-feedback-implemented">-</div>
+                        <div class="stat-label">Implemented</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-value" id="stat-feedback-rejected">-</div>
+                        <div class="stat-label">Rejected</div>
+                    </div>
+                </div>
+                <div class="toolbar">
+                    <select id="feedback-status-filter" class="select-input">
+                        <option value="">All Statuses</option>
+                        <option value="new">New</option>
+                        <option value="reviewed">Reviewed</option>
+                        <option value="implemented">Implemented</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <button id="refresh-feedback" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="feedback-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Category</th>
+                                <th>Content</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="feedback-pagination"></div>
+            </div>
+
+            <!-- Analytics Page -->
+            <div id="page-analytics" class="page">
+                <h2>Analytics</h2>
+                <!-- Overview Stats -->
+                <div class="stats-grid analytics-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-value" id="analytics-total-users">-</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-value" id="analytics-onboarded">-</div>
+                        <div class="stat-label">Onboarded</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-value" id="analytics-active-users">-</div>
+                        <div class="stat-label">Active (7d)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-value" id="analytics-retention-rate">-</div>
+                        <div class="stat-label">Retention Rate</div>
+                    </div>
+                </div>
+
+                <!-- Funnel Section -->
+                <div class="analytics-section">
+                    <h3>User Funnel</h3>
+                    <div class="funnel-container" id="funnel-container">
+                        <div class="funnel-chart" id="funnel-chart">
+                            <p class="loading">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Retention Section -->
+                <div class="analytics-section">
+                    <h3>Retention by Cohorts</h3>
+                    <div class="retention-container">
+                        <div class="table-container">
+                            <table class="data-table retention-table" id="retention-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cohort</th>
+                                        <th>Users</th>
+                                        <th>Week 1</th>
+                                        <th>Week 2</th>
+                                        <th>Week 3</th>
+                                        <th>Week 4</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="6" class="loading">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two Column Layout for Heatmap and Languages -->
+                <div class="analytics-row">
+                    <!-- Heatmap Section -->
+                    <div class="analytics-section analytics-half">
+                        <h3>Activity Heatmap</h3>
+                        <div class="heatmap-container" id="heatmap-container">
+                            <div class="heatmap-grid" id="heatmap-grid">
+                                <p class="loading">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Languages Section -->
+                    <div class="analytics-section analytics-half">
+                        <h3>Language Distribution</h3>
+                        <div class="languages-container" id="languages-container">
+                            <div class="languages-chart" id="languages-chart">
+                                <p class="loading">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar analytics-toolbar">
+                    <button id="refresh-analytics" class="btn btn-secondary">Refresh Analytics</button>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="page-settings" class="page">
+                <h2>Settings</h2>
+
+                <div class="settings-section">
+                    <h3>Database Management</h3>
+                    <div class="settings-card">
+                        <div class="settings-item">
+                            <div class="settings-info">
+                                <h4>Database Backup</h4>
+                                <p>Download a SQL backup of all database tables and data.</p>
+                            </div>
+                            <button id="backup-database-btn" class="btn btn-primary">
+                                💾 Download Backup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>System Information</h3>
+                    <div class="settings-card">
+                        <div class="settings-item">
+                            <div class="settings-info">
+                                <h4>Health Check</h4>
+                                <p>Current system status</p>
+                            </div>
+                            <span id="settings-health-status" class="health-badge">Checking...</span>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-info">
+                                <h4>Database Status</h4>
+                                <p>PostgreSQL connection status</p>
+                            </div>
+                            <span id="settings-db-status" class="health-badge">Checking...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback Detail Modal -->
+            <div id="feedback-modal" class="modal">
+                <div class="modal-content modal-lg">
+                    <div class="modal-header">
+                        <h3>Feedback Details</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body" id="feedback-modal-body">
+                        <p class="loading">Loading...</p>
+                    </div>
+                    <div class="modal-footer" id="feedback-modal-footer">
+                        <!-- Response form will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Detail Modal -->
+            <div id="user-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>User Details</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body" id="user-modal-body">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
