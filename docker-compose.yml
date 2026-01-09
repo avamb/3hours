@@ -34,7 +34,8 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     ports:
-      - "8080"
+       - "18088:8080"
+
     healthcheck:
       test:
         - CMD
@@ -78,6 +79,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-mindsethappybot}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      
     restart: unless-stopped
     networks:
       - dokploy-network
@@ -88,3 +90,5 @@ volumes:
 networks:
   dokploy-network:
     external: true
+      
+

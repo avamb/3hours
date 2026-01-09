@@ -92,3 +92,5 @@ app/node_modules/
 *.bak
 *.bak2
 
+admin/static_old/
+alembic/versions_archive/

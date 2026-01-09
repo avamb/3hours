@@ -55,13 +55,21 @@ run_migrations() {
 case \"${1:-bot}\" in
     \"bot\")
         wait_for_postgres
-        run_migrations
+        if [ "${SKIP_MIGRATIONS:-0}" != "1" ]; then
+            run_migrations
+        else
+            echo "Skipping migrations (SKIP_MIGRATIONS=1)"
+        fi
         echo \"Starting bot...\"
         exec python -m src.bot.main
         ;;
     \"migrate\")
         wait_for_postgres
-        run_migrations
+        if [ "${SKIP_MIGRATIONS:-0}" != "1" ]; then
+            run_migrations
+        else
+            echo "Skipping migrations (SKIP_MIGRATIONS=1)"
+        fi
         echo \"Migration-only mode completed.\"
         ;;
     *)
