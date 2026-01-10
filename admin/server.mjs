@@ -85,6 +85,11 @@ async function serveStatic(req, res) {
 
     if (req.url === '/') {
         filePath = path.join(__dirname, 'static', 'index.html');
+    } else if (req.url === '/favicon.ico') {
+        // Return empty favicon to avoid 404 errors
+        res.writeHead(204);
+        res.end();
+        return true;
     } else if (req.url.startsWith('/static/')) {
         filePath = path.join(__dirname, 'static', req.url.replace('/static/', ''));
     } else {
