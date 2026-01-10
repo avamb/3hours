@@ -1,6 +1,6 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Session 346 - Fri, Jan 10, 2026
+## Session 347 - Fri, Jan 10, 2026
 
 ### Status
 - **All 147 features passing (100%)**
@@ -10,34 +10,26 @@
 ### Verification Tests Run
 Performed regression testing on 3 randomly selected features:
 
-1. **Feature 76: Statistics week/month views** - VERIFIED
-   - Analytics page shows comprehensive statistics
-   - User Funnel: Registered (10) → Onboarding (9) → First Moment (3) → Regular Use (2)
-   - Retention by Cohorts table with weekly data
-   - Activity Heatmap showing activity by day/hour (Wed 18:00 = 6 activities)
-   - Language Distribution: Russian 50%, English 40%, Ukrainian 10%
-   - Stats cards: 10 Total Users, 9 Onboarded, 1 Active (7d), 10% Retention Rate
+1. **Feature 79: Notification opt-out** - VERIFIED
+   - `notifications_enabled` field exists in users table (confirmed via database query)
+   - User details modal shows "Notifications: Enabled" status
+   - Setting is visible and manageable in admin panel
+   - Users can opt out of notifications (field stores true/false)
 
-2. **Feature 133: Knowledge Base page in admin panel** - VERIFIED
-   - Page loads correctly with upload form
-   - Fields: Title, Category, Tags (comma-separated)
-   - File upload button for TXT, PDF, MD files
-   - Status cards: Total, Indexed, Pending, Chunks
-   - Filter dropdown: All Statuses, Indexed, Pending, Error
-   - Table with columns: ID, Title, Type, Category, Status, Chunks, Usage, Created, Actions
+2. **Feature 92: Logging setup** - VERIFIED
+   - System Logs page fully functional
+   - Filter by level: All Levels, ERROR, WARNING, INFO, DEBUG
+   - Filter by source: api, bot, cache, database, knowledge, openai, scheduler
+   - Date range filters available
+   - 8 Total Logs visible with proper categorization
+   - INFO/ERROR/WARNING/DEBUG logs all captured correctly
 
-3. **Feature 119: User model with summary settings** - VERIFIED
-   - Database confirmed all required fields exist:
-     - daily_summary_enabled ✓
-     - weekly_summary_enabled ✓
-     - monthly_summary_enabled ✓
-     - is_blocked ✓
-     - detected_language ✓
-     - last_name ✓
-   - User details modal shows comprehensive user info:
-     - Address Form: Informal (ты) / Formal (Вы)
-     - Active Hours, Notification Interval
-     - Statistics: Total Moments, Streaks, Questions Sent/Answered, Response Rate
+3. **Feature 110: Dokploy-ready compose cleanup** - VERIFIED
+   - No `container_name` on any services (prevents conflicts during redeploy/rollback)
+   - PostgreSQL has no external port mapping (accessible only within compose network)
+   - Admin service uses proper `ports` directive (Dokploy-compatible)
+   - Services communicate via compose service names (postgres, admin, bot)
+   - Traefik labels configured for production domains
 
 ### System Health
 - Docker containers running:
@@ -51,13 +43,26 @@ Performed regression testing on 3 randomly selected features:
 - Console errors: Only favicon.ico 404 (cosmetic)
 
 ### Screenshots Captured
-- regression-session346-dashboard.png
-- regression-session346-knowledgebase.png
-- regression-session346-user-details.png
-- regression-session346-analytics.png
+- regression-session347-dashboard.png
+- regression-session347-logs.png
+- regression-session347-user-details.png
 
 ### Summary
 All 147 features remain passing. Project continues to be production-ready.
+
+---
+
+## Session 346 - Fri, Jan 10, 2026
+
+### Status
+- **All 147 features passing (100%)**
+- Regression testing completed successfully
+- No issues found
+
+### Verification Tests Run
+1. **Feature 76: Statistics week/month views** - VERIFIED
+2. **Feature 133: Knowledge Base page in admin panel** - VERIFIED
+3. **Feature 119: User model with summary settings** - VERIFIED
 
 ---
 
@@ -66,42 +71,17 @@ All 147 features remain passing. Project continues to be production-ready.
 ### Status
 - **All 147 features passing (100%)**
 - Regression testing completed successfully
-- No issues found
 
 ### Verification Tests Run
-Performed regression testing on 3 randomly selected features:
-
 1. **Feature 17: Statistics view** - VERIFIED
 2. **Feature 80: Language detection on start** - VERIFIED
 3. **Feature 102: Skip question functionality** - VERIFIED
 
 ---
 
-## Session 344 - Fri, Jan 10, 2026
-
-### Status
-- **All 147 features passing (100%)**
-- Regression testing completed successfully
-
-### Verification Tests Run
-1. **Feature 136: Analytics page** - VERIFIED
-2. **Feature 103: Follow-up question handling** - VERIFIED
-3. **Feature 109: Summary (weekly/monthly)** - VERIFIED
-
----
-
-## Session 343 - Fri, Jan 10, 2026
-
-### Status
-- **All 147 features passing (100%)**
-- Feature 147 (Comprehensive project verification) COMPLETED
-- Security issues found and fixed - removed hardcoded API keys from test files
-
----
-
 ## Previous Sessions Summary
 
-Sessions 339-343 were verification sessions confirming all features remain passing.
+Sessions 339-344 were verification sessions confirming all features remain passing.
 All 147 features have been implemented and verified end-to-end.
 
 The project is production-ready with:
