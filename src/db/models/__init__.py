@@ -6,6 +6,7 @@ from src.db.models.user_stats import UserStats
 from src.db.models.scheduled_notification import ScheduledNotification
 from src.db.models.question_template import QuestionTemplate
 from src.db.models.feedback import Feedback
+from src.db.models.system_log import SystemLog
 
 __all__ = [
     "User",
@@ -15,4 +16,5 @@ __all__ = [
     "ScheduledNotification",
     "QuestionTemplate",
     "Feedback",
+    "SystemLog",
 ]
