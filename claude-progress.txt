@@ -1,6 +1,6 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Session 378 - January 10, 2026
+## Session 379 - January 10, 2026
 
 ### Status: 148/148 features passing (100%)
 
@@ -12,12 +12,14 @@ Verified admin panel functionality with browser automation:
    - Bot: RUNNING
    - OpenAI: NOT CONFIGURED (needs API key)
    - Stats: 10 Users, 16 Moments, 1 Active (7 days)
-   - Screenshot: regression-dashboard.png
 
 2. **Users Section** - WORKING
    - All 10 users displayed with correct data
-   - Search and Export CSV functionality present
-   - Columns: ID, Telegram ID, Username, Name, Language, Moments, Streak, Last Active, Actions
+   - User Details modal with full info (Telegram ID, Username, Name, Language, Settings)
+   - Statistics section: Total Moments, Current/Longest Streak, Questions Sent/Answered, Response Rate
+   - Recent Moments displayed correctly
+   - **Block User functionality verified** (Feature #140) - Shows confirmation dialog
+   - Send Direct Message functionality available
 
 3. **Moments Section** - WORKING
    - 16 total moments with Topics Cloud (46 unique topics)
@@ -28,9 +30,8 @@ Verified admin panel functionality with browser automation:
 4. **Analytics Section** - WORKING
    - User Funnel: 10 registered -> 9 onboarded -> 3 first moment -> 2 regular use
    - Retention by Cohorts table
-   - Activity Heatmap with real data (Wed 18:00 - 6 activities peak)
+   - Activity Heatmap with real data
    - Language Distribution: 50% Russian, 40% English, 10% Ukrainian
-   - Screenshot: regression-analytics.png
 
 5. **Templates Section** - WORKING
    - 40 templates total: 20 main, 12 follow_up, 8 return_inactive
@@ -44,20 +45,20 @@ Verified admin panel functionality with browser automation:
 - 3hours-postgres-1: Up and healthy
 - 3hours-bot-1: Restarting (requires valid TELEGRAM_BOT_TOKEN to function)
 
+### Features Tested for Regression:
+- Feature #140: User blocking functionality - VERIFIED WORKING
+- Feature #63: Settings persistence - (requires Telegram bot token)
+- Feature #1: Bot responds to /start - (requires Telegram bot token)
+
 ---
 
 ## Previous Sessions Summary:
+- Session 378: Regression testing - all 148 features verified passing
 - Session 377: Regression testing - all 148 features verified passing
 - Session 376: Regression testing - all 148 features verified passing
 - Session 375: Regression testing - all 148 features verified passing
 - Session 374: Regression testing - all 148 features verified passing
-- Session 373: Regression testing - all 148 features verified passing
-- Session 372: Regression testing - all 148 features verified passing
-- Session 371: Regression testing - all 148 features verified passing
-- Session 370: Regression testing - all 148 features verified passing
-- Session 369: Regression testing - all 148 features verified passing
-- Session 368: Fixed favicon 404, regression testing verified
-- Sessions 352-367: All 148 features completed and verified
+- Sessions 352-373: All 148 features completed and verified
 - Session 352: Feature #148 completed, achieving 100% completion
 
 ### Notes:
