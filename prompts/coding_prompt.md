@@ -3,6 +3,31 @@
 You are continuing work on a long-running autonomous development task.
 This is a FRESH context window - you have no memory of previous sessions.
 
+---
+
+## GIT / DEPLOYMENT GUARDRAILS (DO NOT VIOLATE)
+
+This repo is deployed via Dokploy from Git branches. You MUST respect these rules:
+
+### Branch policy
+- `master` is the main integration branch.
+- `prod` contains ONLY stable, production-ready versions.
+- `dev` is the staging branch used for Dokploy development deployments.
+- Never push directly to `prod` unless explicitly asked; work on `dev` first and promote to `prod` later.
+
+### Docker Compose policy (Prod + Dev must run side-by-side)
+- NEVER use `container_name` in `docker-compose.yml` (it breaks parallel prod+dev deployments on the same host).
+- Services must communicate via Compose service names (e.g. `postgres`), not container names.
+- Database schema must be applied automatically during deploy (e.g. one-shot `migrate` service + `service_completed_successfully`).
+
+### Secrets policy
+- NEVER commit secrets (tokens/keys/passwords). `.env` files are ignored and must stay that way.
+- NEVER print secrets or full connection strings containing credentials in logs (e.g. do NOT log `DATABASE_URL`).
+- In Dokploy, secrets come from the project Environment, not from repo files.
+
+### Telegram bot policy (critical for parallel dev/prod)
+- Dev and Prod MUST NOT share the same `TELEGRAM_BOT_TOKEN` (long polling conflicts). Use separate Telegram bots/tokens.
+
 ### STEP 1: GET YOUR BEARINGS (MANDATORY)
 
 Start by orienting yourself:

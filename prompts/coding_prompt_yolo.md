@@ -14,6 +14,35 @@ Use for rapid prototyping only - not for production-quality development.
 You are continuing work on a long-running autonomous development task.
 This is a FRESH context window - you have no memory of previous sessions.
 
+---
+
+## GIT / DEPLOYMENT GUARDRAILS (DO NOT VIOLATE)
+
+These rules define how version control and deployments must work across projects:
+
+### Branch policy
+- `master` is the main integration branch.
+- `prod` contains ONLY stable, production-ready versions.
+- `dev` is the staging branch used for development deployments.
+- Never push directly to `prod` unless explicitly asked; work on `dev` first and promote to `prod` later.
+
+### Commit policy
+- Commit small, reviewable changes. Do not mix unrelated changes (e.g. infra + screenshots + feature) in one commit.
+- Avoid committing generated artifacts unless explicitly required.
+
+### Docker Compose policy (Prod + Dev must run side-by-side)
+- NEVER use `container_name` in `docker-compose.yml` (it breaks parallel prod+dev deployments on the same host).
+- Services must communicate via Compose service names (e.g. `postgres`), not container names.
+- Database schema must be applied automatically during deploy (e.g. one-shot `migrate` service + `service_completed_successfully`).
+
+### Secrets policy
+- NEVER commit secrets (tokens/keys/passwords). `.env` files must be ignored.
+- NEVER print secrets or full connection strings containing credentials in logs (e.g. do NOT log `DATABASE_URL`).
+- In deployment platforms (e.g. Dokploy), secrets come from project Environment, not from repo files.
+
+### Telegram bot policy (critical for parallel dev/prod)
+- Dev and Prod MUST NOT share the same `TELEGRAM_BOT_TOKEN` (long polling conflicts). Use separate Telegram bots/tokens.
+
 ### STEP 1: GET YOUR BEARINGS (MANDATORY)
 
 Start by orienting yourself:

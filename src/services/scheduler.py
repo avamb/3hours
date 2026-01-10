@@ -21,6 +21,7 @@ except ImportError:
 from src.db.database import get_session
 from src.db.models import User, ScheduledNotification, QuestionTemplate
 from src.bot.keyboards.inline import get_question_keyboard
+from src.services.conversation_log_service import ConversationLogService
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,7 @@ class NotificationScheduler:
         self.bot = bot
         self.scheduler = AsyncIOScheduler()
         self._last_questions: dict[int, str] = {}  # user_id -> last question
+        self._conversation_log = ConversationLogService()
         NotificationScheduler._instance = self
 
     @classmethod
@@ -229,6 +231,12 @@ class NotificationScheduler:
                     reply_markup=get_question_keyboard(),
                 )
                 logger.info(f"Sent question to user {user.telegram_id}")
+                await self._conversation_log.log(
+                    telegram_id=user.telegram_id,
+                    message_type="bot_question",
+                    content=question,
+                    metadata={"source": "scheduled"},
+                )
 
                 # Update stats
                 from src.services.stats_service import StatsService
@@ -293,6 +301,12 @@ class NotificationScheduler:
                     reply_markup=get_question_keyboard(),
                 )
                 logger.info(f"Sent first question after onboarding to user {telegram_id}")
+                await self._conversation_log.log(
+                    telegram_id=telegram_id,
+                    message_type="bot_question",
+                    content=question,
+                    metadata={"source": "onboarding"},
+                )
 
                 # Update stats
                 from src.services.stats_service import StatsService

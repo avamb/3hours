@@ -6,10 +6,10 @@
 // Mock configuration structure (as would be with env variables)
 const config = {
     // Telegram Bot Token - required for bot operation
-    TELEGRAM_BOT_TOKEN: '7805611571:AAF59MdS0N3By7mMq_O53Wo8LjYLwfXVrBY',
+    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE',
 
     // OpenAI API Key - required for AI-powered responses
-    OPENAI_API_KEY: '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',
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'YOUR_OPENAI_API_KEY_HERE',
 
     // Database URL - optional (using file storage for now)
     DATABASE_URL: null, // Will be PostgreSQL connection string when DB is enabled

@@ -397,7 +397,9 @@ async def callback_moment_delete(callback: CallbackQuery) -> None:
 async def callback_dialog_exit(callback: CallbackQuery) -> None:
     """Exit dialog mode"""
     from src.bot.keyboards.reply import get_main_menu_keyboard
+    from src.services.dialog_service import DialogService
 
+    DialogService.get_instance().end_dialog(callback.from_user.id)
     await callback.message.answer(
         "Вернулись в обычный режим. Чем могу помочь? 😊",
         reply_markup=get_main_menu_keyboard()
@@ -505,7 +507,9 @@ async def callback_menu_settings(callback: CallbackQuery) -> None:
 async def callback_menu_talk(callback: CallbackQuery) -> None:
     """Start free dialog mode"""
     from src.bot.keyboards.inline import get_dialog_keyboard
+    from src.services.dialog_service import DialogService
 
+    DialogService.get_instance().start_dialog(callback.from_user.id)
     dialog_intro = (
         "💬 <b>Режим диалога</b>\n\n"
         "Я готов выслушать тебя. Расскажи, что у тебя на душе. "
