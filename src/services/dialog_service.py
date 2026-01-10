@@ -18,10 +18,19 @@ logger = logging.getLogger(__name__)
 class DialogService:
     """Service for managing free dialog sessions"""
 
+    _instance: "DialogService | None" = None
+
     def __init__(self):
         self.personalization_service = PersonalizationService()
         # In-memory state for active dialog sessions
         self._active_dialogs: dict[int, bool] = {}  # telegram_id -> is_active
+
+    @classmethod
+    def get_instance(cls) -> "DialogService":
+        """Get singleton instance to preserve in-memory dialog state within process."""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
 
     def is_in_dialog(self, telegram_id: int) -> bool:
         """Check if user is in free dialog mode"""
@@ -101,7 +110,7 @@ class DialogService:
                 user_id=user.id,
                 message_type=message_type,
                 content=content,
-                metadata=metadata,
+                message_metadata=metadata,
             )
             session.add(conversation)
             await session.commit()

@@ -11,9 +11,13 @@ from src.services.moment_service import MomentService
 from src.services.dialog_service import DialogService
 from src.services.speech_service import SpeechToTextService
 from src.services.personalization_service import PersonalizationService
+from src.services.conversation_log_service import ConversationLogService
 
 logger = logging.getLogger(__name__)
 router = Router(name="messages")
+
+dialog_service = DialogService.get_instance()
+conversation_log = ConversationLogService()
 
 
 @router.message(F.text == "📖 Мои моменты")
@@ -78,6 +82,13 @@ async def handle_voice_message(message: Message) -> None:
         moment_service = MomentService()
         personalization_service = PersonalizationService()
 
+        await conversation_log.log(
+            telegram_id=message.from_user.id,
+            message_type="user_response",
+            content=transcribed_text,
+            metadata={"source": "voice", "voice_file_id": voice.file_id},
+        )
+
         moment = await moment_service.create_moment(
             telegram_id=message.from_user.id,
             content=transcribed_text,
@@ -94,6 +105,13 @@ async def handle_voice_message(message: Message) -> None:
         await message.answer(
             f"✅ Распознано: «{transcribed_text}»\n\n{response}",
             reply_markup=get_main_menu_keyboard()
+        )
+
+        await conversation_log.log(
+            telegram_id=message.from_user.id,
+            message_type="bot_reply",
+            content=response,
+            metadata={"source": "voice"},
         )
 
     except Exception as e:
@@ -138,8 +156,24 @@ async def handle_text_message(message: Message) -> None:
         )
         return
 
-    # Check if user is in dialog mode
-    # For now, treat all text as potential moments
+    # Dialog mode: route to DialogService (persists to conversations)
+    if dialog_service.is_in_dialog(message.from_user.id):
+        from src.bot.keyboards.inline import get_dialog_keyboard
+        response = await dialog_service.process_dialog_message(
+            telegram_id=message.from_user.id,
+            message=text,
+        )
+        await message.answer(response, reply_markup=get_dialog_keyboard())
+        return
+
+    # Normal mode: log to conversations for admin visibility
+    await conversation_log.log(
+        telegram_id=message.from_user.id,
+        message_type="user_response",
+        content=text,
+        metadata={"source": "text"},
+    )
+
     moment_service = MomentService()
     personalization_service = PersonalizationService()
 
@@ -168,6 +202,12 @@ async def handle_text_message(message: Message) -> None:
             )
 
         await message.answer(response, reply_markup=get_main_menu_keyboard())
+        await conversation_log.log(
+            telegram_id=message.from_user.id,
+            message_type="bot_reply",
+            content=response,
+            metadata={"source": "text", "kind": "supportive" if is_negative else "other"},
+        )
     else:
         # Save as positive moment
         moment = await moment_service.create_moment(
@@ -183,3 +223,9 @@ async def handle_text_message(message: Message) -> None:
         )
 
         await message.answer(response, reply_markup=get_main_menu_keyboard())
+        await conversation_log.log(
+            telegram_id=message.from_user.id,
+            message_type="bot_reply",
+            content=response,
+            metadata={"source": "text", "kind": "positive"},
+        )
