@@ -82,17 +82,21 @@ function parseQuery(url) {
 
 // Serve static files
 async function serveStatic(req, res) {
-    let filePath = path.join(__dirname, 'static', req.url === '/' ? 'index.html' : req.url.replace('/static/', ''));
+    const url = new URL(req.url, 'http://localhost');
+    const pathname = url.pathname;
 
-    if (req.url === '/') {
-        filePath = path.join(__dirname, 'static', 'index.html');
-    } else if (req.url === '/favicon.ico') {
-        // Return empty favicon to avoid 404 errors
+    // Return empty favicon to avoid 404 errors
+    if (pathname === '/favicon.ico') {
         res.writeHead(204);
         res.end();
         return true;
-    } else if (req.url.startsWith('/static/')) {
-        filePath = path.join(__dirname, 'static', req.url.replace('/static/', ''));
+    }
+
+    let filePath;
+    if (pathname === '/') {
+        filePath = path.join(__dirname, 'static', 'index.html');
+    } else if (pathname.startsWith('/static/')) {
+        filePath = path.join(__dirname, 'static', pathname.replace('/static/', ''));
     } else {
         return false;
     }
@@ -100,7 +104,12 @@ async function serveStatic(req, res) {
     try {
         const content = await fs.promises.readFile(filePath);
         const ext = path.extname(filePath);
-        res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain' });
+        const cacheControl = ext === '.html' ? 'no-store' : 'no-cache';
+        res.writeHead(200, {
+            'Content-Type': mimeTypes[ext] || 'text/plain',
+            'Cache-Control': cacheControl,
+            'X-Content-Type-Options': 'nosniff',
+        });
         res.end(content);
         return true;
     } catch (e) {
