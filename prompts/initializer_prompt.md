@@ -3,6 +3,37 @@
 You are the FIRST agent in a long-running autonomous development process.
 Your job is to set up the foundation for all future coding agents.
 
+---
+
+## GLOBAL VERSION CONTROL RULES (APPLY TO ALL PROJECTS)
+
+### Branch policy
+- Create these branches (or their equivalents) and keep them consistent:
+  - `master`: main integration branch
+  - `dev`: staging branch (auto-deployed to a dev environment)
+  - `prod`: production branch (stable only)
+- Promote changes: `master` -> `dev` (staging) -> `prod` (production).
+- Never push directly to `prod` unless explicitly requested.
+
+### Tags / releases
+- Tag production deployments as `prod-stable-YYYY-MM-DD` (or SemVer tags if the project uses SemVer).
+
+### Repo hygiene
+- Add `.gitignore` early. Never commit:
+  - `.env*` and secrets
+  - databases/dumps (`*.db`, `*.sql`, backups)
+  - `node_modules/`, build artifacts, logs
+- Avoid committing large generated artifacts unless explicitly required.
+
+### Deploy safety (Docker / Dokploy / multi-environment)
+- NEVER use `container_name` in `docker-compose.yml` (prod and dev must be able to run side-by-side on the same host).
+- Services must communicate via Compose service names.
+- Database migrations must be runnable automatically and repeatably during deploy (no manual “exec into container” steps).
+
+### Secrets policy
+- Never print secrets or connection strings with passwords in logs.
+- Deployments must get secrets from the platform Environment/Secrets store, not from repo files.
+
 ### FIRST: Read the Project Specification
 
 Start by reading `app_spec.txt` in your working directory. This file contains
