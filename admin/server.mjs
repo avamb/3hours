@@ -2617,7 +2617,7 @@ const server = http.createServer(async (req, res) => {
 
     try {
         // Try serving static files first
-        if (req.method === 'GET' && (req.url === '/' || req.url.startsWith('/static/'))) {
+        if (req.method === 'GET' && (req.url === '/' || req.url.startsWith('/static/') || req.url === '/favicon.ico')) {
             const served = await serveStatic(req, res);
             if (served) return;
         }
