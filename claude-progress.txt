@@ -1,5 +1,49 @@
 # MINDSETHAPPYBOT Progress Notes
 
+## Session 352 - January 10, 2026
+
+### Issue Investigated
+Feature #148: "запусти бота; он не отзывается и не работает" (launch the bot; it doesn't respond and doesn't work)
+
+### Root Cause Found
+The `docker/entrypoint.sh` script had incorrectly escaped quotes (`\"`) throughout the file. This caused the bash script to fail when the Docker container started, preventing the bot from launching.
+
+### Fix Applied
+Fixed all backslash-escaped quotes in `docker/entrypoint.sh`:
+- Line 34: `echo \"PostgreSQL is ready!\"` → `echo "PostgreSQL is ready!"`
+- Line 38: `echo \"Attempt ...\"` → `echo "Attempt ..."`
+- Line 43: `echo \"ERROR: ...\"` → `echo "ERROR: ..."`
+- Line 49-51: Fixed migration messages
+- Line 55-77: Fixed case statement patterns and all remaining echo statements
+
+### Verification
+- Ran `bash -n docker/entrypoint.sh` - syntax check passed
+- Committed fix: "Fix entrypoint.sh: remove incorrectly escaped quotes"
+- Pushed to dev branch
+
+### Current Status
+- Feature #148 is marked as in_progress
+- The fix has been pushed to the dev branch
+- Dokploy should automatically rebuild and redeploy the container
+- After deployment, the bot should start correctly
+
+### Next Steps
+1. Wait for Dokploy to redeploy the bot container
+2. Test the bot by sending /start command in Telegram
+3. If bot responds, mark feature #148 as passing
+
+### Feature Completion
+- 147/148 features passing (99.3%)
+- Feature #148 pending verification after deployment
+
+### Notes
+- The admin panel is accessible at https://3hours.andreevmaster.com
+- Admin credentials are set via Dokploy environment variables (not the default .env.example values)
+- The bot uses long polling with aiogram 3.x
+- PostgreSQL with pgvector is used for storing user data and embeddings
+
+---
+
 ## Session 351 - Sat, Jan 11, 2026
 
 ### Status
@@ -40,37 +84,11 @@ Performed regression testing on 3 randomly selected features:
 - Database: CONNECTED (10 MB) - mindsethappybot
 - No console errors
 
-### Screenshots Captured
-- regression-session351-dashboard.png
-- regression-session351-user-details.png
-- regression-session351-moments.png
-- regression-session351-analytics.png
-- regression-session351-templates.png
-
-### Summary
-All 147 features remain passing. Project continues to be production-ready.
-
----
-
-## Session 350 - Sat, Jan 11, 2026
-
-### Status
-- **All 147 features passing (100%)**
-- Regression testing completed successfully
-- No issues found
-
-### Verification Tests Run
-Performed regression testing on 3 randomly selected features:
-
-1. **Feature 116: Timezone-aware weekly/monthly summaries** - VERIFIED
-2. **Feature 76: Statistics week/month views** - VERIFIED
-3. **Feature 59: Concurrent message handling** - VERIFIED
-
 ---
 
 ## Previous Sessions Summary
 
-Sessions 339-350 were verification sessions confirming all features remain passing.
+Sessions 339-351 were verification sessions confirming all features remain passing.
 All 147 features have been implemented and verified end-to-end.
 
 The project is production-ready with:
