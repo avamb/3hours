@@ -11,6 +11,7 @@ from sqlalchemy import select
 from src.config import get_settings
 from src.db.database import get_session
 from src.db.models import User, Moment
+from src.utils.text_filters import ABROAD_PHRASE_RULE_RU, replace_abroad_phrases
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,9 @@ class PersonalizationService:
 Ответь коротко (1-2 предложения), тепло и поддерживающе.
 Используй обращение на «{address}».
 Используй подходящие эмодзи для позитива.
-Не задавай вопросов, просто поддержи.""",
+Не задавай вопросов, просто поддержи.
+
+{ABROAD_PHRASE_RULE_RU}""",
                     },
                     {
                         "role": "user",
@@ -62,7 +65,7 @@ class PersonalizationService:
                 temperature=0.7,
             )
 
-            return response.choices[0].message.content.strip()
+            return replace_abroad_phrases(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate response: {e}")
@@ -152,6 +155,8 @@ class PersonalizationService:
 Используй обращение на «{address}».
 Будь тёплым, но не навязчивым. Используй подходящие эмодзи.
 
+{ABROAD_PHRASE_RULE_RU}
+
 Прошлые хорошие моменты пользователя:
 {past_moments_text}""",
                     },
@@ -164,7 +169,7 @@ class PersonalizationService:
                 temperature=0.7,
             )
 
-            return response.choices[0].message.content.strip()
+            return replace_abroad_phrases(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate supportive response: {e}")
@@ -199,7 +204,9 @@ class PersonalizationService:
 Пользователь делится тем, что ему сейчас не очень хорошо.
 Прояви понимание и поддержку. Не навязывай позитив.
 Используй обращение на «{address}».
-Ответь коротко (2-3 предложения), тепло и с эмпатией.""",
+Ответь коротко (2-3 предложения), тепло и с эмпатией.
+
+{ABROAD_PHRASE_RULE_RU}""",
                     },
                     {"role": "user", "content": text},
                 ],
@@ -207,7 +214,7 @@ class PersonalizationService:
                 temperature=0.7,
             )
 
-            return response.choices[0].message.content.strip()
+            return replace_abroad_phrases(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate empathetic response: {e}")
@@ -242,6 +249,8 @@ class PersonalizationService:
 4. Будь тёплым и поддерживающим
 5. Используй обращение на «{address}»
 
+{ABROAD_PHRASE_RULE_RU}
+
 Помни: ты не психолог и не даёшь профессиональных советов. Ты просто друг, который слушает.""",
                 },
             ]
@@ -258,7 +267,7 @@ class PersonalizationService:
                 temperature=0.7,
             )
 
-            return response.choices[0].message.content.strip()
+            return replace_abroad_phrases(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate dialog response: {e}")

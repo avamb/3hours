@@ -3,10 +3,10 @@
  * Full implementation for testing bot features
  */
 
-const BOT_TOKEN = '7805611571:AAF59MdS0N3By7mMq_O53Wo8LjYLwfXVrBY';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
 const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 // OpenAI API configuration
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'YOUR_OPENAI_API_KEY_HERE';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 

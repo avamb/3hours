@@ -31,41 +31,49 @@ try:
 except Exception:
     sys.exit(1)
 " 2>/dev/null; then
-            echo \"PostgreSQL is ready!\"
+            echo "PostgreSQL is ready!"
             return 0
         fi
 
-        echo \"Attempt $attempt/$max_attempts: PostgreSQL not ready, waiting...\"
+        echo "Attempt $attempt/$max_attempts: PostgreSQL not ready, waiting..."
         sleep 2
         attempt=$((attempt + 1))
     done
 
-    echo \"ERROR: PostgreSQL did not become ready in time\"
+    echo "ERROR: PostgreSQL did not become ready in time"
     exit 1
 }
 
 # Function to run migrations
 run_migrations() {
-    echo \"Running database migrations...\"
+    echo "Running database migrations..."
     python -m alembic upgrade head
-    echo \"Migrations completed successfully!\"
+    echo "Migrations completed successfully!"
 }
 
 # Main logic
-case \"${1:-bot}\" in
-    \"bot\")
+case "${1:-bot}" in
+    "bot")
         wait_for_postgres
-        run_migrations
-        echo \"Starting bot...\"
+        if [ "${SKIP_MIGRATIONS:-0}" != "1" ]; then
+            run_migrations
+        else
+            echo "Skipping migrations (SKIP_MIGRATIONS=1)"
+        fi
+        echo "Starting bot..."
         exec python -m src.bot.main
         ;;
-    \"migrate\")
+    "migrate")
         wait_for_postgres
-        run_migrations
-        echo \"Migration-only mode completed.\"
+        if [ "${SKIP_MIGRATIONS:-0}" != "1" ]; then
+            run_migrations
+        else
+            echo "Skipping migrations (SKIP_MIGRATIONS=1)"
+        fi
+        echo "Migration-only mode completed."
         ;;
     *)
         # Pass through any other command
-        exec \"$@\"
+        exec "$@"
         ;;
 esac

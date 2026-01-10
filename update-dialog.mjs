@@ -10,7 +10,7 @@ let content = readFileSync(filePath, 'utf8');
 // 1. Add OpenAI API key constant after BOT_TOKEN
 const openaiConstant = `
 // OpenAI API configuration
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'YOUR_OPENAI_API_KEY_HERE';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 `;
 

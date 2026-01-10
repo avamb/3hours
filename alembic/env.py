@@ -13,7 +13,7 @@ from alembic import context
 
 # Import models to ensure they're registered with Base
 from src.db.database import Base
-from src.db.models import User, Moment, Conversation, UserStats, ScheduledNotification, QuestionTemplate
+from src.db.models import User, Moment, Conversation, UserStats, ScheduledNotification, QuestionTemplate, Feedback, SystemLog
 from src.config import get_settings
 
 # this is the Alembic Config object

@@ -233,6 +233,7 @@ async def cmd_stats(message: Message) -> None:
 async def cmd_talk(message: Message) -> None:
     """Handle /talk command - start free dialog mode"""
     from src.bot.keyboards.inline import get_dialog_keyboard
+    from src.services.dialog_service import DialogService
 
     dialog_intro = (
         "💬 <b>Режим диалога</b>\n\n"
@@ -241,6 +242,7 @@ async def cmd_talk(message: Message) -> None:
         "но помни — все решения принимаешь ты сам. 💝\n\n"
         "Чтобы выйти из режима диалога, нажми кнопку ниже."
     )
+    DialogService.get_instance().start_dialog(message.from_user.id)
     await message.answer(dialog_intro, reply_markup=get_dialog_keyboard())
 
 

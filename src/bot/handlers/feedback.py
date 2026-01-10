@@ -208,27 +208,40 @@ async def handle_feedback_text(message: Message) -> bool:
     if not state or not state.awaiting_content:
         return False
 
-    # User is submitting feedback content
-    state.content = message.text.strip()
-    state.awaiting_content = False
-    set_feedback_state(message.from_user.id, state)
+    content = message.text.strip()
+    if not content:
+        await message.answer("🤔 Кажется, сообщение пустое. Напиши текстом, что именно ты хотел(а) сообщить.")
+        return True
 
-    # Ask for confirmation
-    category_names = {
-        "suggestion": "💡 Идея/предложение",
-        "bug": "🐛 Ошибка",
-        "other": "💬 Другое"
-    }
-    category_name = category_names.get(state.category, "💬 Другое")
-
-    preview = state.content[:200] + "..." if len(state.content) > 200 else state.content
-
-    await message.answer(
-        f"<b>Подтверди отправку:</b>\n\n"
-        f"📂 Категория: {category_name}\n"
-        f"📝 Сообщение:\n{preview}\n\n"
-        f"Отправить?",
-        reply_markup=get_feedback_confirm_keyboard()
+    # Save immediately (no confirmation) to avoid lost in-memory state on restarts
+    feedback_service = FeedbackService()
+    feedback = await feedback_service.submit_feedback(
+        telegram_id=message.from_user.id,
+        content=content,
+        category=state.category or "other",
     )
+
+    clear_feedback_state(message.from_user.id)
+
+    category_names = {
+        "suggestion": "Идея/предложение",
+        "bug": "Ошибка",
+        "other": "Другое",
+    }
+    category_name = category_names.get(state.category, "Другое")
+
+    if feedback:
+        await message.answer(
+            f"✅ <b>Спасибо за отзыв!</b>\n\n"
+            f"📂 Категория: {category_name}\n"
+            f"📝 Сообщение: {content[:100]}{'...' if len(content) > 100 else ''}\n\n"
+            f"Сохранил — скоро посмотрим. 💝",
+            reply_markup=get_feedback_thanks_keyboard(),
+        )
+    else:
+        await message.answer(
+            "😔 Не удалось сохранить отзыв. Попробуй позже.",
+            reply_markup=get_feedback_thanks_keyboard(),
+        )
 
     return True
