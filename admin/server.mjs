@@ -1495,6 +1495,11 @@ const routes = {
         const query = parseQuery(req.url);
         const limit = Math.min(parseInt(query.limit) || 100, 500);
 
+        if (!Number.isFinite(userId)) {
+            sendJson(res, { detail: 'Invalid user id' }, 400);
+            return;
+        }
+
         const client = await pool.connect();
         try {
             // Get user info
@@ -2548,12 +2553,18 @@ const routes = {
             const result = await client.query(`
                 SELECT DISTINCT ON (u.id)
                     u.id, u.telegram_id, u.username, u.first_name,
-                    COUNT(c.id) as message_count,
-                    MAX(c.created_at) as last_message
+                    cnt.message_count,
+                    c.created_at as last_message_at,
+                    c.content as last_message_content,
+                    c.message_type as last_message_type
                 FROM users u
+                INNER JOIN (
+                    SELECT user_id, COUNT(*) as message_count
+                    FROM conversations
+                    GROUP BY user_id
+                ) cnt ON cnt.user_id = u.id
                 INNER JOIN conversations c ON u.id = c.user_id
-                GROUP BY u.id, u.telegram_id, u.username, u.first_name
-                ORDER BY u.id, MAX(c.created_at) DESC
+                ORDER BY u.id, c.created_at DESC
                 LIMIT 100
             `);
 
@@ -2564,7 +2575,9 @@ const routes = {
                     username: row.username,
                     first_name: row.first_name,
                     message_count: parseInt(row.message_count),
-                    last_message: row.last_message?.toISOString(),
+                    last_message_at: row.last_message_at?.toISOString(),
+                    last_message_content: row.last_message_content,
+                    last_message_type: row.last_message_type,
                 })),
             });
         } finally {

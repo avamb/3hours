@@ -1579,24 +1579,39 @@ function renderDialogUsersList(search = '') {
         return;
     }
 
-    container.innerHTML = filteredUsers.map(user => `
-        <div class="dialog-user-item ${currentDialogUserId === user.user_id ? 'active' : ''}"
-             onclick="selectDialogUser(${user.user_id}, '${escapeHtml(user.username || user.first_name || 'User #' + user.telegram_id)}')">
-            <div class="dialog-user-name">${escapeHtml(user.username || user.first_name || 'User #' + user.telegram_id)}</div>
-            <div class="dialog-user-preview">${escapeHtml(user.last_message || 'No messages')}</div>
-            <div class="dialog-user-time">${user.message_count} messages • ${formatRelativeTime(user.last_activity)}</div>
-        </div>
-    `).join('');
+    container.innerHTML = filteredUsers.map(user => {
+        const displayName = escapeHtml(user.username || user.first_name || ('User #' + user.telegram_id));
+        const userId = Number(user.id);
+        const preview = escapeHtml(user.last_message_content || '');
+        const lastAt = user.last_message_at || user.last_message || null;
+        const timeText = lastAt ? formatRelativeTime(lastAt) : '-';
+
+        return `
+            <div class="dialog-user-item ${currentDialogUserId === userId ? 'active' : ''}"
+                 onclick="selectDialogUser(${userId}, '${displayName}', this)">
+                <div class="dialog-user-name">${displayName}</div>
+                <div class="dialog-user-preview">${preview || '-'}</div>
+                <div class="dialog-user-time">${user.message_count} messages • ${timeText}</div>
+            </div>
+        `;
+    }).join('');
 }
 
-async function selectDialogUser(userId, userName) {
-    currentDialogUserId = userId;
+async function selectDialogUser(userId, userName, el) {
+    const id = Number(userId);
+    if (!Number.isFinite(id)) {
+        const container = document.getElementById('dialogs-messages');
+        container.innerHTML = '<p class="loading">Error: Invalid user id</p>';
+        return;
+    }
+
+    currentDialogUserId = id;
 
     // Update user list UI
     document.querySelectorAll('.dialog-user-item').forEach(item => {
         item.classList.remove('active');
     });
-    event.currentTarget.classList.add('active');
+    if (el) el.classList.add('active');
 
     // Update header
     document.getElementById('dialogs-header').innerHTML = `
@@ -1604,7 +1619,7 @@ async function selectDialogUser(userId, userName) {
     `;
 
     // Load messages for this user
-    await loadUserDialog(userId);
+    await loadUserDialog(id);
 }
 
 async function loadUserDialog(userId) {
