@@ -18,6 +18,7 @@ const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 
 // Parse database URL
 const dbConfig = new URL(DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://'));
@@ -877,7 +878,7 @@ const routes = {
 
         // Check OpenAI status (we can't directly check without making API call)
         // Instead, check if API key is configured
-        let openaiStatus = TELEGRAM_BOT_TOKEN ? 'configured' : 'not_configured';
+        let openaiStatus = OPENAI_API_KEY ? 'configured' : 'not_configured';
 
         sendJson(res, {
             status: dbStatus === 'healthy' ? 'healthy' : 'unhealthy',
