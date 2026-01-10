@@ -1,6 +1,6 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Session 374 - January 10, 2026
+## Session 375 - January 10, 2026
 
 ### Status: 148/148 features passing (100%)
 
@@ -12,31 +12,31 @@ Verified admin panel functionality with browser automation:
    - Bot: RUNNING
    - OpenAI: NOT CONFIGURED (needs API key)
    - Stats: 10 Users, 16 Moments, 1 Active (7 days)
-   - Screenshot: regression-test-dashboard.png
+   - Screenshot: regression-dashboard.png
 
 2. **Users Section** - WORKING
    - All 10 users displayed with correct data
    - Search and Export CSV functionality present
-   - Screenshot: regression-test-users.png
+   - Screenshot: regression-users.png
 
 3. **Moments Section** - WORKING
    - 16 total moments with Topics Cloud (46 unique topics)
    - Filtering by user, date range, mood score
    - Avg Mood: 0.58, 3 unique users
-   - Screenshot: regression-test-moments.png
+   - Screenshot: regression-moments.png
 
 4. **Analytics Section** - WORKING
    - User Funnel: 10 registered → 9 onboarded → 3 first moment → 2 regular use
    - Retention by Cohorts table
    - Activity Heatmap with real data (Wed 18:00 - 6 activities)
    - Language Distribution: 50% Russian, 40% English, 10% Ukrainian
-   - Screenshot: regression-test-analytics.png
+   - Screenshot: regression-analytics.png
 
 5. **Templates Section** - WORKING
    - 40 templates total: 20 main, 12 follow_up, 8 return_inactive
    - Supports ru/en languages and formal/informal (Ты/Вы) forms
    - Create, Edit, Delete functionality available
-   - Screenshot: regression-test-templates.png
+   - Screenshot: regression-templates.png
 
 ### Console Errors: NONE
 
@@ -48,6 +48,7 @@ Verified admin panel functionality with browser automation:
 ---
 
 ## Previous Sessions Summary:
+- Session 374: Regression testing - all 148 features verified passing
 - Session 373: Regression testing - all 148 features verified passing
 - Session 372: Regression testing - all 148 features verified passing
 - Session 371: Regression testing - all 148 features verified passing
