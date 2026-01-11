@@ -34,7 +34,7 @@ class SpeechToTextService:
 
         Args:
             bot: Telegram bot instance
-            file_path: Telegram file path
+            file_path: Telegram file path (from file.file_path)
 
         Returns:
             Transcribed text or None if failed
@@ -42,9 +42,8 @@ class SpeechToTextService:
         temp_file = None
 
         try:
-            # Download voice file
-            file = await bot.get_file(file_path)
-            file_url = f"https://api.telegram.org/file/bot{bot.token}/{file.file_path}"
+            # Build download URL from file path
+            file_url = f"https://api.telegram.org/file/bot{bot.token}/{file_path}"
 
             # Download to temp file
             async with aiohttp.ClientSession() as session:
