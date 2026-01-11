@@ -19,6 +19,7 @@ class User(Base):
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, index=True)
     username: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     first_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    gender: Mapped[Optional[str]] = mapped_column(String(10), nullable=True, default="unknown")  # male, female, unknown
     language_code: Mapped[str] = mapped_column(String(10), default="ru")
     formal_address: Mapped[bool] = mapped_column(Boolean, default=False)  # True = вы, False = ты
     active_hours_start: Mapped[time] = mapped_column(Time, default=time(9, 0))

@@ -380,7 +380,7 @@ const routes = {
 
             const result = await client.query(`
                 SELECT
-                    u.id, u.telegram_id, u.username, u.first_name,
+                    u.id, u.telegram_id, u.username, u.first_name, u.gender,
                     u.language_code, u.notifications_enabled, u.created_at,
                     u.last_active_at, u.onboarding_completed, u.is_blocked,
                     COALESCE(s.total_moments, 0) as total_moments,
@@ -405,6 +405,7 @@ const routes = {
                     telegram_id: row.telegram_id.toString(),
                     username: row.username,
                     first_name: row.first_name,
+                    gender: row.gender || 'unknown',
                     language_code: row.language_code,
                     notifications_enabled: row.notifications_enabled,
                     created_at: row.created_at?.toISOString(),
@@ -526,7 +527,7 @@ const routes = {
         try {
             const result = await client.query(`
                 SELECT
-                    u.id, u.telegram_id, u.username, u.first_name,
+                    u.id, u.telegram_id, u.username, u.first_name, u.gender,
                     u.language_code, u.formal_address, u.active_hours_start,
                     u.active_hours_end, u.notification_interval_hours,
                     u.notifications_enabled, u.timezone, u.created_at,
@@ -576,6 +577,7 @@ const routes = {
                 telegram_id: user.telegram_id.toString(),
                 username: user.username,
                 first_name: user.first_name,
+                gender: user.gender || 'unknown',
                 language_code: user.language_code,
                 formal_address: user.formal_address,
                 active_hours_start: user.active_hours_start?.toString(),

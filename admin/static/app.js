@@ -66,6 +66,13 @@ function formatNumber(num) {
     return num.toLocaleString();
 }
 
+function formatGender(gender) {
+    if (!gender || gender === 'unknown') return '-';
+    if (gender === 'male') return '👨 M';
+    if (gender === 'female') return '👩 F';
+    return gender;
+}
+
 // Authentication
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -275,7 +282,7 @@ function getUsersFilters() {
 async function loadUsers(offset = 0) {
     usersOffset = offset;
     const tbody = document.querySelector('#users-table tbody');
-    tbody.innerHTML = '<tr><td colspan="9" class="loading">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="loading">Loading...</td></tr>';
 
     try {
         const filters = getUsersFilters();
@@ -289,7 +296,7 @@ async function loadUsers(offset = 0) {
         const { users, total } = await api(`/users?${params}`);
 
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="loading">No users found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="loading">No users found</td></tr>';
         } else {
             tbody.innerHTML = users.map(user => `
                 <tr>
@@ -297,6 +304,7 @@ async function loadUsers(offset = 0) {
                     <td>${user.telegram_id}</td>
                     <td>${user.username || '-'}</td>
                     <td>${user.first_name || '-'}</td>
+                    <td>${formatGender(user.gender)}</td>
                     <td>${user.language_code}</td>
                     <td>${user.total_moments}</td>
                     <td>${user.current_streak}</td>
@@ -311,7 +319,7 @@ async function loadUsers(offset = 0) {
         renderPagination('users-pagination', total, offset, pageSize, loadUsers);
     } catch (error) {
         console.error('Error loading users:', error);
-        tbody.innerHTML = `<tr><td colspan="9" class="loading">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="loading">Error: ${error.message}</td></tr>`;
     }
 }
 
@@ -363,6 +371,10 @@ async function showUserDetail(userId) {
                 <div class="detail-item">
                     <div class="detail-label">Name</div>
                     <div class="detail-value">${user.first_name || '-'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Gender</div>
+                    <div class="detail-value">${formatGender(user.gender)}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Language</div>

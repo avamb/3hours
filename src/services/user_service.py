@@ -17,6 +17,7 @@ except ImportError:
 
 from src.db.database import get_session
 from src.db.models import User, UserStats, ScheduledNotification
+from src.utils.gender_detection import detect_user_gender
 
 logger = logging.getLogger(__name__)
 
@@ -72,14 +73,34 @@ class UserService:
             if user:
                 # Update last active
                 user.last_active_at = datetime.utcnow()
+
+                # Update gender if not set or unknown
+                if not user.gender or user.gender == 'unknown':
+                    detected_gender = detect_user_gender(
+                        first_name=telegram_user.first_name,
+                        last_name=getattr(telegram_user, 'last_name', None),
+                        username=telegram_user.username
+                    )
+                    if detected_gender != 'unknown':
+                        user.gender = detected_gender
+                        logger.info(f"Updated gender for user {user.telegram_id}: {detected_gender}")
+
                 await session.commit()
                 return user
+
+            # Detect gender from Telegram user info
+            detected_gender = detect_user_gender(
+                first_name=telegram_user.first_name,
+                last_name=getattr(telegram_user, 'last_name', None),
+                username=telegram_user.username
+            )
 
             # Create new user
             user = User(
                 telegram_id=telegram_user.id,
                 username=telegram_user.username,
                 first_name=telegram_user.first_name or "Друг",
+                gender=detected_gender,
                 language_code=telegram_user.language_code or "ru",
             )
             session.add(user)
@@ -90,7 +111,7 @@ class UserService:
             session.add(stats)
 
             await session.commit()
-            logger.info(f"Created new user: {user.telegram_id}")
+            logger.info(f"Created new user: {user.telegram_id} (gender: {detected_gender})")
 
             return user
 
