@@ -2,6 +2,56 @@
 
 ## Current Status: 172/172 features passing (100% complete!)
 
+## Session 509 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 features to ensure system stability:
+
+1. **Feature #124 - Weekly Summary feature** ✅
+   - SummaryService properly implemented in `src/services/summary_service.py`
+   - Generates personalized weekly summaries using GPT-4
+   - Scheduled on Sundays at 10:00 local user time
+   - Summary includes:
+     - Warm greeting with user's name
+     - Count of good moments for the week
+     - Main themes of joy (top 5 topics)
+     - 2-3 brightest moments highlighted
+     - Inspiring conclusion
+   - Proper emoji usage and formatting
+   - Monthly summary also available
+
+2. **Feature #74 - Export file format** ✅
+   - Export CSV button on Moments page works correctly
+   - Downloaded file: `moments_export_2026-01-11.csv`
+   - CSV format properly structured with headers:
+     - ID, User ID, Username, Name, Content, Source, Mood Score, Topics, Created At
+   - All 22 moments included in export
+   - Special characters and emojis (♥️) handled correctly
+   - Multi-line content properly escaped
+   - ISO timestamps for dates
+   - File is parseable as valid CSV
+
+3. **Feature #110 - Dokploy-ready compose cleanup** ✅
+   - docker-compose.yml verified Dokploy-friendly:
+     - No `container_name` directives (prevents redeploy conflicts)
+     - No external PostgreSQL port mapping (5432:5432)
+     - Services communicate via compose service names
+     - Admin service uses `ports: "18088:8080"` for local dev
+     - Traefik labels configured for production routing
+     - Uses `dokploy-network` external network
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
+- 10 users, 22 moments, 8 pending notifications
+- 6 moments recorded today
+- Console: Zero JavaScript errors
+- All Docker containers healthy (bot, admin, postgres)
+
+### Screenshots Captured:
+- regression-dashboard-session509.png
+
+---
+
 ## Session 508 - January 11, 2026
 
 ### Regression Testing Performed:
