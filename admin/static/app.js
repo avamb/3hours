@@ -2044,6 +2044,7 @@ async function loadAnalyticsPage() {
         loadAnalyticsOverview(),
         loadFunnelChart(),
         loadRetentionTable(),
+        loadUsersPerDayChart(),
         loadHeatmap(),
         loadLanguagesChart(),
     ]);
@@ -2278,6 +2279,71 @@ async function loadLanguagesChart() {
         container.innerHTML = `<p class="loading">Error: ${error.message}</p>`;
     }
 }
+
+// Users per day chart
+async function loadUsersPerDayChart(days = null) {
+    const container = document.getElementById('users-chart');
+    container.innerHTML = '<p class="loading">Loading chart...</p>';
+
+    try {
+        // Get period from dropdown if not specified
+        if (!days) {
+            const select = document.getElementById('users-chart-period');
+            days = parseInt(select?.value) || 30;
+        }
+
+        const data = await api(`/analytics/users-per-day?days=${days}`);
+        const chartData = data.data || [];
+
+        if (chartData.length === 0) {
+            container.innerHTML = '<p class="loading">No registration data available</p>';
+            return;
+        }
+
+        // Find max value for scaling
+        const maxCount = Math.max(...chartData.map(d => d.count), 1);
+        const total = chartData.reduce((sum, d) => sum + d.count, 0);
+
+        // Create bar chart
+        let html = '<div class="users-chart-bars">';
+
+        chartData.forEach((item, index) => {
+            const barHeight = Math.max(5, (item.count / maxCount) * 100);
+            const dateObj = new Date(item.date);
+            const dayLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+            const fullDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            html += `
+                <div class="users-chart-bar-container" title="${fullDate}: ${item.count} user${item.count !== 1 ? 's' : ''}">
+                    <div class="users-chart-bar" style="height: ${barHeight}%;">
+                        ${item.count > 0 ? `<span class="users-chart-bar-value">${item.count}</span>` : ''}
+                    </div>
+                    <div class="users-chart-bar-label">${dayLabel}</div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+
+        // Add summary
+        html += `
+            <div class="users-chart-summary">
+                <span class="users-chart-total">Total: <strong>${total}</strong> new users in last ${days} days</span>
+                <span class="users-chart-avg">Average: <strong>${(total / chartData.length).toFixed(1)}</strong> per day</span>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading users per day chart:', error);
+        container.innerHTML = `<p class="loading">Error: ${error.message}</p>`;
+    }
+}
+
+// Users chart period selector
+document.getElementById('users-chart-period')?.addEventListener('change', (e) => {
+    loadUsersPerDayChart(parseInt(e.target.value));
+});
 
 // Analytics refresh button
 document.getElementById('refresh-analytics')?.addEventListener('click', loadAnalyticsPage);

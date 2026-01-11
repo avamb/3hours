@@ -2731,6 +2731,43 @@ const routes = {
         }
     },
 
+    // Analytics - Users added per day (registration chart)
+    'GET /api/analytics/users-per-day': async (req, res) => {
+        const query = parseQuery(req.url);
+        const days = Math.min(Math.max(parseInt(query.days) || 30, 7), 90);
+
+        const client = await pool.connect();
+        try {
+            // Get user registrations per day for the specified period
+            const result = await client.query(`
+                WITH date_series AS (
+                    SELECT generate_series(
+                        (NOW() - INTERVAL '${days} days')::date,
+                        NOW()::date,
+                        '1 day'::interval
+                    )::date as date
+                )
+                SELECT
+                    ds.date,
+                    COALESCE(COUNT(u.id), 0) as count
+                FROM date_series ds
+                LEFT JOIN users u ON DATE(u.created_at) = ds.date
+                GROUP BY ds.date
+                ORDER BY ds.date ASC
+            `);
+
+            sendJson(res, {
+                period_days: days,
+                data: result.rows.map(row => ({
+                    date: row.date.toISOString().split('T')[0],
+                    count: parseInt(row.count),
+                })),
+            });
+        } finally {
+            client.release();
+        }
+    },
+
     // Get single knowledge base item detail
     'GET /api/knowledge/:id': async (req, res, params) => {
         const itemId = parseInt(params.id);

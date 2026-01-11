@@ -698,6 +698,23 @@
                     </div>
                 </div>
 
+                <!-- Users per Day Chart -->
+                <div class="analytics-section">
+                    <div class="analytics-section-header">
+                        <h3>User Registrations</h3>
+                        <select id="users-chart-period" class="select-input select-small">
+                            <option value="7">Last 7 days</option>
+                            <option value="14">Last 14 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                        </select>
+                    </div>
+                    <div class="users-chart-container" id="users-chart-container">
+                        <div class="users-chart" id="users-chart">
+                            <p class="loading">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Two Column Layout for Heatmap and Languages -->
                 <div class="analytics-row">
                     <!-- Heatmap Section -->
