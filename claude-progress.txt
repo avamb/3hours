@@ -2,6 +2,43 @@
 
 ## Current Status: 175/175 features passing (100.0%) 🎉
 
+## Session 525 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 features to ensure system stability:
+
+1. **Feature #143 - Export dialogs to CSV/JSON** ✅
+   - CSV export button works and downloads file with proper columns (ID, User ID, Telegram ID, Username, First Name, Message Type, Content, Created At)
+   - JSON export button works and downloads properly formatted JSON array
+   - Both exports contain real data (32 dialog messages from database)
+
+2. **Feature #64 - User isolation - cannot see others' data** ✅
+   - Code review confirms all data queries filter by `user_id`
+   - moment_service.py: `Moment.user_id == user.id` for all queries
+   - Conversations, feedback, GDPR operations all properly scoped to user
+   - Telegram authentication ensures users can only access their own data
+
+3. **Feature #110 - Dokploy-ready compose cleanup** ✅
+   - No `container_name` in any service (prevents deployment conflicts)
+   - No external PostgreSQL port mapping (DB only accessible within network)
+   - Services communicate via compose service names (e.g., `postgres`)
+   - Proper Traefik labels for domain routing
+   - Using dokploy-network (external network)
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
+- 10 users, 23 moments, 8 pending notifications
+- 7 moments recorded today
+- Console: Zero JavaScript errors
+- All Docker containers healthy (bot, admin, postgres)
+
+### Screenshots Captured:
+- regression-dashboard-session525.png
+- regression-dialogs-page-session525.png
+- regression-users-page-session525.png
+
+---
+
 ## Session 524 - January 11, 2026
 
 ### Regression Testing Performed:
