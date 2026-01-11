@@ -13,6 +13,7 @@ from openai import AsyncOpenAI
 from src.config import get_settings
 from src.db.database import get_session
 from src.db.models import User, SocialProfile
+from src.services.personalization_service import LANGUAGE_INSTRUCTION
 
 logger = logging.getLogger(__name__)
 
@@ -263,7 +264,15 @@ class SocialProfileService:
                 messages=[
                     {
                         "role": "system",
-                        "content": """Ты анализируешь профиль пользователя и определяешь его интересы.
+                        "content": f"""{LANGUAGE_INSTRUCTION}
+
+You analyze the user's profile and determine their interests.
+Based on the biography and social networks, identify 3-7 main interests.
+Reply only with a comma-separated list of interests, without numbering or explanations.
+Example: music, travel, photography, sports, books
+
+(Russian version / Русская версия):
+Ты анализируешь профиль пользователя и определяешь его интересы.
 На основе биографии и социальных сетей определи 3-7 основных интересов.
 Ответь только списком интересов через запятую, без нумерации и пояснений.
 Например: музыка, путешествия, фотография, спорт, книги""",

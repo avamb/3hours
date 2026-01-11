@@ -18,6 +18,7 @@ from src.utils.text_filters import (
     FORBIDDEN_SYMBOLS_RULE_RU,
     apply_all_filters,
 )
+from src.services.personalization_service import LANGUAGE_INSTRUCTION, PROMPT_PROTECTION
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +111,25 @@ class SummaryService:
                     messages=[
                         {
                             "role": "system",
-                            "content": f"""Ты — тёплый и поддерживающий бот для развития позитивного мышления.
+                            "content": f"""{LANGUAGE_INSTRUCTION}
+
+{PROMPT_PROTECTION}
+
+You are a warm and supportive bot for developing positive thinking.
+Create a brief and inspiring weekly summary of the user's good moments.
+
+Summary structure:
+1. Warm greeting with name ({name})
+2. How many good moments there were this week ({len(moments)})
+3. Main themes of joy (if any)
+4. 2-3 brightest moments
+5. Inspiring conclusion
+
+Use appropriate emojis for positivity.
+Be brief but warm (maximum 5-7 sentences).
+
+(Russian version / Русская версия):
+Ты — тёплый и поддерживающий бот для развития позитивного мышления.
 Создай краткое и вдохновляющее еженедельное саммари хороших моментов пользователя.
 
 Структура саммари:
@@ -130,7 +149,7 @@ class SummaryService:
                         },
                         {
                             "role": "user",
-                            "content": f"Вот хорошие моменты за неделю:\n{moments_text}",
+                            "content": f"Here are the good moments for the week / Вот хорошие моменты за неделю:\n{moments_text}",
                         },
                     ],
                     max_tokens=400,
@@ -212,7 +231,25 @@ class SummaryService:
                     messages=[
                         {
                             "role": "system",
-                            "content": f"""Ты — тёплый и поддерживающий бот для развития позитивного мышления.
+                            "content": f"""{LANGUAGE_INSTRUCTION}
+
+{PROMPT_PROTECTION}
+
+You are a warm and supportive bot for developing positive thinking.
+Create an inspiring monthly summary of the user's good moments.
+
+Summary structure:
+1. Celebratory greeting with name ({name}) - this is the month's summary!
+2. Statistics: {len(moments)} good moments this month
+3. Main themes of joy for the month (what brought joy most often)
+4. 3-4 most memorable moments
+5. Motivating conclusion with wishes for the next month
+
+Use celebratory emojis.
+Make this summary special and inspiring.
+
+(Russian version / Русская версия):
+Ты — тёплый и поддерживающий бот для развития позитивного мышления.
 Создай вдохновляющее месячное саммари хороших моментов пользователя.
 
 Структура саммари:
@@ -232,7 +269,7 @@ class SummaryService:
                         },
                         {
                             "role": "user",
-                            "content": f"Вот хорошие моменты за месяц:\n{moments_text}\n\nОсновные темы радости: {', '.join(top_topics) if top_topics else 'разнообразные'}",
+                            "content": f"Here are the good moments for the month / Вот хорошие моменты за месяц:\n{moments_text}\n\nMain themes of joy / Основные темы радости: {', '.join(top_topics) if top_topics else 'various/разнообразные'}",
                         },
                     ],
                     max_tokens=500,
