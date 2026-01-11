@@ -624,8 +624,8 @@ window.blockUser = blockUser;
 window.unblockUser = unblockUser;
 window.sendDirectMessage = sendDirectMessage;
 
-// Modal close
-document.querySelector('.modal-close').addEventListener('click', () => {
+// Modal close - user modal
+document.querySelector('#user-modal .modal-close').addEventListener('click', () => {
     document.getElementById('user-modal').classList.remove('active');
 });
 
