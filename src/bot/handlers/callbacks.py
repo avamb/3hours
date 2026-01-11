@@ -17,6 +17,8 @@ from src.bot.keyboards.inline import (
     get_address_form_keyboard,
     get_gender_keyboard,
     get_timezone_keyboard,
+    get_timezone_regions_keyboard,
+    get_language_keyboard,
     get_social_profile_keyboard,
     get_social_remove_keyboard,
 )
@@ -271,6 +273,87 @@ async def callback_gender_female(callback: CallbackQuery) -> None:
     )
     await callback.answer("Сохранено!")
 
+
+@router.callback_query(F.data == "settings_language")
+async def callback_settings_language(callback: CallbackQuery) -> None:
+    """Show language settings"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+
+    # Language names in their native form
+    lang_names = {
+        "en": "English",
+        "ru": "Русский",
+        "uk": "Українська",
+        "es": "Español",
+        "de": "Deutsch",
+        "fr": "Français",
+        "pt": "Português",
+        "it": "Italiano",
+        "zh": "中文",
+        "ja": "日本語",
+    }
+    current_lang_name = lang_names.get(language_code, language_code)
+
+    await callback.message.edit_text(
+        f"🌐 <b>Interface Language</b>\n\n"
+        f"Current: {current_lang_name}\n\n"
+        "Select your preferred language:",
+        reply_markup=get_language_keyboard(language_code)
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("language_"))
+async def callback_set_language(callback: CallbackQuery) -> None:
+    """Set user interface language"""
+    new_language = callback.data.replace("language_", "")
+
+    # Language names for confirmation message
+    lang_names = {
+        "en": "English",
+        "ru": "Русский",
+        "uk": "Українська",
+        "es": "Español",
+        "de": "Deutsch",
+        "fr": "Français",
+        "pt": "Português",
+        "it": "Italiano",
+        "zh": "中文",
+        "ja": "日本語",
+    }
+
+    user_service = UserService()
+    await user_service.update_user_settings(
+        telegram_id=callback.from_user.id,
+        language_code=new_language
+    )
+
+    lang_name = lang_names.get(new_language, new_language)
+
+    # Confirmation messages in different languages
+    confirmations = {
+        "en": f"✅ Language set to {lang_name}",
+        "ru": f"✅ Язык изменён: {lang_name}",
+        "uk": f"✅ Мову змінено: {lang_name}",
+        "es": f"✅ Idioma cambiado: {lang_name}",
+        "de": f"✅ Sprache geändert: {lang_name}",
+        "fr": f"✅ Langue changée: {lang_name}",
+        "pt": f"✅ Idioma alterado: {lang_name}",
+        "it": f"✅ Lingua cambiata: {lang_name}",
+        "zh": f"✅ 语言已更改: {lang_name}",
+        "ja": f"✅ 言語を変更しました: {lang_name}",
+    }
+    confirm_msg = confirmations.get(new_language, f"✅ Language set to {lang_name}")
+
+    await callback.message.edit_text(
+        confirm_msg,
+        reply_markup=get_settings_keyboard(new_language)
+    )
+    await callback.answer()
+
+
 @router.callback_query(F.data == "settings_notifications")
 async def callback_settings_notifications(callback: CallbackQuery) -> None:
     """Toggle notifications"""
@@ -294,17 +377,40 @@ async def callback_settings_notifications(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "settings_timezone")
 async def callback_settings_timezone(callback: CallbackQuery) -> None:
-    """Show timezone settings"""
+    """Show timezone settings - region selection first"""
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     language_code = user.language_code if user else "ru"
 
     current_tz = user.timezone if user else "UTC"
     await callback.message.edit_text(
-        f"🌍 <b>Часовой пояс</b>\n\n"
-        f"Текущий: <code>{current_tz}</code>\n\n"
-        "Выбери свой часовой пояс:",
-        reply_markup=get_timezone_keyboard(language_code)
+        f"🌍 <b>Timezone</b>\n\n"
+        f"Current: <code>{current_tz}</code>\n\n"
+        "Select your region:",
+        reply_markup=get_timezone_regions_keyboard(language_code)
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("tz_region_"))
+async def callback_timezone_region(callback: CallbackQuery) -> None:
+    """Show timezones for selected region"""
+    region = callback.data.replace("tz_region_", "")
+    language_code = await get_user_language(callback.from_user.id)
+
+    region_names = {
+        "europe": "Europe",
+        "americas": "Americas",
+        "asia": "Asia",
+        "pacific": "Australia & Pacific",
+        "africa": "Africa & Middle East",
+    }
+    region_name = region_names.get(region, region.title())
+
+    await callback.message.edit_text(
+        f"🌍 <b>{region_name}</b>\n\n"
+        "Select your timezone:",
+        reply_markup=get_timezone_keyboard(language_code, region=region)
     )
     await callback.answer()
 

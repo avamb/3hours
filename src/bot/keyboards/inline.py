@@ -58,6 +58,9 @@ def get_settings_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text=get_menu_text("settings_timezone", language_code), callback_data="settings_timezone"),
             ],
             [
+                InlineKeyboardButton(text=get_menu_text("settings_language", language_code), callback_data="settings_language"),
+            ],
+            [
                 InlineKeyboardButton(text=get_menu_text("settings_social", language_code), callback_data="settings_social"),
             ],
             [
@@ -78,6 +81,35 @@ def get_settings_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
         ]
     )
     return keyboard
+
+
+def get_language_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
+    """Create keyboard for language selection with most common languages"""
+    # Most common languages with native names and flags
+    languages = [
+        ("🇬🇧 English", "en"),
+        ("🇷🇺 Русский", "ru"),
+        ("🇺🇦 Українська", "uk"),
+        ("🇪🇸 Español", "es"),
+        ("🇩🇪 Deutsch", "de"),
+        ("🇫🇷 Français", "fr"),
+        ("🇵🇹 Português", "pt"),
+        ("🇮🇹 Italiano", "it"),
+        ("🇨🇳 中文", "zh"),
+        ("🇯🇵 日本語", "ja"),
+    ]
+
+    rows = []
+    # Create 2 columns per row
+    for i in range(0, len(languages), 2):
+        row = []
+        for label, lang_code in languages[i:i+2]:
+            row.append(InlineKeyboardButton(text=label, callback_data=f"language_{lang_code}"))
+        rows.append(row)
+
+    rows.append([InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back")])
+
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def get_social_profile_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
@@ -135,30 +167,141 @@ def get_social_remove_keyboard(profile_urls: dict, language_code: str = "ru") ->
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def get_timezone_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
-    """Create keyboard for selecting timezone"""
-    # Common timezones relevant for Russian-speaking users
-    timezones = [
-        ("🇷🇺 Москва (UTC+3)", "Europe/Moscow"),
-        ("🇷🇺 Калининград (UTC+2)", "Europe/Kaliningrad"),
-        ("🇷🇺 Самара (UTC+4)", "Europe/Samara"),
-        ("🇷🇺 Екатеринбург (UTC+5)", "Asia/Yekaterinburg"),
-        ("🇷🇺 Омск (UTC+6)", "Asia/Omsk"),
-        ("🇷🇺 Красноярск (UTC+7)", "Asia/Krasnoyarsk"),
-        ("🇷🇺 Иркутск (UTC+8)", "Asia/Irkutsk"),
-        ("🇷🇺 Якутск (UTC+9)", "Asia/Yakutsk"),
-        ("🇷🇺 Владивосток (UTC+10)", "Asia/Vladivostok"),
-        ("🇷🇺 Магадан (UTC+11)", "Asia/Magadan"),
-        ("🇷🇺 Камчатка (UTC+12)", "Asia/Kamchatka"),
-        ("🇺🇦 Киев (UTC+2)", "Europe/Kiev"),
-        ("🇧🇾 Минск (UTC+3)", "Europe/Minsk"),
-        ("🇰🇿 Алматы (UTC+6)", "Asia/Almaty"),
-        ("🇺🇿 Ташкент (UTC+5)", "Asia/Tashkent"),
-        ("🇬🇪 Тбилиси (UTC+4)", "Asia/Tbilisi"),
-        ("🇦🇲 Ереван (UTC+4)", "Asia/Yerevan"),
-        ("🇦🇿 Баку (UTC+4)", "Asia/Baku"),
-        ("UTC (Универсальное)", "UTC"),
+def get_timezone_regions_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
+    """Create keyboard for selecting timezone region (first step)"""
+    regions = [
+        ("🌍 Europe", "tz_region_europe"),
+        ("🌎 Americas", "tz_region_americas"),
+        ("🌏 Asia", "tz_region_asia"),
+        ("🌏 Australia & Pacific", "tz_region_pacific"),
+        ("🌍 Africa & Middle East", "tz_region_africa"),
+        ("🕐 UTC", "timezone_UTC"),
     ]
+
+    rows = []
+    for label, callback_data in regions:
+        rows.append([InlineKeyboardButton(text=label, callback_data=callback_data)])
+
+    rows.append([InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back")])
+
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def get_timezone_keyboard(language_code: str = "ru", region: str = None) -> InlineKeyboardMarkup:
+    """Create keyboard for selecting timezone within a region"""
+    # International timezone database organized by region
+    timezone_data = {
+        "europe": [
+            ("🇬🇧 London (UTC+0/+1)", "Europe/London"),
+            ("🇫🇷 Paris (UTC+1/+2)", "Europe/Paris"),
+            ("🇩🇪 Berlin (UTC+1/+2)", "Europe/Berlin"),
+            ("🇪🇸 Madrid (UTC+1/+2)", "Europe/Madrid"),
+            ("🇮🇹 Rome (UTC+1/+2)", "Europe/Rome"),
+            ("🇳🇱 Amsterdam (UTC+1/+2)", "Europe/Amsterdam"),
+            ("🇧🇪 Brussels (UTC+1/+2)", "Europe/Brussels"),
+            ("🇨🇭 Zurich (UTC+1/+2)", "Europe/Zurich"),
+            ("🇦🇹 Vienna (UTC+1/+2)", "Europe/Vienna"),
+            ("🇵🇱 Warsaw (UTC+1/+2)", "Europe/Warsaw"),
+            ("🇨🇿 Prague (UTC+1/+2)", "Europe/Prague"),
+            ("🇸🇪 Stockholm (UTC+1/+2)", "Europe/Stockholm"),
+            ("🇳🇴 Oslo (UTC+1/+2)", "Europe/Oslo"),
+            ("🇫🇮 Helsinki (UTC+2/+3)", "Europe/Helsinki"),
+            ("🇬🇷 Athens (UTC+2/+3)", "Europe/Athens"),
+            ("🇧🇬 Sofia (UTC+2/+3)", "Europe/Sofia"),
+            ("🇷🇴 Bucharest (UTC+2/+3)", "Europe/Bucharest"),
+            ("🇺🇦 Kyiv (UTC+2/+3)", "Europe/Kyiv"),
+            ("🇹🇷 Istanbul (UTC+3)", "Europe/Istanbul"),
+            ("🇷🇺 Moscow (UTC+3)", "Europe/Moscow"),
+            ("🇧🇾 Minsk (UTC+3)", "Europe/Minsk"),
+            ("🇷🇺 Kaliningrad (UTC+2)", "Europe/Kaliningrad"),
+            ("🇷🇺 Samara (UTC+4)", "Europe/Samara"),
+            ("🇵🇹 Lisbon (UTC+0/+1)", "Europe/Lisbon"),
+            ("🇮🇪 Dublin (UTC+0/+1)", "Europe/Dublin"),
+        ],
+        "americas": [
+            ("🇺🇸 New York (UTC-5/-4)", "America/New_York"),
+            ("🇺🇸 Chicago (UTC-6/-5)", "America/Chicago"),
+            ("🇺🇸 Denver (UTC-7/-6)", "America/Denver"),
+            ("🇺🇸 Phoenix (UTC-7)", "America/Phoenix"),
+            ("🇺🇸 Los Angeles (UTC-8/-7)", "America/Los_Angeles"),
+            ("🇺🇸 Anchorage (UTC-9/-8)", "America/Anchorage"),
+            ("🇺🇸 Honolulu (UTC-10)", "Pacific/Honolulu"),
+            ("🇨🇦 Toronto (UTC-5/-4)", "America/Toronto"),
+            ("🇨🇦 Vancouver (UTC-8/-7)", "America/Vancouver"),
+            ("🇲🇽 Mexico City (UTC-6/-5)", "America/Mexico_City"),
+            ("🇧🇷 São Paulo (UTC-3)", "America/Sao_Paulo"),
+            ("🇧🇷 Rio de Janeiro (UTC-3)", "America/Sao_Paulo"),
+            ("🇦🇷 Buenos Aires (UTC-3)", "America/Argentina/Buenos_Aires"),
+            ("🇨🇱 Santiago (UTC-4/-3)", "America/Santiago"),
+            ("🇨🇴 Bogota (UTC-5)", "America/Bogota"),
+            ("🇵🇪 Lima (UTC-5)", "America/Lima"),
+            ("🇻🇪 Caracas (UTC-4)", "America/Caracas"),
+            ("🇵🇦 Panama (UTC-5)", "America/Panama"),
+            ("🇨🇷 San Jose (UTC-6)", "America/Costa_Rica"),
+        ],
+        "asia": [
+            ("🇯🇵 Tokyo (UTC+9)", "Asia/Tokyo"),
+            ("🇰🇷 Seoul (UTC+9)", "Asia/Seoul"),
+            ("🇨🇳 Shanghai (UTC+8)", "Asia/Shanghai"),
+            ("🇨🇳 Beijing (UTC+8)", "Asia/Shanghai"),
+            ("🇭🇰 Hong Kong (UTC+8)", "Asia/Hong_Kong"),
+            ("🇸🇬 Singapore (UTC+8)", "Asia/Singapore"),
+            ("🇹🇼 Taipei (UTC+8)", "Asia/Taipei"),
+            ("🇵🇭 Manila (UTC+8)", "Asia/Manila"),
+            ("🇲🇾 Kuala Lumpur (UTC+8)", "Asia/Kuala_Lumpur"),
+            ("🇮🇩 Jakarta (UTC+7)", "Asia/Jakarta"),
+            ("🇹🇭 Bangkok (UTC+7)", "Asia/Bangkok"),
+            ("🇻🇳 Ho Chi Minh (UTC+7)", "Asia/Ho_Chi_Minh"),
+            ("🇮🇳 Mumbai (UTC+5:30)", "Asia/Kolkata"),
+            ("🇮🇳 Delhi (UTC+5:30)", "Asia/Kolkata"),
+            ("🇧🇩 Dhaka (UTC+6)", "Asia/Dhaka"),
+            ("🇵🇰 Karachi (UTC+5)", "Asia/Karachi"),
+            ("🇰🇿 Almaty (UTC+6)", "Asia/Almaty"),
+            ("🇺🇿 Tashkent (UTC+5)", "Asia/Tashkent"),
+            ("🇦🇿 Baku (UTC+4)", "Asia/Baku"),
+            ("🇬🇪 Tbilisi (UTC+4)", "Asia/Tbilisi"),
+            ("🇦🇲 Yerevan (UTC+4)", "Asia/Yerevan"),
+            ("🇷🇺 Yekaterinburg (UTC+5)", "Asia/Yekaterinburg"),
+            ("🇷🇺 Novosibirsk (UTC+7)", "Asia/Novosibirsk"),
+            ("🇷🇺 Krasnoyarsk (UTC+7)", "Asia/Krasnoyarsk"),
+            ("🇷🇺 Irkutsk (UTC+8)", "Asia/Irkutsk"),
+            ("🇷🇺 Vladivostok (UTC+10)", "Asia/Vladivostok"),
+        ],
+        "pacific": [
+            ("🇦🇺 Sydney (UTC+10/+11)", "Australia/Sydney"),
+            ("🇦🇺 Melbourne (UTC+10/+11)", "Australia/Melbourne"),
+            ("🇦🇺 Brisbane (UTC+10)", "Australia/Brisbane"),
+            ("🇦🇺 Perth (UTC+8)", "Australia/Perth"),
+            ("🇦🇺 Adelaide (UTC+9:30/+10:30)", "Australia/Adelaide"),
+            ("🇳🇿 Auckland (UTC+12/+13)", "Pacific/Auckland"),
+            ("🇳🇿 Wellington (UTC+12/+13)", "Pacific/Auckland"),
+            ("🇫🇯 Fiji (UTC+12/+13)", "Pacific/Fiji"),
+            ("🇵🇬 Port Moresby (UTC+10)", "Pacific/Port_Moresby"),
+            ("🇬🇺 Guam (UTC+10)", "Pacific/Guam"),
+        ],
+        "africa": [
+            ("🇿🇦 Johannesburg (UTC+2)", "Africa/Johannesburg"),
+            ("🇪🇬 Cairo (UTC+2)", "Africa/Cairo"),
+            ("🇲🇦 Casablanca (UTC+0/+1)", "Africa/Casablanca"),
+            ("🇳🇬 Lagos (UTC+1)", "Africa/Lagos"),
+            ("🇰🇪 Nairobi (UTC+3)", "Africa/Nairobi"),
+            ("🇪🇹 Addis Ababa (UTC+3)", "Africa/Addis_Ababa"),
+            ("🇸🇦 Riyadh (UTC+3)", "Asia/Riyadh"),
+            ("🇦🇪 Dubai (UTC+4)", "Asia/Dubai"),
+            ("🇮🇱 Tel Aviv (UTC+2/+3)", "Asia/Tel_Aviv"),
+            ("🇶🇦 Doha (UTC+3)", "Asia/Qatar"),
+            ("🇰🇼 Kuwait (UTC+3)", "Asia/Kuwait"),
+            ("🇯🇴 Amman (UTC+2/+3)", "Asia/Amman"),
+            ("🇱🇧 Beirut (UTC+2/+3)", "Asia/Beirut"),
+        ],
+    }
+
+    # If no region specified, show region selection
+    if not region:
+        return get_timezone_regions_keyboard(language_code)
+
+    # Get timezones for the selected region
+    timezones = timezone_data.get(region, [])
 
     rows = []
     for label, tz in timezones:
@@ -166,7 +309,8 @@ def get_timezone_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
             InlineKeyboardButton(text=label, callback_data=f"timezone_{tz}")
         ])
 
-    rows.append([InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back")])
+    # Add back button to region selection
+    rows.append([InlineKeyboardButton(text="⬅️ " + get_menu_text("back", language_code), callback_data="settings_timezone")])
 
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
