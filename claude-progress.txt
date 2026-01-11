@@ -2,6 +2,46 @@
 
 ## Current Status: 174/174 features passing (100.0%) 🎉
 
+## Session 517 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 features to ensure system stability:
+
+1. **Feature #110 - Dokploy-ready compose cleanup** ✅
+   - No `container_name` directives in docker-compose.yml (prevents redeploy conflicts)
+   - No external PostgreSQL port mapping (database only accessible within compose network)
+   - Admin service uses `ports: "18088:8080"` for local dev
+   - Traefik labels configured for production routing
+   - Uses `dokploy-network` external network
+
+2. **Feature #70 - Callback query handling** ✅
+   - All callback handlers properly logged and working
+   - Settings callbacks: timezone, notifications, gender, address, social
+   - Moments callbacks: random, filter_today/week/month
+   - Dialog callbacks: dialog_exit
+   - All callbacks produce appropriate responses in logs
+
+3. **Feature #61 - Deep link support** ✅
+   - `/start` command handled by `CommandStart()` filter in aiogram
+   - New users: Onboarding flow with welcome image
+   - Returning users: Welcome back message with main menu
+   - Proper localization (Russian, English, Ukrainian)
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
+- 10 users, 23 moments, 8 pending notifications
+- 0 Errors (24h), 0 Warnings (24h), 43 Info logs
+- Console: Zero JavaScript errors
+- All Docker containers healthy (bot, admin, postgres)
+
+### Screenshots Captured:
+- regression-dashboard-session517.png
+- regression-user-details-session517.png
+- regression-moments-session517.png
+- regression-logs-session517.png
+
+---
+
 ## Session 516 - January 11, 2026
 
 ### Regression Testing Performed:
