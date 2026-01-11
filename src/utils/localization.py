@@ -444,6 +444,147 @@ SYSTEM_MESSAGES = {
             "🔔 Уведомления: {notifications}\n"
             "🌐 Язык: {language}"
         ),
+
+        # Settings section headers
+        "settings_title": "⚙️ <b>Настройки</b>",
+        "active_hours_title": "🕐 <b>Активные часы</b>",
+        "interval_title": "⏰ <b>Интервал между вопросами</b>",
+        "address_form_title": "🗣 <b>Форма обращения</b>",
+        "gender_title": "🚻 <b>Пол</b>",
+        "language_title": "🌐 <b>Язык интерфейса</b>",
+        "timezone_title": "🌍 <b>Часовой пояс</b>",
+        "social_profile_title": "👤 <b>Социальный профиль</b>",
+
+        # Settings prompts
+        "select_active_hours_start": "Выбери время начала активного периода:",
+        "select_active_hours_end": "Теперь выбери время окончания:",
+        "start_hour_set": "🕐 Начало: {hour}:00",
+        "how_often_ask": "Как часто мне спрашивать о хорошем?",
+        "how_would_you_like": "Как тебе удобнее?",
+        "current_value": "Текущий: {value}",
+        "select_gender_prompt": "Выбери пол для правильного обращения:",
+        "select_language_prompt": "Выбери язык интерфейса:",
+        "select_timezone_prompt": "Выбери свой регион:",
+        "select_timezone_city": "Выбери свой часовой пояс:",
+
+        # Gender display values
+        "gender_male_value": "мужской",
+        "gender_female_value": "женский",
+        "gender_unknown": "не указан",
+
+        # Address display values
+        "address_formal_value": "на «вы»",
+        "address_informal_value": "на «ты»",
+
+        # Notifications display
+        "notifications_on": "включены",
+        "notifications_off": "выключены",
+        "notifications_toggled_on": "🔔 Уведомления включены",
+        "notifications_toggled_off": "🔔 Уведомления выключены",
+
+        # Interval display
+        "every_n_hours": "каждые {hours} ч.",
+        "interval_set_confirm": "✅ Интервал установлен: каждые {hours} ч.",
+
+        # Timezone
+        "timezone_invalid": "❌ Ошибка: неверный часовой пояс",
+        "timezone_set_confirm": "✅ Часовой пояс установлен: {timezone}",
+
+        # Settings reset
+        "settings_reset_title": "✅ <b>Настройки сброшены!</b>",
+        "settings_reset_error": "😔 Не удалось сбросить настройки. Попробуй позже.",
+
+        # Social profile
+        "social_add_prompt": (
+            "🔗 <b>Добавить соцсеть</b>\n\n"
+            "Отправь ссылку на свою страницу в соцсети.\n\n"
+            "Поддерживаются:\n"
+            "• Instagram\n• Facebook\n• Twitter/X\n• LinkedIn\n"
+            "• ВКонтакте\n• Telegram канал\n• YouTube\n• TikTok\n\n"
+            "Отправь /cancel чтобы отменить."
+        ),
+        "social_bio_prompt": (
+            "📝 <b>Редактирование биографии</b>\n\n"
+            "Напиши немного о себе, своих увлечениях и интересах.\n"
+            "Это поможет мне лучше понять тебя и сделать наше общение более персональным.\n\n"
+            "Отправь /cancel чтобы отменить."
+        ),
+        "social_parsing": "🔍 Анализирую профиль...",
+        "social_interests_found": (
+            "✅ <b>Интересы определены!</b>\n\n"
+            "Твои интересы: {interests}\n\n"
+            "Эта информация будет использоваться для персонализации нашего общения."
+        ),
+        "social_interests_failed": (
+            "❌ Не удалось определить интересы.\n\n"
+            "Добавь больше информации в свой профиль: ссылки на соцсети или биографию."
+        ),
+        "social_no_links": "У тебя нет добавленных соцсетей.",
+        "social_remove_title": "🗑 <b>Удаление ссылки</b>\n\nВыбери соцсеть для удаления:",
+
+        # Moments
+        "moments_title": "📖 <b>Твои хорошие моменты</b>",
+        "moments_empty": (
+            "📖 У тебя пока нет сохранённых моментов.\n"
+            "Когда придёт время вопроса, поделись чем-то хорошим! 🌟"
+        ),
+        "random_moment_header": "🎲 <b>Случайный хороший момент</b>",
+        "moment_not_found": "😔 Момент не найден.",
+        "moment_delete_title": "🗑️ <b>Удалить момент?</b>",
+        "moment_delete_warning": "⚠️ Это действие необратимо!",
+        "moment_deleted_confirm": "✅ Момент удалён.",
+        "moment_delete_error": "😔 Не удалось удалить момент.",
+        "no_moments_period": "📖 Нет моментов {period}.",
+        "moments_period_title": "📖 <b>Моменты {period}</b>",
+        "period_today": "сегодня",
+        "period_week": "за неделю",
+        "period_month": "за месяц",
+        "moments_pagination_next": "Следующая страница",
+        "moments_pagination_prev": "Предыдущая страница",
+
+        # Dialog mode
+        "dialog_intro": (
+            "💬 <b>Режим диалога</b>\n\n"
+            "Я готов выслушать тебя. Расскажи, что у тебя на душе. "
+            "Я постараюсь помочь взглядом со стороны, "
+            "но помни — все решения принимаешь ты сам. 💝\n\n"
+            "Чтобы выйти из режима диалога, нажми кнопку ниже."
+        ),
+        "dialog_exit_confirm": "Вернулись в обычный режим. Чем могу помочь? 😊",
+        "main_menu_prompt": "Чем могу помочь? 😊",
+
+        # Delete data
+        "data_deleted": (
+            "✅ Все твои данные удалены.\n\n"
+            "Если захочешь вернуться — просто напиши /start 💝"
+        ),
+        "data_delete_error": "😔 Произошла ошибка при удалении. Попробуй позже.",
+        "delete_cancelled": "👍 Удаление отменено. Твои данные в безопасности!",
+
+        # Question skip
+        "question_skipped": "👍 Хорошо, пропустим этот вопрос. До скорой встречи! 😊",
+
+        # Summary
+        "summary_title": "📊 <b>Саммари моментов</b>",
+        "summary_generating_weekly": "⏳ Готовлю еженедельное саммари...",
+        "summary_generating_monthly": "⏳ Готовлю месячное саммари...",
+        "summary_not_enough_weekly": (
+            "📅 Недостаточно моментов для еженедельного саммари.\n\n"
+            "Когда у тебя будет больше записей, я смогу создать красивый обзор! 🌟"
+        ),
+        "summary_not_enough_monthly": (
+            "🗓 Недостаточно моментов для месячного саммари.\n\n"
+            "Когда у тебя будет больше записей, я смогу создать красивый обзор! 🌟"
+        ),
+
+        # Stats
+        "stats_empty": (
+            "📊 Статистика пока недоступна.\n"
+            "Начни отвечать на вопросы, и здесь появится твой прогресс! ✨"
+        ),
+
+        # Need to start first
+        "please_start_first": "Пожалуйста, сначала запусти бота командой /start",
     },
     "en": {
         # Status messages
@@ -558,6 +699,147 @@ SYSTEM_MESSAGES = {
             "🔔 Notifications: {notifications}\n"
             "🌐 Language: {language}"
         ),
+
+        # Settings section headers
+        "settings_title": "⚙️ <b>Settings</b>",
+        "active_hours_title": "🕐 <b>Active Hours</b>",
+        "interval_title": "⏰ <b>Question Interval</b>",
+        "address_form_title": "🗣 <b>Address Form</b>",
+        "gender_title": "🚻 <b>Gender</b>",
+        "language_title": "🌐 <b>Interface Language</b>",
+        "timezone_title": "🌍 <b>Timezone</b>",
+        "social_profile_title": "👤 <b>Social Profile</b>",
+
+        # Settings prompts
+        "select_active_hours_start": "Select the start time of your active period:",
+        "select_active_hours_end": "Now select the end time:",
+        "start_hour_set": "🕐 Start: {hour}:00",
+        "how_often_ask": "How often should I ask about good things?",
+        "how_would_you_like": "How would you prefer?",
+        "current_value": "Current: {value}",
+        "select_gender_prompt": "Select your gender for proper addressing:",
+        "select_language_prompt": "Select interface language:",
+        "select_timezone_prompt": "Select your region:",
+        "select_timezone_city": "Select your timezone:",
+
+        # Gender display values
+        "gender_male_value": "male",
+        "gender_female_value": "female",
+        "gender_unknown": "not specified",
+
+        # Address display values
+        "address_formal_value": "formal",
+        "address_informal_value": "informal",
+
+        # Notifications display
+        "notifications_on": "enabled",
+        "notifications_off": "disabled",
+        "notifications_toggled_on": "🔔 Notifications enabled",
+        "notifications_toggled_off": "🔔 Notifications disabled",
+
+        # Interval display
+        "every_n_hours": "every {hours} h.",
+        "interval_set_confirm": "✅ Interval set: every {hours} h.",
+
+        # Timezone
+        "timezone_invalid": "❌ Error: invalid timezone",
+        "timezone_set_confirm": "✅ Timezone set: {timezone}",
+
+        # Settings reset
+        "settings_reset_title": "✅ <b>Settings reset!</b>",
+        "settings_reset_error": "😔 Failed to reset settings. Try again later.",
+
+        # Social profile
+        "social_add_prompt": (
+            "🔗 <b>Add Social Network</b>\n\n"
+            "Send a link to your social media profile.\n\n"
+            "Supported:\n"
+            "• Instagram\n• Facebook\n• Twitter/X\n• LinkedIn\n"
+            "• VKontakte\n• Telegram channel\n• YouTube\n• TikTok\n\n"
+            "Send /cancel to cancel."
+        ),
+        "social_bio_prompt": (
+            "📝 <b>Edit Biography</b>\n\n"
+            "Tell me a bit about yourself, your hobbies and interests.\n"
+            "This will help me understand you better and personalize our communication.\n\n"
+            "Send /cancel to cancel."
+        ),
+        "social_parsing": "🔍 Analyzing profile...",
+        "social_interests_found": (
+            "✅ <b>Interests detected!</b>\n\n"
+            "Your interests: {interests}\n\n"
+            "This information will be used to personalize our communication."
+        ),
+        "social_interests_failed": (
+            "❌ Could not detect interests.\n\n"
+            "Add more information to your profile: social media links or biography."
+        ),
+        "social_no_links": "You don't have any social networks added.",
+        "social_remove_title": "🗑 <b>Remove Link</b>\n\nSelect a social network to remove:",
+
+        # Moments
+        "moments_title": "📖 <b>Your Good Moments</b>",
+        "moments_empty": (
+            "📖 You don't have any saved moments yet.\n"
+            "When it's time for a question, share something good! 🌟"
+        ),
+        "random_moment_header": "🎲 <b>Random Good Moment</b>",
+        "moment_not_found": "😔 Moment not found.",
+        "moment_delete_title": "🗑️ <b>Delete moment?</b>",
+        "moment_delete_warning": "⚠️ This action cannot be undone!",
+        "moment_deleted_confirm": "✅ Moment deleted.",
+        "moment_delete_error": "😔 Failed to delete moment.",
+        "no_moments_period": "📖 No moments {period}.",
+        "moments_period_title": "📖 <b>Moments {period}</b>",
+        "period_today": "today",
+        "period_week": "this week",
+        "period_month": "this month",
+        "moments_pagination_next": "Next page",
+        "moments_pagination_prev": "Previous page",
+
+        # Dialog mode
+        "dialog_intro": (
+            "💬 <b>Dialog Mode</b>\n\n"
+            "I'm ready to listen. Tell me what's on your mind. "
+            "I'll try to help with an outside perspective, "
+            "but remember — all decisions are yours. 💝\n\n"
+            "To exit dialog mode, press the button below."
+        ),
+        "dialog_exit_confirm": "Returned to normal mode. How can I help? 😊",
+        "main_menu_prompt": "How can I help? 😊",
+
+        # Delete data
+        "data_deleted": (
+            "✅ All your data has been deleted.\n\n"
+            "If you want to come back — just write /start 💝"
+        ),
+        "data_delete_error": "😔 An error occurred while deleting. Try again later.",
+        "delete_cancelled": "👍 Deletion cancelled. Your data is safe!",
+
+        # Question skip
+        "question_skipped": "👍 Okay, let's skip this question. See you soon! 😊",
+
+        # Summary
+        "summary_title": "📊 <b>Moments Summary</b>",
+        "summary_generating_weekly": "⏳ Preparing weekly summary...",
+        "summary_generating_monthly": "⏳ Preparing monthly summary...",
+        "summary_not_enough_weekly": (
+            "📅 Not enough moments for a weekly summary.\n\n"
+            "When you have more entries, I'll be able to create a nice overview! 🌟"
+        ),
+        "summary_not_enough_monthly": (
+            "🗓 Not enough moments for a monthly summary.\n\n"
+            "When you have more entries, I'll be able to create a nice overview! 🌟"
+        ),
+
+        # Stats
+        "stats_empty": (
+            "📊 Statistics not available yet.\n"
+            "Start answering questions, and your progress will appear here! ✨"
+        ),
+
+        # Need to start first
+        "please_start_first": "Please start the bot first with /start command",
     },
     "uk": {
         # Status messages
@@ -672,6 +954,147 @@ SYSTEM_MESSAGES = {
             "🔔 Сповіщення: {notifications}\n"
             "🌐 Мова: {language}"
         ),
+
+        # Settings section headers
+        "settings_title": "⚙️ <b>Налаштування</b>",
+        "active_hours_title": "🕐 <b>Активні години</b>",
+        "interval_title": "⏰ <b>Інтервал між запитаннями</b>",
+        "address_form_title": "🗣 <b>Форма звертання</b>",
+        "gender_title": "🚻 <b>Стать</b>",
+        "language_title": "🌐 <b>Мова інтерфейсу</b>",
+        "timezone_title": "🌍 <b>Часовий пояс</b>",
+        "social_profile_title": "👤 <b>Соціальний профіль</b>",
+
+        # Settings prompts
+        "select_active_hours_start": "Вибери час початку активного періоду:",
+        "select_active_hours_end": "Тепер вибери час закінчення:",
+        "start_hour_set": "🕐 Початок: {hour}:00",
+        "how_often_ask": "Як часто мені питати про хороше?",
+        "how_would_you_like": "Як тобі зручніше?",
+        "current_value": "Поточний: {value}",
+        "select_gender_prompt": "Вибери стать для правильного звертання:",
+        "select_language_prompt": "Вибери мову інтерфейсу:",
+        "select_timezone_prompt": "Вибери свій регіон:",
+        "select_timezone_city": "Вибери свій часовий пояс:",
+
+        # Gender display values
+        "gender_male_value": "чоловіча",
+        "gender_female_value": "жіноча",
+        "gender_unknown": "не вказано",
+
+        # Address display values
+        "address_formal_value": "на «ви»",
+        "address_informal_value": "на «ти»",
+
+        # Notifications display
+        "notifications_on": "увімкнено",
+        "notifications_off": "вимкнено",
+        "notifications_toggled_on": "🔔 Сповіщення увімкнено",
+        "notifications_toggled_off": "🔔 Сповіщення вимкнено",
+
+        # Interval display
+        "every_n_hours": "кожні {hours} год.",
+        "interval_set_confirm": "✅ Інтервал встановлено: кожні {hours} год.",
+
+        # Timezone
+        "timezone_invalid": "❌ Помилка: неправильний часовий пояс",
+        "timezone_set_confirm": "✅ Часовий пояс встановлено: {timezone}",
+
+        # Settings reset
+        "settings_reset_title": "✅ <b>Налаштування скинуто!</b>",
+        "settings_reset_error": "😔 Не вдалося скинути налаштування. Спробуй пізніше.",
+
+        # Social profile
+        "social_add_prompt": (
+            "🔗 <b>Додати соцмережу</b>\n\n"
+            "Надішли посилання на свою сторінку в соцмережі.\n\n"
+            "Підтримуються:\n"
+            "• Instagram\n• Facebook\n• Twitter/X\n• LinkedIn\n"
+            "• ВКонтакте\n• Telegram канал\n• YouTube\n• TikTok\n\n"
+            "Надішли /cancel щоб скасувати."
+        ),
+        "social_bio_prompt": (
+            "📝 <b>Редагування біографії</b>\n\n"
+            "Напиши трохи про себе, свої захоплення та інтереси.\n"
+            "Це допоможе мені краще зрозуміти тебе і зробити наше спілкування більш персональним.\n\n"
+            "Надішли /cancel щоб скасувати."
+        ),
+        "social_parsing": "🔍 Аналізую профіль...",
+        "social_interests_found": (
+            "✅ <b>Інтереси визначено!</b>\n\n"
+            "Твої інтереси: {interests}\n\n"
+            "Ця інформація буде використовуватися для персоналізації нашого спілкування."
+        ),
+        "social_interests_failed": (
+            "❌ Не вдалося визначити інтереси.\n\n"
+            "Додай більше інформації до свого профілю: посилання на соцмережі або біографію."
+        ),
+        "social_no_links": "У тебе немає доданих соцмереж.",
+        "social_remove_title": "🗑 <b>Видалення посилання</b>\n\nВибери соцмережу для видалення:",
+
+        # Moments
+        "moments_title": "📖 <b>Твої хороші моменти</b>",
+        "moments_empty": (
+            "📖 У тебе поки немає збережених моментів.\n"
+            "Коли прийде час запитання, поділися чимось хорошим! 🌟"
+        ),
+        "random_moment_header": "🎲 <b>Випадковий хороший момент</b>",
+        "moment_not_found": "😔 Момент не знайдено.",
+        "moment_delete_title": "🗑️ <b>Видалити момент?</b>",
+        "moment_delete_warning": "⚠️ Ця дія незворотна!",
+        "moment_deleted_confirm": "✅ Момент видалено.",
+        "moment_delete_error": "😔 Не вдалося видалити момент.",
+        "no_moments_period": "📖 Немає моментів {period}.",
+        "moments_period_title": "📖 <b>Моменти {period}</b>",
+        "period_today": "сьогодні",
+        "period_week": "за тиждень",
+        "period_month": "за місяць",
+        "moments_pagination_next": "Наступна сторінка",
+        "moments_pagination_prev": "Попередня сторінка",
+
+        # Dialog mode
+        "dialog_intro": (
+            "💬 <b>Режим діалогу</b>\n\n"
+            "Я готовий вислухати тебе. Розкажи, що у тебе на душі. "
+            "Я постараюся допомогти поглядом з боку, "
+            "але пам'ятай — всі рішення приймаєш ти сам. 💝\n\n"
+            "Щоб вийти з режиму діалогу, натисни кнопку нижче."
+        ),
+        "dialog_exit_confirm": "Повернулися до звичайного режиму. Чим можу допомогти? 😊",
+        "main_menu_prompt": "Чим можу допомогти? 😊",
+
+        # Delete data
+        "data_deleted": (
+            "✅ Всі твої дані видалено.\n\n"
+            "Якщо захочеш повернутися — просто напиши /start 💝"
+        ),
+        "data_delete_error": "😔 Сталася помилка при видаленні. Спробуй пізніше.",
+        "delete_cancelled": "👍 Видалення скасовано. Твої дані в безпеці!",
+
+        # Question skip
+        "question_skipped": "👍 Добре, пропустимо це запитання. До скорої зустрічі! 😊",
+
+        # Summary
+        "summary_title": "📊 <b>Саммарі моментів</b>",
+        "summary_generating_weekly": "⏳ Готую щотижневе саммарі...",
+        "summary_generating_monthly": "⏳ Готую місячне саммарі...",
+        "summary_not_enough_weekly": (
+            "📅 Недостатньо моментів для щотижневого саммарі.\n\n"
+            "Коли у тебе буде більше записів, я зможу створити гарний огляд! 🌟"
+        ),
+        "summary_not_enough_monthly": (
+            "🗓 Недостатньо моментів для місячного саммарі.\n\n"
+            "Коли у тебе буде більше записів, я зможу створити гарний огляд! 🌟"
+        ),
+
+        # Stats
+        "stats_empty": (
+            "📊 Статистика поки недоступна.\n"
+            "Почни відповідати на запитання, і тут з'явиться твій прогрес! ✨"
+        ),
+
+        # Need to start first
+        "please_start_first": "Будь ласка, спочатку запусти бота командою /start",
     },
 }
 
