@@ -2,6 +2,41 @@
 
 ## Current Status: 172/172 features passing (100% complete!)
 
+## Session 492 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 random passing features to ensure system stability:
+
+1. **Feature #122 - System Logs Model (Database)** ✅
+   - Logs page showing: 0 Errors, 0 Warnings, 40 Info (24h), 48 Total Logs
+   - Filtering by Level (ERROR, WARNING, INFO, DEBUG) working
+   - Filtering by Source (bot, admin, scheduler, openai, etc.) working
+   - Real log entries with timestamps, sources, and messages
+
+2. **Feature #74 - Export file format** ✅
+   - CSV export button working on Users page
+   - Downloaded file: users_export_2026-01-11.csv
+   - All 10 users exported with correct data and proper CSV format
+
+3. **Feature #124 - Weekly Summary feature** ✅
+   - SummaryService implemented with generate_weekly_summary()
+   - Scheduler runs on Sundays (weekday() == 6)
+   - GPT-4 generates personalized summaries with emojis
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED, OpenAI CONFIGURED
+- System Logs: 0 errors in 24h, 0 warnings in 24h, 40 info logs
+- 10 users, 22 moments, 6 pending notifications
+- Console: No JavaScript errors
+
+### Screenshots Captured:
+- regression-dashboard.png
+- regression-logs.png
+- regression-notifications.png
+- regression-messages.png
+
+---
+
 ## Session 491 - January 11, 2026
 
 ### Regression Testing Performed:
@@ -9,7 +44,7 @@ Verified 3 random passing features to ensure system stability:
 
 1. **Feature #153 - Personalization (Social Profile)** ✅
    - LinkedIn URL stored and displayed in User Details modal
-   - Interests extracted: "технологии, веб-разработка, цифровые проекты, управление проектами, автоматизация, маркетинг, стартапы"
+   - Interests extracted
    - Bio parsed from LinkedIn profile
    - Admin panel shows social profile section with all data
 
@@ -17,77 +52,17 @@ Verified 3 random passing features to ensure system stability:
    - Bot processes messages in multiple languages (Russian, English, Spanish, German)
    - Language column in Users table shows user languages (ru, en, uk)
    - Language filter dropdown working in admin panel
-   - Topics extracted in appropriate languages
-   - Recent activity shows multilingual messages
 
 3. **Feature #128 - Social profile parsing** ✅
    - Logs show social_parse and social_add callbacks
    - LinkedIn bio parsing working correctly
-   - Interests extraction working
-   - Settings page social functionality accessible via bot
-
-### System Health Check:
-- Dashboard: Bot RUNNING, Database CONNECTED, OpenAI CONFIGURED
-- System Logs: 0 errors in 24h, 0 warnings in 24h, 38 info logs
-- 10 users, 21 moments, avg mood 0.59
-- Voice messages being processed (Whisper API)
-- Console: No JavaScript errors
-
-### Screenshots Captured:
-- regression-1-dashboard.png
-- regression-2-users.png
-- regression-3-user-details-social.png
-- regression-6-moments-multilang.png
-- regression-7-logs.png
 
 ## Session 490 - January 11, 2026
 
 ### Regression Testing Performed:
-Verified 3 random passing features to ensure system stability:
-
 1. **Feature #17 - Statistics view** ✅
-   - Analytics page showing correct data
-   - User funnel with drop-off rates
-   - 10 total users, 9 onboarded, 1 active (7d)
-   - Retention rate 10%
-   - Activity heatmap working
-   - Language distribution showing correctly
-
 2. **Feature #172 - Language menu** ✅
-   - Users page showing language column (en, ru, uk)
-   - Language filter dropdown working
-   - 5 English, 4 Russian, 1 Ukrainian users
-
 3. **Feature #165 - Social profile parsing** ✅
-   - Logs show social_parse and social_add callbacks
-   - Settings page social functionality working
-
-### System Health Check:
-- Dashboard: Bot RUNNING, Database CONNECTED, OpenAI CONFIGURED
-- System Logs: 0 errors in 24h, 0 warnings in 24h, 32 info logs
-- 10 users, 21 moments, avg mood 0.59
-- Voice messages being processed (Whisper API)
-- Console: No JavaScript errors
-
-## Session 489 - January 11, 2026
-
-### Features Implemented:
-
-1. **Feature #171 - International timezone system** ✅
-   - Replaced Russian cities with region-based timezone selection
-   - Added 5 regions: Europe, Americas, Asia, Australia & Pacific, Africa & Middle East
-   - 80+ international timezones with country flags and UTC offsets
-   - Two-step selection: choose region first, then city
-   - Proper back navigation between region and city selection
-   - Uses IANA timezone names compatible with zoneinfo library
-
-2. **Feature #172 - Interface language menu** ✅
-   - Added language selection to bot settings menu
-   - 10 languages supported: English, Russian, Ukrainian, Spanish, German, French, Portuguese, Italian, Chinese, Japanese
-   - Each language shows native name with flag emoji
-   - Localized confirmation messages in each selected language
-   - 2-column layout for better UI
-   - Language preference saved to user settings
 
 ## Key Milestones:
 - **100% Feature Completion achieved!** All 172 features passing
