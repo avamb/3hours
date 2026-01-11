@@ -24,6 +24,7 @@ from src.services.user_service import UserService
 from src.services.moment_service import MomentService
 from src.services.gdpr_service import GDPRService
 from src.services.social_profile_service import SocialProfileService
+from src.utils.localization import get_onboarding_text
 
 logger = logging.getLogger(__name__)
 router = Router(name="callbacks")
@@ -39,14 +40,13 @@ async def callback_address_informal(callback: CallbackQuery) -> None:
         formal_address=False
     )
 
+    # Get user's language for localized response
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    confirm_text = get_onboarding_text("address_informal_confirm", language_code)
+
     await callback.message.edit_text(
-        "Отлично! Буду обращаться на «ты» 😊\n\n"
-        "Теперь немного о том, как это работает:\n\n"
-        "• Каждые несколько часов я спрошу: «Что хорошего произошло?»\n"
-        "• Ты можешь ответить текстом или голосовым сообщением\n"
-        "• Я сохраню твои моменты и напомню о них, когда понадобится поддержка\n\n"
-        "🔒 Твои данные в безопасности и используются только для нашего общения.\n"
-        "Подробнее: /privacy",
+        confirm_text,
         reply_markup=get_main_menu_inline()
     )
 
@@ -83,14 +83,13 @@ async def callback_address_formal(callback: CallbackQuery) -> None:
         formal_address=True
     )
 
+    # Get user's language for localized response
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    confirm_text = get_onboarding_text("address_formal_confirm", language_code)
+
     await callback.message.edit_text(
-        "Хорошо! Буду обращаться на «вы» 😊\n\n"
-        "Теперь немного о том, как это работает:\n\n"
-        "• Каждые несколько часов я спрошу: «Что хорошего произошло?»\n"
-        "• Вы можете ответить текстом или голосовым сообщением\n"
-        "• Я сохраню Ваши моменты и напомню о них, когда понадобится поддержка\n\n"
-        "🔒 Ваши данные в безопасности и используются только для нашего общения.\n"
-        "Подробнее: /privacy",
+        confirm_text,
         reply_markup=get_main_menu_inline()
     )
 

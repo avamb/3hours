@@ -17,6 +17,7 @@ from src.services.speech_service import SpeechToTextService
 from src.services.personalization_service import PersonalizationService
 from src.services.conversation_log_service import ConversationLogService
 from src.services.social_profile_service import SocialProfileService
+from src.utils.localization import detect_and_update_language
 
 logger = logging.getLogger(__name__)
 router = Router(name="messages")
@@ -227,6 +228,9 @@ async def handle_text_message(message: Message) -> None:
             "Пожалуйста, начни с команды /start"
         )
         return
+
+    # Detect and update language based on user's message
+    await detect_and_update_language(message.from_user.id, text)
 
     # Dialog mode: route to DialogService (persists to conversations)
     if dialog_service.is_in_dialog(message.from_user.id):

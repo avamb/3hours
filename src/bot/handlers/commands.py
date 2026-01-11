@@ -112,7 +112,7 @@ async def cmd_start(message: Message) -> None:
 
         await message.answer(
             welcome_text,
-            reply_markup=get_onboarding_keyboard()
+            reply_markup=get_onboarding_keyboard(user.language_code)
         )
     else:
         # Existing user - welcome back

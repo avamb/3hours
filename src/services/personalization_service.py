@@ -16,8 +16,17 @@ from src.utils.text_filters import (
     FORBIDDEN_SYMBOLS_RULE_RU,
     apply_all_filters,
 )
+from src.utils.localization import get_language_code
 
 logger = logging.getLogger(__name__)
+
+# Language instruction to add to all prompts
+LANGUAGE_INSTRUCTION = """
+ВАЖНО/IMPORTANT: Отвечай ТОЛЬКО на том языке, на котором написано сообщение пользователя.
+Если пользователь пишет по-русски — отвечай по-русски.
+Если пользователь пишет по-английски — отвечай по-английски.
+Если пользователь пишет по-украински — отвечай по-украински.
+Always respond in the SAME language as the user's message."""
 
 
 class PersonalizationService:
@@ -58,13 +67,15 @@ class PersonalizationService:
 Используй подходящие эмодзи для позитива.
 Не задавай вопросов, просто поддержи.
 
+{LANGUAGE_INSTRUCTION}
+
 {ABROAD_PHRASE_RULE_RU}
 
 {FORBIDDEN_SYMBOLS_RULE_RU}""",
                     },
                     {
                         "role": "user",
-                        "content": f"Мой хороший момент: {moment_content}",
+                        "content": moment_content,
                     },
                 ],
                 max_tokens=150,
@@ -161,6 +172,8 @@ class PersonalizationService:
 Используй обращение на «{address}».
 Будь тёплым, но не навязчивым. Используй подходящие эмодзи.
 
+{LANGUAGE_INSTRUCTION}
+
 {ABROAD_PHRASE_RULE_RU}
 
 {FORBIDDEN_SYMBOLS_RULE_RU}
@@ -214,6 +227,8 @@ class PersonalizationService:
 Используй обращение на «{address}».
 Ответь коротко (2-3 предложения), тепло и с эмпатией.
 
+{LANGUAGE_INSTRUCTION}
+
 {ABROAD_PHRASE_RULE_RU}
 
 {FORBIDDEN_SYMBOLS_RULE_RU}""",
@@ -258,6 +273,8 @@ class PersonalizationService:
 3. Явно указывай, что решение принимает сам пользователь
 4. Будь тёплым и поддерживающим
 5. Используй обращение на «{address}»
+
+{LANGUAGE_INSTRUCTION}
 
 {ABROAD_PHRASE_RULE_RU}
 

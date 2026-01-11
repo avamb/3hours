@@ -4,14 +4,23 @@ Inline buttons for various bot interactions
 """
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from src.utils.localization import get_onboarding_text
 
-def get_onboarding_keyboard() -> InlineKeyboardMarkup:
-    """Create keyboard for address form selection during onboarding"""
+
+def get_onboarding_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
+    """Create keyboard for address form selection during onboarding.
+
+    Args:
+        language_code: User's Telegram language code for button localization
+    """
+    informal_text = get_onboarding_text("address_informal_button", language_code)
+    formal_text = get_onboarding_text("address_formal_button", language_code)
+
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="На «ты» 😊", callback_data="address_informal"),
-                InlineKeyboardButton(text="На «вы» 🤝", callback_data="address_formal"),
+                InlineKeyboardButton(text=informal_text, callback_data="address_informal"),
+                InlineKeyboardButton(text=formal_text, callback_data="address_formal"),
             ],
         ]
     )
