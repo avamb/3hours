@@ -2,6 +2,63 @@
 
 ## Current Status: 172/172 features passing (100% complete!)
 
+## Session 514 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 features to ensure system stability:
+
+1. **Feature #135 - Create Message Templates CRUD in admin panel** ✅
+   - Templates page accessible from navigation
+   - Create New Template form with:
+     - Template Text input with {name} placeholder support
+     - Language dropdown (Russian/English)
+     - Category text input
+     - Formal (Вы) checkbox
+     - Active checkbox (default checked)
+   - Live preview showing {name} replaced with "User"
+   - Filter dropdowns for Language and Category (with counts: follow_up 12, main 20, return_inactive 8)
+   - Table displays all 40 templates with ID, text, language, formal/informal, category, status
+   - Edit and Delete buttons for each template
+   - CRUD Test: Created "TEST_REGRESSION_514_{name}, share something wonderful!" template
+     - Successfully saved with ID 60
+     - Successfully deleted with confirmation dialog
+     - Category filter updated dynamically
+
+2. **Feature #20 - Configure active hours** ✅
+   - User details modal shows configurable settings:
+     - Active Hours: 08:00:00 - 23:00:00 (differs from default 09:00-21:00)
+     - Notification Interval: 1h
+     - Timezone: UTC
+     - Address Form: Informal (ты)
+     - Notifications: Enabled
+   - Settings are persisted in database
+   - User andreiandreev62 has customized active hours
+
+3. **Feature #104 - Bot state recovery after crash** ✅
+   - Bot container running for 2 hours (after restart)
+   - Postgres container running for 26 hours (survived bot restart)
+   - APScheduler jobs running every minute:
+     - `NotificationScheduler._process_notifications` executes successfully
+     - All jobs show "executed successfully" status
+   - No data loss after restart:
+     - 10 users preserved
+     - 22 moments preserved
+     - User settings intact
+   - 8 pending notifications in queue
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
+- 10 users, 22 moments, 8 pending notifications
+- 0 Errors (24h), 0 Warnings (24h), 40 Info logs
+- Console: Zero JavaScript errors
+- All Docker containers healthy (bot, admin, postgres)
+
+### Screenshots Captured:
+- regression-session514-dashboard.png
+- regression-session514-logs.png
+
+---
+
 ## Session 513 - January 11, 2026
 
 ### Regression Testing Performed:
