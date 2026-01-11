@@ -1,8 +1,8 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Current Status: 165/165 features passing (100% complete) 🎉
+## Current Status: 165/165 features passing (100% complete)
 
-## Session 449 - January 11, 2026
+## Session 450 - January 11, 2026
 
 ### Regression Testing Completed
 - Verified all Docker services running:
@@ -11,41 +11,48 @@
   - bot: RUNNING
 
 ### Features Tested:
-1. **Feature #79 (Notification opt-out)**: VERIFIED
-   - `notifications_enabled` field exists in database
-   - Toggle functionality implemented in callbacks.py (lines 226-230)
-   - Settings menu displays notification status correctly
+1. **Feature #71 (Back navigation)**: VERIFIED
+   - Navigation between pages works correctly
+   - Overview, Users, Settings, Moments, Dialogs all navigable
+   - No 404 errors or broken links
 
-2. **Feature #107 (Feedback button)**: VERIFIED
-   - Admin panel Feedback page working
-   - Categories: Bug, Idea
-   - Status tracking: New, Reviewed, Implemented, Rejected
-   - Admin response with Telegram send capability
+2. **Feature #55 (Embedding creation for moments)**: VERIFIED
+   - Database query confirmed all moments have embeddings
+   - All embeddings have correct dimension: 1536
+   - Query: `SELECT has_embedding, embedding_dim FROM moments` shows all TRUE with 1536
 
-3. **Feature #23 (Toggle notifications on/off)**: VERIFIED
-   - User details show notification status
-   - Database stores `notifications_enabled` setting
-   - Bot handles toggle via Settings menu
+3. **Feature #77 (Free dialog context usage)**: VERIFIED
+   - Bot responds contextually to user messages
+   - Language adaptation working (German, Spanish, Russian, English)
+   - Conversation history visible in Dialogs page
+
+### Bug Found and Fixed:
+- **Issue**: User Details modal close button (×) not working
+- **Root Cause**: Selector `.modal-close` only matched first modal (feedback modal)
+- **Fix**: Changed selector to `#user-modal .modal-close` in admin/static/app.js
+- **Commit**: ddaa978
+- **Note**: Requires admin container rebuild to take effect
 
 ### System Health:
 - Admin panel: HEALTHY
 - Database: CONNECTED (10 MB)
 - Bot: RUNNING
 - OpenAI: CONFIGURED
-- 10 Total Users, 17 Total Moments
+- 10 Total Users, 18 Total Moments
 - No console errors detected
+
+## Session 449 - January 11, 2026
+
+### Regression Testing Completed
+- Verified all Docker services running
+- Features tested: #79 (Notification opt-out), #107 (Feedback button), #23 (Toggle notifications)
 
 ## Session 448 - January 11, 2026
 
 ### Feature #165 Implemented: Social Network Profile Parsing
-- **Feature Name**: "Парсинг соцсетей" (Social Network Parsing)
-- **Description**: Display error message when social network profile data cannot be parsed
-
-### Implementation Details:
-1. Added `attempt_parse_profile_data()` method to `social_profile_service.py`
-2. Updated `add_social_link()` method with profile parsing
-3. Updated `handle_social_link_input()` for localized warnings
-4. Added localized error messages (RU, EN, UK)
+- Added `attempt_parse_profile_data()` method to `social_profile_service.py`
+- Updated `add_social_link()` method with profile parsing
+- Added localized error messages (RU, EN, UK)
 
 ## Previous Sessions Summary
 - Sessions 408-447: Regression testing - all features verified
