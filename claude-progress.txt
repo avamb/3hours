@@ -2,6 +2,45 @@
 
 ## Current Status: 175/175 features passing (100.0%) 🎉
 
+## Session 527 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 features to ensure system stability:
+
+1. **Feature #13 - History search functionality** ✅
+   - Vector similarity search implemented in `moment_service.py`
+   - Uses pgvector for semantic search through moments
+   - `find_similar_moments()` method allows searching by text query
+   - Creates embeddings for search queries and finds similar moments
+
+2. **Feature #132 - Create Moments page in admin panel** ✅
+   - Page shows 23 total moments with statistics (avg mood 0.56, 3 unique users)
+   - Topics Cloud visualization working with extracted topics
+   - Filters available: user dropdown, date range, mood filter
+   - Export CSV functionality present
+   - Table shows ID, User, Content, Source, Mood, Topics, Created date
+
+3. **Feature #119 - Add summary settings to User model** ✅
+   - Migration file `20260110_0003_add_user_summary_fields.py` exists
+   - Fields added: daily_summary_enabled, weekly_summary_enabled, monthly_summary_enabled (Boolean, default true)
+   - Additional fields: detected_language, is_blocked, last_name
+   - question_templates also extended with is_active and updated_at fields
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
+- 10 users, 23 moments, 2 pending notifications
+- 0 Errors (24h), 0 Warnings (24h), 49 Info logs, 57 Total logs
+- Console: Zero JavaScript errors
+- All Docker containers healthy (bot, admin, postgres)
+
+### Screenshots Captured:
+- regression-dashboard-session527.png
+- regression-moments-page-session527.png
+- regression-user-details-session527.png
+- regression-logs-session527.png
+
+---
+
 ## Session 526 - January 11, 2026
 
 ### Regression Testing Performed:
@@ -25,144 +64,6 @@ Verified 3 features to ensure system stability:
    - "Respond to User" section with text field and send button
    - "Send to user via Telegram" checkbox option
    - Previous responses shown in modal
-
-### System Health Check:
-- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
-- 10 users, 23 moments, 8 pending notifications
-- 0 Errors (24h), 0 Warnings (24h), 49 Info logs, 57 Total logs
-- Console: Zero JavaScript errors
-- All Docker containers healthy (bot, admin, postgres)
-
-### Screenshots Captured:
-- regression-dashboard-session526.png
-- regression-feedback-modal-session526.png
-- regression-moments-session526.png
-- regression-logs-session526.png
-
----
-
-## Session 525 - January 11, 2026
-
-### Regression Testing Performed:
-Verified 3 features to ensure system stability:
-
-1. **Feature #143 - Export dialogs to CSV/JSON** ✅
-   - CSV export button works and downloads file with proper columns (ID, User ID, Telegram ID, Username, First Name, Message Type, Content, Created At)
-   - JSON export button works and downloads properly formatted JSON array
-   - Both exports contain real data (32 dialog messages from database)
-
-2. **Feature #64 - User isolation - cannot see others' data** ✅
-   - Code review confirms all data queries filter by `user_id`
-   - moment_service.py: `Moment.user_id == user.id` for all queries
-   - Conversations, feedback, GDPR operations all properly scoped to user
-   - Telegram authentication ensures users can only access their own data
-
-3. **Feature #110 - Dokploy-ready compose cleanup** ✅
-   - No `container_name` in any service (prevents deployment conflicts)
-   - No external PostgreSQL port mapping (DB only accessible within network)
-   - Services communicate via compose service names (e.g., `postgres`)
-   - Proper Traefik labels for domain routing
-   - Using dokploy-network (external network)
-
-### System Health Check:
-- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
-- 10 users, 23 moments, 8 pending notifications
-- 7 moments recorded today
-- Console: Zero JavaScript errors
-- All Docker containers healthy (bot, admin, postgres)
-
-### Screenshots Captured:
-- regression-dashboard-session525.png
-- regression-dialogs-page-session525.png
-- regression-users-page-session525.png
-
----
-
-## Session 524 - January 11, 2026
-
-### Regression Testing Performed:
-Verified 3 features to ensure system stability:
-
-1. **Feature #93 - Error retry mechanism** ✅
-   - OpenAI AsyncOpenAI client has built-in retry with exponential backoff
-   - Error handling exists throughout all service layers
-   - Zero errors in system logs (24h)
-
-2. **Feature #98 - Longest streak preservation** ✅
-   - Database schema tracks `current_streak` and `longest_streak` separately
-   - User details modal shows both values correctly
-   - Verified in database: user streaks properly preserved
-
-3. **Feature #113 - Admin health endpoint + container healthcheck** ✅
-   - `/health` endpoint returns `{"status":"ok","service":"admin","timestamp":"..."}`
-   - Admin container shows "healthy" status in Docker
-   - Dashboard shows "HEALTHY" badge in top bar
-
-### System Health Check:
-- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
-- 10 users, 23 moments, 8 pending notifications
-- 0 Errors (24h), 0 Warnings (24h), 49 Info logs, 57 Total logs
-- Console: Zero JavaScript errors
-- All Docker containers healthy (bot, admin, postgres)
-- 7 moments recorded today
-
-### Screenshots Captured:
-- regression-dashboard.png
-- regression-user-details.png
-- regression-logs.png
-- regression-moments.png
-
----
-
-## Session 523 - January 11, 2026
-
-### Regression Testing Performed:
-Verified 3 features to ensure system stability:
-
-1. **Feature #136 - Analytics page in admin panel** ✅
-   - User Funnel visualization (Registered → Onboarded → First Moment → Regular Use)
-   - Retention by Cohorts table with weekly data
-   - User Registrations chart with 30-day view (10 total users)
-   - Activity Heatmap showing usage patterns by day/hour
-   - Language Distribution pie chart (English 50%, Russian 40%, Ukrainian 10%)
-
-2. **Feature #90 - Environment variables configuration** ✅
-   - System Logs page shows 0 Errors, 0 Warnings in 24h
-   - 49 Info logs and 57 total logs
-   - Bot, Database, and OpenAI all configured and running
-   - All environment variables properly loaded
-
-3. **Feature #49 - Message formatting - short paragraphs** ✅
-   - Moments page showing 23 total moments with proper formatting
-   - Topics Cloud displaying extracted topics
-   - Filters working for users, dates, and mood levels
-   - Export CSV functionality available
-
-### System Health Check:
-- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
-- 10 users, 23 moments, 8 pending notifications
-- 0 Errors (24h), 0 Warnings (24h), 49 Info logs
-- Console: Zero JavaScript errors
-- All Docker containers healthy (bot, admin, postgres)
-- 7 moments recorded today
-
-### Screenshots Captured:
-- regression-session523-dashboard.png
-- regression-session523-analytics.png
-- regression-session523-moments.png
-- regression-session523-logs.png
-- regression-session523-notifications.png
-
----
-
-## Session 522 - January 11, 2026
-
-### Regression Testing Performed:
-Verified 3 features to ensure system stability:
-
-1. **Feature #11 - History view - list moments** ✅
-2. **Feature #32 - Inactive user re-engagement (1 day)** ✅
-3. **Feature #118 - New specification updates** ✅
 
 ---
 
