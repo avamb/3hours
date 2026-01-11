@@ -7,6 +7,7 @@ from aiogram import Router, F
 from aiogram.types import Message, ContentType
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command, StateFilter
+from aiogram.enums import ChatAction
 
 from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_social_profile_keyboard
@@ -169,6 +170,9 @@ async def handle_voice_message(message: Message) -> None:
             voice_file_id=voice.file_id
         )
 
+        # Show typing indicator while generating response
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+
         # Generate personalized response
         response = await personalization_service.generate_response(
             telegram_id=message.from_user.id,
@@ -235,6 +239,8 @@ async def handle_text_message(message: Message) -> None:
     # Dialog mode: route to DialogService (persists to conversations)
     if dialog_service.is_in_dialog(message.from_user.id):
         from src.bot.keyboards.inline import get_dialog_keyboard
+        # Show typing indicator while generating AI response
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
         response = await dialog_service.process_dialog_message(
             telegram_id=message.from_user.id,
             message=text,
@@ -253,6 +259,9 @@ async def handle_text_message(message: Message) -> None:
     moment_service = MomentService()
     personalization_service = PersonalizationService()
 
+    # Show typing indicator while processing AI tasks
+    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+
     # Check for negative mood
     is_negative = await personalization_service.detect_negative_mood(text)
 
@@ -265,13 +274,16 @@ async def handle_text_message(message: Message) -> None:
         )
 
         if similar_moments:
-            # Remind about past positive moments
+            # Remind about past positive moments - refresh typing indicator
+            await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
             response = await personalization_service.generate_supportive_response(
                 telegram_id=message.from_user.id,
                 current_text=text,
                 past_moments=similar_moments
             )
         else:
+            # Refresh typing indicator before generating response
+            await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
             response = await personalization_service.generate_empathetic_response(
                 telegram_id=message.from_user.id,
                 text=text
@@ -291,6 +303,9 @@ async def handle_text_message(message: Message) -> None:
             content=text,
             source_type="text"
         )
+
+        # Refresh typing indicator before generating response
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
 
         # Generate personalized positive response
         response = await personalization_service.generate_response(

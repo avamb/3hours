@@ -1501,26 +1501,61 @@ const routes = {
                 WHERE id = $2
             `, [response.trim(), feedbackId]);
 
-            // If send_to_user is true, mark that user should receive the response
-            // The actual sending would be handled by the bot service checking for new responses
+            // If send_to_user is true, send the response to user via Telegram
             let messageSent = false;
-            if (send_to_user && feedback.telegram_id) {
-                // For now, we mark the response as pending delivery
-                // The bot can poll for undelivered responses or use a webhook
-                // We'll use a simple flag in the feedback table
-                await client.query(`
-                    UPDATE feedback
-                    SET admin_response_sent = false
-                    WHERE id = $1
-                `, [feedbackId]);
-                messageSent = true;
+            let telegramError = null;
+            if (send_to_user && feedback.telegram_id && TELEGRAM_BOT_TOKEN) {
+                try {
+                    // Format the response message
+                    const messageText = `💬 <b>Ответ на ваш отзыв:</b>\n\n${response.trim()}`;
+
+                    // Send message via Telegram API
+                    const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                    const telegramResponse = await fetch(telegramUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: feedback.telegram_id.toString(),
+                            text: messageText,
+                            parse_mode: 'HTML',
+                        }),
+                    });
+
+                    const telegramResult = await telegramResponse.json();
+
+                    if (telegramResult.ok) {
+                        messageSent = true;
+                        // Mark response as sent
+                        await client.query(`
+                            UPDATE feedback
+                            SET admin_response_sent = true
+                            WHERE id = $1
+                        `, [feedbackId]);
+
+                        // Log the message in conversations table
+                        await client.query(`
+                            INSERT INTO conversations (user_id, message_type, content, metadata, created_at)
+                            VALUES ($1, 'admin_feedback_response', $2, $3, NOW())
+                        `, [feedback.user_id, response.trim(), JSON.stringify({
+                            source: 'admin_panel',
+                            feedback_id: feedbackId
+                        })]);
+                    } else {
+                        telegramError = telegramResult.description || 'Unknown Telegram error';
+                        console.error('Telegram API error sending feedback response:', telegramResult);
+                    }
+                } catch (error) {
+                    telegramError = error.message;
+                    console.error('Error sending feedback response via Telegram:', error);
+                }
             }
 
             sendJson(res, {
                 success: true,
                 feedback_id: feedbackId,
                 response_saved: true,
-                message_queued: messageSent,
+                message_sent: messageSent,
+                telegram_error: telegramError,
                 telegram_id: feedback.telegram_id?.toString(),
             });
         } finally {

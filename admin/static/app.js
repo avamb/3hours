@@ -1091,9 +1091,17 @@ async function sendFeedbackResponse(feedbackId) {
         });
 
         if (result.success) {
-            alert(sendToUser
-                ? 'Response saved and message queued for delivery!'
-                : 'Response saved successfully!');
+            let alertMessage = 'Response saved successfully!';
+            if (sendToUser) {
+                if (result.message_sent) {
+                    alertMessage = 'Response saved and message sent to user!';
+                } else if (result.telegram_error) {
+                    alertMessage = `Response saved but message failed to send: ${result.telegram_error}`;
+                } else {
+                    alertMessage = 'Response saved (message sending not available)';
+                }
+            }
+            alert(alertMessage);
 
             // Close modal and refresh
             document.getElementById('feedback-modal').classList.remove('active');
