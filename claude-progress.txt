@@ -2,6 +2,42 @@
 
 ## Current Status: 175/175 features passing (100.0%) 🎉
 
+## Session 528 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 features to ensure system stability:
+
+1. **Feature #85 - Statistics visual formatting** ✅
+   - Analytics page shows emojis (📊✅💬🎯) for stat cards
+   - Clear numbers displayed: 10 Total Users, 9 Onboarded, 1 Active (7d), 10% Retention Rate
+   - User Funnel visualization with drop-off percentages
+   - Activity Heatmap, Language Distribution, User Registrations chart all working
+
+2. **Feature #43 - Formal/informal templates** ✅
+   - Templates page shows both Ты (informal) and Вы (formal) versions
+   - Templates exist for ru, en, uk languages
+   - Categories: main, follow_up, return_inactive
+   - {name} placeholder working for personalization
+
+3. **Feature #22 - Toggle address form ты/вы** ✅
+   - User details modal shows "Address Form: Informal (ты)" setting
+   - User MarinaBakanova (ID 7) has informal address configured
+   - Settings include timezone, active hours, notification interval
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
+- 10 users, 23 moments, 2 pending notifications
+- Console: Zero JavaScript errors
+- All Docker containers healthy (bot, admin, postgres)
+
+### Screenshots Captured:
+- regression-dashboard-session528.png
+- regression-user-details-session528.png
+- regression-templates-session528.png
+- regression-analytics-session528.png
+
+---
+
 ## Session 527 - January 11, 2026
 
 ### Regression Testing Performed:
@@ -25,45 +61,6 @@ Verified 3 features to ensure system stability:
    - Fields added: daily_summary_enabled, weekly_summary_enabled, monthly_summary_enabled (Boolean, default true)
    - Additional fields: detected_language, is_blocked, last_name
    - question_templates also extended with is_active and updated_at fields
-
-### System Health Check:
-- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
-- 10 users, 23 moments, 2 pending notifications
-- 0 Errors (24h), 0 Warnings (24h), 49 Info logs, 57 Total logs
-- Console: Zero JavaScript errors
-- All Docker containers healthy (bot, admin, postgres)
-
-### Screenshots Captured:
-- regression-dashboard-session527.png
-- regression-moments-page-session527.png
-- regression-user-details-session527.png
-- regression-logs-session527.png
-
----
-
-## Session 526 - January 11, 2026
-
-### Regression Testing Performed:
-Verified 3 features to ensure system stability:
-
-1. **Feature #34 - Whisper transcription error handling** ✅
-   - Code has proper try/catch blocks in `speech_service.py` and `messages.py`
-   - Friendly error messages in 5 languages (ru, en, uk, es, de)
-   - User can retry or type message instead
-   - No crashes on failure - graceful degradation
-
-2. **Feature #62 - Data persistence across sessions** ✅
-   - 23 moments stored in database from multiple users
-   - Both text and voice messages persisted
-   - Data spans 4+ days showing persistence across sessions
-   - Topics Cloud showing extracted topics from all moments
-
-3. **Feature #139 - Respond to feedback from admin panel** ✅
-   - Feedback page shows 5 real user feedback entries
-   - "View" button opens modal with full details
-   - "Respond to User" section with text field and send button
-   - "Send to user via Telegram" checkbox option
-   - Previous responses shown in modal
 
 ---
 
