@@ -18,7 +18,7 @@ from src.services.speech_service import SpeechToTextService
 from src.services.personalization_service import PersonalizationService
 from src.services.conversation_log_service import ConversationLogService
 from src.services.social_profile_service import SocialProfileService
-from src.utils.localization import detect_and_update_language, get_all_menu_button_texts
+from src.utils.localization import detect_and_update_language, get_all_menu_button_texts, get_language_code, get_menu_text
 
 logger = logging.getLogger(__name__)
 router = Router(name="messages")
@@ -162,15 +162,23 @@ async def handle_voice_message(message: Message) -> None:
     """
     Handle voice messages
     - Download voice file
-    - Transcribe using Whisper API
-    - Process as text response
+    - Transcribe using Whisper API with auto language detection
+    - Respond in the same language as the voice message
     """
     from src.services.user_service import UserService
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
 
-    await message.answer("🎙 Распознаю голосовое сообщение...")
+    # Processing messages in different languages
+    processing_messages = {
+        "ru": "🎙 Распознаю голосовое сообщение...",
+        "en": "🎙 Recognizing voice message...",
+        "uk": "🎙 Розпізнаю голосове повідомлення...",
+        "es": "🎙 Reconociendo mensaje de voz...",
+        "de": "🎙 Sprachnachricht wird erkannt...",
+    }
+    await message.answer(processing_messages.get(language_code, processing_messages["ru"]))
 
     speech_service = SpeechToTextService()
 
@@ -180,18 +188,39 @@ async def handle_voice_message(message: Message) -> None:
         file = await message.bot.get_file(voice.file_id)
         file_path = file.file_path
 
-        # Download and transcribe
-        transcribed_text = await speech_service.transcribe_voice(
+        # Download and transcribe - now returns (text, detected_language)
+        transcribed_text, detected_language = await speech_service.transcribe_voice(
             bot=message.bot,
             file_path=file_path,
             telegram_id=message.from_user.id,
         )
 
         if not transcribed_text or transcribed_text.strip() == "":
-            await message.answer(
-                "😔 Не удалось распознать голос. Попробуй ещё раз или напиши текстом."
-            )
+            # Error messages in different languages
+            error_messages = {
+                "ru": "😔 Не удалось распознать голос. Попробуй ещё раз или напиши текстом.",
+                "en": "😔 Couldn't recognize voice. Please try again or type your message.",
+                "uk": "😔 Не вдалося розпізнати голос. Спробуй ще раз або напиши текстом.",
+                "es": "😔 No se pudo reconocer la voz. Intenta de nuevo o escribe tu mensaje.",
+                "de": "😔 Spracherkennung fehlgeschlagen. Bitte versuche es erneut oder schreibe.",
+            }
+            await message.answer(error_messages.get(language_code, error_messages["ru"]))
             return
+
+        # Update user's language preference based on the voice message language
+        # This ensures responses match the language the user spoke in
+        voice_language = get_language_code(detected_language) if detected_language else language_code
+
+        # Update user language if it differs from detected voice language
+        if detected_language and voice_language != language_code:
+            await user_service.update_user_settings(
+                telegram_id=message.from_user.id,
+                language_code=voice_language
+            )
+            logger.info(f"Updated user {message.from_user.id} language to {voice_language} based on voice message")
+
+        # Use the detected language for responses
+        response_language = voice_language
 
         # Process as moment
         moment_service = MomentService()
@@ -201,7 +230,7 @@ async def handle_voice_message(message: Message) -> None:
             telegram_id=message.from_user.id,
             message_type="user_response",
             content=transcribed_text,
-            metadata={"source": "voice", "voice_file_id": voice.file_id},
+            metadata={"source": "voice", "voice_file_id": voice.file_id, "detected_language": detected_language},
         )
 
         moment = await moment_service.create_moment(
@@ -214,30 +243,46 @@ async def handle_voice_message(message: Message) -> None:
         # Show typing indicator while generating response
         await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
 
-        # Generate personalized response
+        # Generate personalized response in the detected language
         response = await personalization_service.generate_response(
             telegram_id=message.from_user.id,
-            moment_content=transcribed_text
+            moment_content=transcribed_text,
+            override_language=response_language  # Force response in voice message language
         )
 
+        # "Recognized" prefix in different languages
+        recognized_prefix = {
+            "ru": "✅ Распознано",
+            "en": "✅ Recognized",
+            "uk": "✅ Розпізнано",
+            "es": "✅ Reconocido",
+            "de": "✅ Erkannt",
+        }
+        prefix = recognized_prefix.get(response_language, recognized_prefix["ru"])
+
         await message.answer(
-            f"✅ Распознано: «{transcribed_text}»\n\n{response}",
-            reply_markup=get_main_menu_keyboard(language_code)
+            f"{prefix}: «{transcribed_text}»\n\n{response}",
+            reply_markup=get_main_menu_keyboard(response_language)
         )
 
         await conversation_log.log(
             telegram_id=message.from_user.id,
             message_type="bot_reply",
             content=response,
-            metadata={"source": "voice"},
+            metadata={"source": "voice", "response_language": response_language},
         )
 
     except Exception as e:
         logger.error(f"Voice processing error: {e}")
-        await message.answer(
-            "😔 Произошла ошибка при обработке голосового сообщения. "
-            "Попробуй ещё раз или напиши текстом."
-        )
+        # Error messages in different languages
+        error_messages = {
+            "ru": "😔 Произошла ошибка при обработке голосового сообщения. Попробуй ещё раз или напиши текстом.",
+            "en": "😔 An error occurred while processing the voice message. Please try again or type your message.",
+            "uk": "😔 Сталася помилка при обробці голосового повідомлення. Спробуй ще раз або напиши текстом.",
+            "es": "😔 Ocurrió un error al procesar el mensaje de voz. Intenta de nuevo o escribe tu mensaje.",
+            "de": "😔 Bei der Verarbeitung der Sprachnachricht ist ein Fehler aufgetreten. Bitte versuche es erneut oder schreibe.",
+        }
+        await message.answer(error_messages.get(language_code, error_messages["ru"]))
 
 
 @router.message(F.text)

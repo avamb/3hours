@@ -6,7 +6,7 @@ import logging
 import tempfile
 import os
 import time
-from typing import Optional
+from typing import Optional, Tuple
 
 from aiogram import Bot
 from openai import AsyncOpenAI
@@ -31,9 +31,10 @@ class SpeechToTextService:
         bot: Bot,
         file_path: str,
         telegram_id: int = None,
-    ) -> Optional[str]:
+    ) -> Tuple[Optional[str], Optional[str]]:
         """
-        Download voice file and transcribe using Whisper API
+        Download voice file and transcribe using Whisper API.
+        Auto-detects the language of the voice message.
 
         Args:
             bot: Telegram bot instance
@@ -41,7 +42,8 @@ class SpeechToTextService:
             telegram_id: Optional Telegram user ID for tracking
 
         Returns:
-            Transcribed text or None if failed
+            Tuple of (transcribed_text, detected_language_code) or (None, None) if failed
+            Language code is ISO 639-1 format (e.g., "ru", "en", "uk")
         """
         temp_file = None
         start_time = time.time()
@@ -61,7 +63,7 @@ class SpeechToTextService:
                         logger.error(f"Failed to download voice: HTTP {response.status}")
                         success = False
                         error_msg = f"HTTP {response.status}"
-                        return None
+                        return None, None
 
                     # Create temp file with .ogg extension
                     temp_file = tempfile.NamedTemporaryFile(
@@ -73,22 +75,55 @@ class SpeechToTextService:
                     async with aiofiles.open(temp_file.name, "wb") as f:
                         await f.write(file_content)
 
-            # Transcribe using Whisper
+            # Transcribe using Whisper with auto-language detection
+            # Using verbose_json response format to get the detected language
             with open(temp_file.name, "rb") as audio_file:
                 transcript = await self.client.audio.transcriptions.create(
                     model="whisper-1",
                     file=audio_file,
-                    language="ru",  # Default to Russian, could be auto-detected
+                    response_format="verbose_json",
+                    # No language parameter - let Whisper auto-detect
                 )
 
-            logger.info(f"Transcribed voice: {transcript.text[:50]}...")
-            return transcript.text
+            # Extract detected language from response
+            detected_language = getattr(transcript, 'language', None)
+            transcribed_text = transcript.text
+
+            # Map Whisper language names to ISO codes if needed
+            language_map = {
+                'russian': 'ru',
+                'english': 'en',
+                'ukrainian': 'uk',
+                'spanish': 'es',
+                'german': 'de',
+                'french': 'fr',
+                'italian': 'it',
+                'portuguese': 'pt',
+                'chinese': 'zh',
+                'japanese': 'ja',
+                'korean': 'ko',
+            }
+
+            # Normalize the detected language to ISO code
+            if detected_language:
+                detected_language = detected_language.lower()
+                # If it's already a 2-letter code, use it
+                if len(detected_language) == 2:
+                    lang_code = detected_language
+                else:
+                    # Try to map from full name to code
+                    lang_code = language_map.get(detected_language, detected_language[:2] if len(detected_language) >= 2 else 'ru')
+            else:
+                lang_code = 'ru'  # Fallback to Russian
+
+            logger.info(f"Transcribed voice (lang={lang_code}): {transcribed_text[:50]}...")
+            return transcribed_text, lang_code
 
         except Exception as e:
             logger.error(f"Voice transcription failed: {e}")
             success = False
             error_msg = str(e)
-            return None
+            return None, None
 
         finally:
             # Clean up temp file

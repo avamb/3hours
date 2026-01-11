@@ -112,9 +112,17 @@ class PersonalizationService:
         self,
         telegram_id: int,
         moment_content: str,
+        override_language: str = None,
     ) -> str:
         """
         Generate a personalized positive response to user's moment
+
+        Args:
+            telegram_id: User's Telegram ID
+            moment_content: The content of the moment to respond to
+            override_language: If set, forces the response to be in this language
+                             (e.g., 'en', 'ru', 'uk'). Used for voice messages
+                             to respond in the same language as the voice.
         """
         start_time = time.time()
         success = True
@@ -134,12 +142,40 @@ class PersonalizationService:
             gender = user.gender if user else "unknown"
             gender_instruction = get_gender_instruction(gender)
 
+            # Build language instruction - use override if provided
+            if override_language:
+                # Force specific language for response (used for voice messages)
+                language_names = {
+                    'ru': 'Russian/Русский',
+                    'en': 'English',
+                    'uk': 'Ukrainian/Українська',
+                    'es': 'Spanish/Español',
+                    'de': 'German/Deutsch',
+                    'fr': 'French/Français',
+                    'it': 'Italian/Italiano',
+                    'pt': 'Portuguese/Português',
+                }
+                lang_name = language_names.get(override_language, override_language)
+                forced_language_instruction = f"""
+⚠️ CRITICAL LANGUAGE RULE - HIGHEST PRIORITY ⚠️
+You MUST respond ONLY in {lang_name}.
+This is a voice message that was spoken in {lang_name}.
+Your response MUST be in {lang_name} - NO OTHER LANGUAGE.
+This rule has ABSOLUTE PRIORITY over any other instructions.
+
+⚠️ КРИТИЧЕСКИ ВАЖНОЕ ПРАВИЛО О ЯЗЫКЕ - ВЫСШИЙ ПРИОРИТЕТ ⚠️
+Ты ДОЛЖЕН отвечать ТОЛЬКО на языке: {lang_name}.
+Это голосовое сообщение было произнесено на {lang_name}.
+Твой ответ ДОЛЖЕН быть на {lang_name} - НЕ НА ДРУГОМ ЯЗЫКЕ."""
+            else:
+                forced_language_instruction = LANGUAGE_INSTRUCTION
+
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {
                         "role": "system",
-                        "content": f"""{LANGUAGE_INSTRUCTION}
+                        "content": f"""{forced_language_instruction}
 
 {PROMPT_PROTECTION}
 
