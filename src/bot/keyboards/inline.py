@@ -46,6 +46,12 @@ def get_settings_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="⏰ Интервал", callback_data="settings_interval"),
             ],
             [
+                InlineKeyboardButton(text="🌍 Часовой пояс", callback_data="settings_timezone"),
+            ],
+            [
+                InlineKeyboardButton(text="👤 Социальный профиль", callback_data="settings_social"),
+            ],
+            [
                 InlineKeyboardButton(text="🗣 Форма обращения", callback_data="settings_address"),
             ],
             [
@@ -60,6 +66,97 @@ def get_settings_keyboard() -> InlineKeyboardMarkup:
         ]
     )
     return keyboard
+
+
+def get_social_profile_keyboard() -> InlineKeyboardMarkup:
+    """Create keyboard for social profile settings"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="➕ Добавить соцсеть", callback_data="social_add"),
+            ],
+            [
+                InlineKeyboardButton(text="📝 Редактировать био", callback_data="social_bio"),
+            ],
+            [
+                InlineKeyboardButton(text="🔍 Определить интересы", callback_data="social_parse"),
+            ],
+            [
+                InlineKeyboardButton(text="🗑 Удалить ссылку", callback_data="social_remove"),
+            ],
+            [
+                InlineKeyboardButton(text="⬅️ Назад", callback_data="settings_back"),
+            ],
+        ]
+    )
+    return keyboard
+
+
+def get_social_remove_keyboard(profile_urls: dict) -> InlineKeyboardMarkup:
+    """Create keyboard for removing social links"""
+    network_names = {
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "twitter": "Twitter/X",
+        "linkedin": "LinkedIn",
+        "vk": "ВКонтакте",
+        "telegram_channel": "Telegram канал",
+        "youtube": "YouTube",
+        "tiktok": "TikTok",
+    }
+
+    rows = []
+    for network, url in profile_urls.items():
+        if url:
+            name = network_names.get(network, network)
+            rows.append([
+                InlineKeyboardButton(text=f"❌ {name}", callback_data=f"social_del_{network}")
+            ])
+
+    if not rows:
+        rows.append([
+            InlineKeyboardButton(text="Нет добавленных соцсетей", callback_data="noop")
+        ])
+
+    rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="social_back")])
+
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def get_timezone_keyboard() -> InlineKeyboardMarkup:
+    """Create keyboard for selecting timezone"""
+    # Common timezones relevant for Russian-speaking users
+    timezones = [
+        ("🇷🇺 Москва (UTC+3)", "Europe/Moscow"),
+        ("🇷🇺 Калининград (UTC+2)", "Europe/Kaliningrad"),
+        ("🇷🇺 Самара (UTC+4)", "Europe/Samara"),
+        ("🇷🇺 Екатеринбург (UTC+5)", "Asia/Yekaterinburg"),
+        ("🇷🇺 Омск (UTC+6)", "Asia/Omsk"),
+        ("🇷🇺 Красноярск (UTC+7)", "Asia/Krasnoyarsk"),
+        ("🇷🇺 Иркутск (UTC+8)", "Asia/Irkutsk"),
+        ("🇷🇺 Якутск (UTC+9)", "Asia/Yakutsk"),
+        ("🇷🇺 Владивосток (UTC+10)", "Asia/Vladivostok"),
+        ("🇷🇺 Магадан (UTC+11)", "Asia/Magadan"),
+        ("🇷🇺 Камчатка (UTC+12)", "Asia/Kamchatka"),
+        ("🇺🇦 Киев (UTC+2)", "Europe/Kiev"),
+        ("🇧🇾 Минск (UTC+3)", "Europe/Minsk"),
+        ("🇰🇿 Алматы (UTC+6)", "Asia/Almaty"),
+        ("🇺🇿 Ташкент (UTC+5)", "Asia/Tashkent"),
+        ("🇬🇪 Тбилиси (UTC+4)", "Asia/Tbilisi"),
+        ("🇦🇲 Ереван (UTC+4)", "Asia/Yerevan"),
+        ("🇦🇿 Баку (UTC+4)", "Asia/Baku"),
+        ("UTC (Универсальное)", "UTC"),
+    ]
+
+    rows = []
+    for label, tz in timezones:
+        rows.append([
+            InlineKeyboardButton(text=label, callback_data=f"timezone_{tz}")
+        ])
+
+    rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="settings_back")])
+
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def get_hours_keyboard(mode: str, start_hour: str = None) -> InlineKeyboardMarkup:

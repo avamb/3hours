@@ -6,6 +6,8 @@ import logging
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 
+from aiogram.fsm.context import FSMContext
+
 from src.bot.keyboards.inline import (
     get_settings_keyboard,
     get_moments_keyboard,
@@ -13,10 +15,15 @@ from src.bot.keyboards.inline import (
     get_hours_keyboard,
     get_interval_keyboard,
     get_address_form_keyboard,
+    get_timezone_keyboard,
+    get_social_profile_keyboard,
+    get_social_remove_keyboard,
 )
+from src.bot.states.social_profile import SocialProfileStates
 from src.services.user_service import UserService
 from src.services.moment_service import MomentService
 from src.services.gdpr_service import GDPRService
+from src.services.social_profile_service import SocialProfileService
 
 logger = logging.getLogger(__name__)
 router = Router(name="callbacks")
@@ -217,6 +224,175 @@ async def callback_settings_notifications(callback: CallbackQuery) -> None:
     await callback.answer("Сохранено!")
 
 
+@router.callback_query(F.data == "settings_timezone")
+async def callback_settings_timezone(callback: CallbackQuery) -> None:
+    """Show timezone settings"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+
+    current_tz = user.timezone if user else "UTC"
+    await callback.message.edit_text(
+        f"🌍 <b>Часовой пояс</b>\n\n"
+        f"Текущий: <code>{current_tz}</code>\n\n"
+        "Выбери свой часовой пояс:",
+        reply_markup=get_timezone_keyboard()
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("timezone_"))
+async def callback_set_timezone(callback: CallbackQuery) -> None:
+    """Set user timezone"""
+    timezone = callback.data.replace("timezone_", "")
+
+    user_service = UserService()
+    try:
+        await user_service.update_user_settings(
+            telegram_id=callback.from_user.id,
+            timezone=timezone
+        )
+
+        await callback.message.edit_text(
+            f"✅ Часовой пояс установлен: {timezone}",
+            reply_markup=get_settings_keyboard()
+        )
+        await callback.answer("Сохранено!")
+    except ValueError as e:
+        await callback.message.edit_text(
+            f"❌ Ошибка: неверный часовой пояс",
+            reply_markup=get_settings_keyboard()
+        )
+        await callback.answer("Ошибка!")
+
+
+# Social profile callbacks
+@router.callback_query(F.data == "settings_social")
+async def callback_settings_social(callback: CallbackQuery) -> None:
+    """Show social profile settings"""
+    social_service = SocialProfileService()
+    summary = await social_service.get_profile_summary(callback.from_user.id)
+
+    await callback.message.edit_text(
+        f"👤 <b>Социальный профиль</b>\n\n{summary}",
+        reply_markup=get_social_profile_keyboard()
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "social_add")
+async def callback_social_add(callback: CallbackQuery, state: FSMContext) -> None:
+    """Prompt to add a social network link"""
+    await state.set_state(SocialProfileStates.waiting_for_social_link)
+    await callback.message.edit_text(
+        "🔗 <b>Добавить соцсеть</b>\n\n"
+        "Отправь ссылку на свою страницу в соцсети.\n\n"
+        "Поддерживаются:\n"
+        "• Instagram\n"
+        "• Facebook\n"
+        "• Twitter/X\n"
+        "• LinkedIn\n"
+        "• ВКонтакте\n"
+        "• Telegram канал\n"
+        "• YouTube\n"
+        "• TikTok\n\n"
+        "Отправь /cancel чтобы отменить."
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "social_bio")
+async def callback_social_bio(callback: CallbackQuery, state: FSMContext) -> None:
+    """Prompt to edit bio"""
+    await state.set_state(SocialProfileStates.waiting_for_bio)
+    await callback.message.edit_text(
+        "📝 <b>Редактирование биографии</b>\n\n"
+        "Напиши немного о себе, своих увлечениях и интересах.\n"
+        "Это поможет мне лучше понять тебя и сделать наше общение более персональным.\n\n"
+        "Отправь /cancel чтобы отменить."
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "social_parse")
+async def callback_social_parse(callback: CallbackQuery) -> None:
+    """Parse interests from profile"""
+    await callback.message.edit_text("🔍 Анализирую профиль...")
+
+    social_service = SocialProfileService()
+    success, interests = await social_service.parse_interests(callback.from_user.id)
+
+    if success and interests:
+        interests_text = ", ".join(interests)
+        await callback.message.edit_text(
+            f"✅ <b>Интересы определены!</b>\n\n"
+            f"Твои интересы: {interests_text}\n\n"
+            f"Эта информация будет использоваться для персонализации нашего общения.",
+            reply_markup=get_social_profile_keyboard()
+        )
+    else:
+        await callback.message.edit_text(
+            "❌ Не удалось определить интересы.\n\n"
+            "Добавь больше информации в свой профиль: ссылки на соцсети или биографию.",
+            reply_markup=get_social_profile_keyboard()
+        )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "social_remove")
+async def callback_social_remove(callback: CallbackQuery) -> None:
+    """Show list of social links to remove"""
+    social_service = SocialProfileService()
+    profile = await social_service.get_profile(callback.from_user.id)
+
+    if not profile:
+        await callback.message.edit_text(
+            "У тебя нет добавленных соцсетей.",
+            reply_markup=get_social_profile_keyboard()
+        )
+    else:
+        urls = profile.get_all_urls()
+        await callback.message.edit_text(
+            "🗑 <b>Удаление ссылки</b>\n\n"
+            "Выбери соцсеть для удаления:",
+            reply_markup=get_social_remove_keyboard(urls)
+        )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("social_del_"))
+async def callback_social_delete(callback: CallbackQuery) -> None:
+    """Delete a social network link"""
+    network = callback.data.replace("social_del_", "")
+
+    social_service = SocialProfileService()
+    success, message = await social_service.remove_social_link(callback.from_user.id, network)
+
+    if success:
+        await callback.message.edit_text(
+            f"✅ {message}",
+            reply_markup=get_social_profile_keyboard()
+        )
+    else:
+        await callback.message.edit_text(
+            f"❌ {message}",
+            reply_markup=get_social_profile_keyboard()
+        )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "social_back")
+async def callback_social_back(callback: CallbackQuery) -> None:
+    """Go back to social profile menu"""
+    social_service = SocialProfileService()
+    summary = await social_service.get_profile_summary(callback.from_user.id)
+
+    await callback.message.edit_text(
+        f"👤 <b>Социальный профиль</b>\n\n{summary}",
+        reply_markup=get_social_profile_keyboard()
+    )
+    await callback.answer()
+
+
 @router.callback_query(F.data == "settings_back")
 async def callback_settings_back(callback: CallbackQuery) -> None:
     """Go back to settings menu"""
@@ -228,6 +404,7 @@ async def callback_settings_back(callback: CallbackQuery) -> None:
         "⚙️ <b>Настройки</b>\n\n"
         f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
         f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
+        f"🌍 Часовой пояс: {user.timezone}\n"
         f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
         f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
     )
@@ -248,6 +425,7 @@ async def callback_settings_reset(callback: CallbackQuery) -> None:
             "✅ <b>Настройки сброшены!</b>\n\n"
             f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
             f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
+            f"🌍 Часовой пояс: {user.timezone}\n"
             f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
             f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
         )
@@ -494,9 +672,9 @@ async def callback_menu_settings(callback: CallbackQuery) -> None:
             "⚙️ <b>Настройки</b>\n\n"
             f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
             f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
+            f"🌍 Часовой пояс: {user.timezone}\n"
             f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
             f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
-            f"🌍 Язык: {user.language_code}\n"
         )
         await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard())
 

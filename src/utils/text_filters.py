@@ -15,6 +15,31 @@ ABROAD_PHRASE_RULE_RU: Final[str] = (
     "«в другой стране» (если речь о месте) и «в другую страну» (если речь о направлении)."
 )
 
+# Rule for forbidden religious and community symbols
+FORBIDDEN_SYMBOLS_RULE_RU: Final[str] = (
+    "ВАЖНО: Никогда не используй в ответах символы, эмодзи и изображения, связанные с "
+    "религиозными конфессиями (кресты, полумесяцы, звёзды Давида, буддийские символы и т.д.) "
+    "или ЛГБТ-сообществом (радуга, флаги и т.д.). "
+    "Используй только нейтральные позитивные эмодзи: 🌟 ⭐ 💫 ✨ 🌸 🌺 💐 🌷 💝 💖 💗 💕 "
+    "🤗 😊 😃 🙂 👍 🎉 🎊 ☀️ 🌤️ 🌈 🍀 🌻 и подобные нейтральные символы."
+)
+
+# Forbidden emoji characters to filter from bot responses
+# Religious symbols
+_RELIGIOUS_EMOJIS = {
+    "✝️", "✝", "☦️", "☦", "✡️", "✡", "☪️", "☪", "🕉️", "🕉", "☸️", "☸",
+    "🛐", "⛪", "🕌", "🕍", "⛩️", "⛩", "🕋", "🔯", "✴️", "📿", "🙏",
+    "👼", "😇", "🧕", "👳", "✞", "☩", "♱", "☥", "卐", "卍", "࿕", "࿖",
+}
+
+# LGBT-related flags and symbols
+_LGBT_EMOJIS = {
+    "🏳️‍🌈", "🏳️‍⚧️", "🏳‍🌈", "🏳‍⚧",
+}
+
+# Combined set of all forbidden emojis
+FORBIDDEN_EMOJIS: Final[frozenset] = frozenset(_RELIGIOUS_EMOJIS | _LGBT_EMOJIS)
+
 # Matches:
 # - "за границей" / "за границу"
 # - "за рубежом" / "за рубеж"
@@ -42,5 +67,29 @@ def replace_abroad_phrases(text: str) -> str:
         return replacement
 
     return _ABROAD_PHRASE_RE.sub(_repl, text)
+
+
+def remove_forbidden_emojis(text: str) -> str:
+    """
+    Remove forbidden religious and LGBT-related emojis from text.
+    Returns cleaned text.
+    """
+    result = text
+    for emoji in FORBIDDEN_EMOJIS:
+        result = result.replace(emoji, "")
+    # Clean up any double spaces that might result
+    result = re.sub(r"  +", " ", result)
+    return result.strip()
+
+
+def apply_all_filters(text: str) -> str:
+    """
+    Apply all text filters to bot response:
+    1. Replace abroad phrases
+    2. Remove forbidden emojis
+    """
+    text = replace_abroad_phrases(text)
+    text = remove_forbidden_emojis(text)
+    return text
 
 

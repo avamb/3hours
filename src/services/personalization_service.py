@@ -11,7 +11,11 @@ from sqlalchemy import select
 from src.config import get_settings
 from src.db.database import get_session
 from src.db.models import User, Moment
-from src.utils.text_filters import ABROAD_PHRASE_RULE_RU, replace_abroad_phrases
+from src.utils.text_filters import (
+    ABROAD_PHRASE_RULE_RU,
+    FORBIDDEN_SYMBOLS_RULE_RU,
+    apply_all_filters,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +58,9 @@ class PersonalizationService:
 Используй подходящие эмодзи для позитива.
 Не задавай вопросов, просто поддержи.
 
-{ABROAD_PHRASE_RULE_RU}""",
+{ABROAD_PHRASE_RULE_RU}
+
+{FORBIDDEN_SYMBOLS_RULE_RU}""",
                     },
                     {
                         "role": "user",
@@ -65,7 +71,7 @@ class PersonalizationService:
                 temperature=0.7,
             )
 
-            return replace_abroad_phrases(response.choices[0].message.content.strip())
+            return apply_all_filters(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate response: {e}")
@@ -157,6 +163,8 @@ class PersonalizationService:
 
 {ABROAD_PHRASE_RULE_RU}
 
+{FORBIDDEN_SYMBOLS_RULE_RU}
+
 Прошлые хорошие моменты пользователя:
 {past_moments_text}""",
                     },
@@ -169,7 +177,7 @@ class PersonalizationService:
                 temperature=0.7,
             )
 
-            return replace_abroad_phrases(response.choices[0].message.content.strip())
+            return apply_all_filters(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate supportive response: {e}")
@@ -206,7 +214,9 @@ class PersonalizationService:
 Используй обращение на «{address}».
 Ответь коротко (2-3 предложения), тепло и с эмпатией.
 
-{ABROAD_PHRASE_RULE_RU}""",
+{ABROAD_PHRASE_RULE_RU}
+
+{FORBIDDEN_SYMBOLS_RULE_RU}""",
                     },
                     {"role": "user", "content": text},
                 ],
@@ -214,7 +224,7 @@ class PersonalizationService:
                 temperature=0.7,
             )
 
-            return replace_abroad_phrases(response.choices[0].message.content.strip())
+            return apply_all_filters(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate empathetic response: {e}")
@@ -251,6 +261,8 @@ class PersonalizationService:
 
 {ABROAD_PHRASE_RULE_RU}
 
+{FORBIDDEN_SYMBOLS_RULE_RU}
+
 Помни: ты не психолог и не даёшь профессиональных советов. Ты просто друг, который слушает.""",
                 },
             ]
@@ -267,7 +279,7 @@ class PersonalizationService:
                 temperature=0.7,
             )
 
-            return replace_abroad_phrases(response.choices[0].message.content.strip())
+            return apply_all_filters(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate dialog response: {e}")

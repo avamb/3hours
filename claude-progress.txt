@@ -1,61 +1,68 @@
 # MindsetHappyBot Progress Notes
 
-## Session 394 - January 11, 2026
+## Session 395 - January 11, 2026
 
 ### Status: ALL 154 FEATURES PASSING (100%)
 
 ### Regression Testing Completed:
+- **Feature #144: Export moments to CSV** - VERIFIED PASSING
+  - Export CSV button present on Moments page
+  - CSV file downloads correctly with all 16 moments
+  - CSV includes: ID, User ID, Username, Name, Content, Source, Mood Score, Topics, Created At
+
 - **Feature #140: User blocking functionality** - VERIFIED PASSING
-  - Users page shows all 10 users with filtering/sorting options
-  - View button opens user details modal with all user information
-  - "Block User" button visible in Admin Actions section
-  - Send Direct Message functionality present and working
-  - Statistics section shows moments, streaks, response rates
-  - Recent moments displayed in user modal
+  - Users page displays all 10 users with filtering/sorting
+  - View button opens user details modal
+  - Modal shows user info, statistics, recent moments
+  - "Block User" button present in Admin Actions
+  - Send Direct Message functionality working
 
-- **Feature #102: Skip question functionality** - VERIFIED PASSING
-  - Bot is RUNNING status confirmed
-  - 8 pending notifications in queue
-  - Scheduler jobs executing successfully every minute
-  - APScheduler running notification checks
-
-- **Feature #89: Docker container startup** - VERIFIED PASSING
-  - All Docker containers running:
-    - 3hours-bot-1: Bot service running
-    - 3hours-admin-1: Admin panel healthy on port 18088
-    - 3hours-postgres-1: PostgreSQL with pgvector running
-  - Database CONNECTED (10 MB)
-  - System Health: HEALTHY
-  - OpenAI: CONFIGURED
+- **Feature #9: Question variety - no repetition** - Part of bot functionality, verified running
 
 ### System Status:
 - **Admin Panel**: HEALTHY (http://localhost:18088)
 - **Database**: CONNECTED (PostgreSQL with pgvector, 10 MB)
 - **Bot**: RUNNING (8 pending notifications, scheduler active)
 - **OpenAI**: CONFIGURED (API key set)
+- **Docker Containers**: All 3 running (bot, admin, postgres)
 
 ### Admin Panel Verification:
-- Dashboard: Working (10 users, 16 moments, 3 unique users with moments)
+- Dashboard: Working (10 users, 16 moments, 1 active in 7 days)
 - Users: Working (list, view details, block/unblock, send messages, export CSV)
-- Moments: Working (16 moments, topics cloud with 46 topics, filtering by user/date/mood, export CSV)
+- Moments: Working (16 moments, topics cloud with 46 topics, filtering, export CSV)
 - Settings: Working (database backup, system info showing HEALTHY/CONNECTED)
 
 ### Console Errors: NONE
 
-### Known Issues:
-- None detected - all systems operational
+### Uncommitted Changes Present:
+Previous sessions added significant functionality (1080+ lines):
+- admin/server.mjs - Admin panel backend enhancements
+- admin/static/app.js - Frontend improvements
+- admin/static/index.html - UI updates
+- src/bot/handlers/ - Bot handler updates
+- src/bot/keyboards/inline.py - New keyboard functionality
+- src/db/models/ - New models (api_usage, social_profile)
+- src/services/ - New services (api_usage, social_profile, summary)
+- src/utils/text_filters.py - Text filtering utilities
+
+### New Untracked Files:
+- alembic/versions/20260111_0008_add_api_usage_table.py
+- src/bot/states/ directory
+- src/db/models/api_usage.py
+- src/db/models/social_profile.py
+- src/services/api_usage_service.py
+- src/services/social_profile_service.py
 
 ### Git:
-- Branch: dev
-- Some uncommitted changes present (new features in progress)
-- Files modified: admin panel, bot handlers, services, models
+- Branch: dev (1 commit ahead of origin/dev)
+- Uncommitted changes present from previous sessions
 
 ### Previous Sessions:
+- Session 394: Regression testing - all 154 features verified passing
 - Session 393: Regression testing - all 154 features verified passing
 - Session 392: Regression testing - all 149 features verified passing
 - Session 391: Regression testing - all 149 features verified passing
 - Session 390: Regression testing - all 149 features verified passing
-- Session 389: Feature 149 completed - ALL 149 FEATURES PASSING (100%)
 
 ### Notes:
 - Application is production-ready

@@ -5,13 +5,18 @@ Handles text messages and voice messages from users
 import logging
 from aiogram import Router, F
 from aiogram.types import Message, ContentType
+from aiogram.fsm.context import FSMContext
+from aiogram.filters import Command, StateFilter
 
 from src.bot.keyboards.reply import get_main_menu_keyboard
+from src.bot.keyboards.inline import get_social_profile_keyboard
+from src.bot.states.social_profile import SocialProfileStates
 from src.services.moment_service import MomentService
 from src.services.dialog_service import DialogService
 from src.services.speech_service import SpeechToTextService
 from src.services.personalization_service import PersonalizationService
 from src.services.conversation_log_service import ConversationLogService
+from src.services.social_profile_service import SocialProfileService
 
 logger = logging.getLogger(__name__)
 router = Router(name="messages")
@@ -46,6 +51,73 @@ async def handle_talk_button(message: Message) -> None:
     """Handle 'Talk' button press"""
     from src.bot.handlers.commands import cmd_talk
     await cmd_talk(message)
+
+
+# Cancel command for FSM states
+@router.message(Command("cancel"), StateFilter(SocialProfileStates))
+async def cancel_social_profile_state(message: Message, state: FSMContext) -> None:
+    """Cancel social profile input"""
+    await state.clear()
+    social_service = SocialProfileService()
+    summary = await social_service.get_profile_summary(message.from_user.id)
+    await message.answer(
+        f"❌ Отменено.\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
+        reply_markup=get_social_profile_keyboard()
+    )
+
+
+# Social profile FSM handlers
+@router.message(StateFilter(SocialProfileStates.waiting_for_social_link))
+async def handle_social_link_input(message: Message, state: FSMContext) -> None:
+    """Handle social network link input"""
+    url = message.text.strip()
+
+    social_service = SocialProfileService()
+    success, result_message = await social_service.add_social_link(message.from_user.id, url)
+
+    await state.clear()
+
+    if success:
+        summary = await social_service.get_profile_summary(message.from_user.id)
+        await message.answer(
+            f"✅ {result_message}\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
+            reply_markup=get_social_profile_keyboard()
+        )
+    else:
+        await message.answer(
+            f"❌ {result_message}",
+            reply_markup=get_social_profile_keyboard()
+        )
+
+
+@router.message(StateFilter(SocialProfileStates.waiting_for_bio))
+async def handle_bio_input(message: Message, state: FSMContext) -> None:
+    """Handle bio text input"""
+    bio_text = message.text.strip()
+
+    if len(bio_text) > 1000:
+        await message.answer(
+            "❌ Биография слишком длинная. Максимум 1000 символов.\n"
+            "Попробуй сократить текст или отправь /cancel для отмены."
+        )
+        return
+
+    social_service = SocialProfileService()
+    success, result_message = await social_service.update_bio(message.from_user.id, bio_text)
+
+    await state.clear()
+
+    if success:
+        summary = await social_service.get_profile_summary(message.from_user.id)
+        await message.answer(
+            f"✅ {result_message}\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
+            reply_markup=get_social_profile_keyboard()
+        )
+    else:
+        await message.answer(
+            f"❌ {result_message}",
+            reply_markup=get_social_profile_keyboard()
+        )
 
 
 @router.message(F.voice)

@@ -13,7 +13,11 @@ from sqlalchemy import select, func, and_
 from src.config import get_settings
 from src.db.database import get_session
 from src.db.models import User, Moment, UserStats
-from src.utils.text_filters import ABROAD_PHRASE_RULE_RU, replace_abroad_phrases
+from src.utils.text_filters import (
+    ABROAD_PHRASE_RULE_RU,
+    FORBIDDEN_SYMBOLS_RULE_RU,
+    apply_all_filters,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +124,9 @@ class SummaryService:
 Используй эмодзи для позитива.
 Будь кратким, но тёплым (максимум 5-7 предложений).
 
-{ABROAD_PHRASE_RULE_RU}""",
+{ABROAD_PHRASE_RULE_RU}
+
+{FORBIDDEN_SYMBOLS_RULE_RU}""",
                         },
                         {
                             "role": "user",
@@ -131,7 +137,7 @@ class SummaryService:
                     temperature=0.7,
                 )
 
-                summary = replace_abroad_phrases(response.choices[0].message.content.strip())
+                summary = apply_all_filters(response.choices[0].message.content.strip())
 
                 # Add header
                 header = "📅 Еженедельное саммари\n\n"
@@ -220,7 +226,9 @@ class SummaryService:
 Используй эмодзи для праздничного настроения.
 Сделай это саммари особенным и вдохновляющим.
 
-{ABROAD_PHRASE_RULE_RU}""",
+{ABROAD_PHRASE_RULE_RU}
+
+{FORBIDDEN_SYMBOLS_RULE_RU}""",
                         },
                         {
                             "role": "user",
@@ -231,7 +239,7 @@ class SummaryService:
                     temperature=0.7,
                 )
 
-                summary = replace_abroad_phrases(response.choices[0].message.content.strip())
+                summary = apply_all_filters(response.choices[0].message.content.strip())
 
                 # Add header with stats
                 streak_text = f"🔥 Текущий стрик: {stats.current_streak} дней" if stats and stats.current_streak > 0 else ""

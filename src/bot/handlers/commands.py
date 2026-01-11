@@ -163,9 +163,9 @@ async def cmd_settings(message: Message) -> None:
         "⚙️ <b>Настройки</b>\n\n"
         f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
         f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
+        f"🌍 Часовой пояс: {user.timezone}\n"
         f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
         f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
-        f"🌍 Язык: {user.language_code}\n"
     )
     await message.answer(settings_text, reply_markup=get_settings_keyboard())
 

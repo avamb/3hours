@@ -37,6 +37,7 @@ class User(Base):
     stats = relationship("UserStats", back_populates="user", uselist=False, cascade="all, delete-orphan")
     scheduled_notifications = relationship("ScheduledNotification", back_populates="user", cascade="all, delete-orphan")
     feedback = relationship("Feedback", back_populates="user", cascade="all, delete-orphan")
+    social_profile = relationship("SocialProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, telegram_id={self.telegram_id}, username={self.username})>"
