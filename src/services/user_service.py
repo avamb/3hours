@@ -133,6 +133,7 @@ class UserService:
         notifications_enabled: Optional[bool] = None,
         language_code: Optional[str] = None,
         timezone: Optional[str] = None,
+        gender: Optional[str] = None,
     ) -> Optional[User]:
         """Update user settings"""
         async with get_session() as session:
@@ -189,6 +190,9 @@ class UserService:
                             )
                         )
                     )
+
+            if gender is not None:
+                user.gender = gender
 
             user.updated_at = datetime.utcnow()
             await session.commit()

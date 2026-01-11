@@ -15,6 +15,7 @@ from src.bot.keyboards.inline import (
     get_hours_keyboard,
     get_interval_keyboard,
     get_address_form_keyboard,
+    get_gender_keyboard,
     get_timezone_keyboard,
     get_social_profile_keyboard,
     get_social_remove_keyboard,
@@ -215,6 +216,60 @@ async def callback_settings_address(callback: CallbackQuery) -> None:
     )
     await callback.answer()
 
+
+
+
+@router.callback_query(F.data == "settings_gender")
+async def callback_settings_gender(callback: CallbackQuery) -> None:
+    """Show gender settings"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+
+    current_gender = user.gender if user and user.gender else "unknown"
+    gender_text = {"male": "мужской", "female": "женский"}.get(current_gender, "не указан")
+
+    await callback.message.edit_text(
+        f"🚻 <b>Пол</b>\n\n"
+        f"Текущий: {gender_text}\n\n"
+        "Выбери пол для правильного обращения:",
+        reply_markup=get_gender_keyboard(language_code)
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "gender_male")
+async def callback_gender_male(callback: CallbackQuery) -> None:
+    """Set gender to male"""
+    user_service = UserService()
+    await user_service.update_user_settings(
+        telegram_id=callback.from_user.id,
+        gender="male"
+    )
+
+    language_code = await get_user_language(callback.from_user.id)
+    await callback.message.edit_text(
+        "✅ Пол установлен: мужской",
+        reply_markup=get_settings_keyboard(language_code)
+    )
+    await callback.answer("Сохранено!")
+
+
+@router.callback_query(F.data == "gender_female")
+async def callback_gender_female(callback: CallbackQuery) -> None:
+    """Set gender to female"""
+    user_service = UserService()
+    await user_service.update_user_settings(
+        telegram_id=callback.from_user.id,
+        gender="female"
+    )
+
+    language_code = await get_user_language(callback.from_user.id)
+    await callback.message.edit_text(
+        "✅ Пол установлен: женский",
+        reply_markup=get_settings_keyboard(language_code)
+    )
+    await callback.answer("Сохранено!")
 
 @router.callback_query(F.data == "settings_notifications")
 async def callback_settings_notifications(callback: CallbackQuery) -> None:

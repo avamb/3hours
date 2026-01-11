@@ -64,6 +64,9 @@ def get_settings_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text=get_menu_text("settings_address", language_code), callback_data="settings_address"),
             ],
             [
+                InlineKeyboardButton(text=get_menu_text("settings_gender", language_code), callback_data="settings_gender"),
+            ],
+            [
                 InlineKeyboardButton(text=get_menu_text("settings_notifications", language_code), callback_data="settings_notifications"),
             ],
             [
@@ -223,6 +226,22 @@ def get_address_form_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup
             [
                 InlineKeyboardButton(text=get_menu_text("address_informal", language_code), callback_data="address_informal"),
                 InlineKeyboardButton(text=get_menu_text("address_formal", language_code), callback_data="address_formal"),
+            ],
+            [
+                InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back"),
+            ],
+        ]
+    )
+    return keyboard
+
+
+def get_gender_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
+    """Create keyboard for gender selection"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text=get_menu_text("gender_male", language_code), callback_data="gender_male"),
+                InlineKeyboardButton(text=get_menu_text("gender_female", language_code), callback_data="gender_female"),
             ],
             [
                 InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back"),
