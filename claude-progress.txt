@@ -2,6 +2,49 @@
 
 ## Current Status: 172/172 features passing (100% complete!)
 
+## Session 512 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 features to ensure system stability:
+
+1. **Feature #116 - Timezone-aware weekly/monthly summaries** ✅
+   - SummaryService generates weekly/monthly summaries using GPT-4
+   - `_check_summary_delivery()` in scheduler runs hourly
+   - Weekly summaries: Sunday at 10:00 user's local time
+   - Monthly summaries: 1st of month at 10:00 user's local time
+   - Uses `get_user_local_now(user.timezone)` for timezone handling
+   - Respects user's active hours before sending
+   - Supports IANA timezone names and UTC offsets
+
+2. **Feature #66 - SQL injection prevention** ✅
+   - SQLAlchemy ORM used throughout codebase
+   - All queries use parameterized statements (e.g., `select(User).where(User.telegram_id == telegram_id)`)
+   - Content stored directly without raw SQL concatenation
+   - Moments table shows special characters preserved safely:
+     - URLs (LinkedIn links)
+     - Emojis (♥️, 🌴)
+     - Multi-language text (Russian, Spanish, German, English)
+
+3. **Feature #106 - First message after registration** ✅
+   - `send_first_question_after_onboarding()` called in callbacks.py
+   - Triggered immediately after user selects formal/informal address
+   - Question sent right after onboarding completion
+   - Scheduler schedules next notification based on user's interval
+   - Fallback mechanism if scheduler instance unavailable
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
+- 10 users, 22 moments, 8 pending notifications
+- 0 Errors (24h), 0 Warnings (24h), 40 Info logs
+- Console: Zero JavaScript errors
+- All Docker containers healthy (bot, admin, postgres)
+
+### Screenshots Captured:
+- regression-dashboard-session512.png
+- regression-logs-session512.png
+
+---
+
 ## Session 511 - January 11, 2026
 
 ### Regression Testing Performed:
