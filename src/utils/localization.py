@@ -329,6 +329,389 @@ def get_onboarding_text(key: str, language_code: str) -> str:
     return texts.get(key, ONBOARDING_TEXTS["ru"].get(key, ""))
 
 
+# System/status messages for localization
+SYSTEM_MESSAGES = {
+    "ru": {
+        # Status messages
+        "saved": "Сохранено!",
+        "error": "Ошибка",
+        "success": "Успешно!",
+        "cancelled": "Отменено",
+        "loading": "Загрузка...",
+
+        # Settings messages
+        "active_hours_set": "Активные часы установлены: {start} - {end}",
+        "interval_set": "Интервал уведомлений: {interval}",
+        "timezone_set": "Часовой пояс установлен: {timezone}",
+        "notifications_enabled": "🔔 Уведомления включены",
+        "notifications_disabled": "🔕 Уведомления отключены",
+        "settings_reset": "Настройки сброшены до значений по умолчанию",
+        "language_changed": "Язык изменён на русский",
+        "address_changed_informal": "Буду обращаться на «ты»",
+        "address_changed_formal": "Буду обращаться на «вы»",
+        "gender_set_male": "Пол установлен: мужской",
+        "gender_set_female": "Пол установлен: женский",
+
+        # Moments messages
+        "no_moments": "У тебя пока нет сохранённых моментов. Расскажи, что хорошего произошло сегодня!",
+        "no_moments_formal": "У Вас пока нет сохранённых моментов. Расскажите, что хорошего произошло сегодня!",
+        "moment_deleted": "Момент удалён",
+        "moments_count": "Найдено моментов: {count}",
+        "random_moment_title": "🎲 Случайный радостный момент:",
+
+        # Stats messages
+        "stats_title": "📊 Твоя статистика",
+        "stats_title_formal": "📊 Ваша статистика",
+        "stats_total_moments": "Всего моментов: {count}",
+        "stats_current_streak": "Текущая серия: {days} дн.",
+        "stats_longest_streak": "Лучшая серия: {days} дн.",
+        "stats_response_rate": "Процент ответов: {rate}%",
+        "stats_not_available": "Статистика пока недоступна",
+
+        # Dialog messages
+        "dialog_started": "💬 Режим диалога. Я слушаю тебя. Напиши «выход» или нажми кнопку, чтобы выйти.",
+        "dialog_started_formal": "💬 Режим диалога. Я слушаю Вас. Напишите «выход» или нажмите кнопку, чтобы выйти.",
+        "dialog_ended": "Диалог завершён. Возвращаю в главное меню.",
+
+        # Social profile messages
+        "social_profile_updated": "Профиль обновлён",
+        "social_link_removed": "Ссылка удалена",
+        "enter_social_link": "Отправь ссылку на свой профиль в социальной сети:",
+        "enter_social_link_formal": "Отправьте ссылку на Ваш профиль в социальной сети:",
+        "enter_bio": "Расскажи немного о себе (увлечения, интересы):",
+        "enter_bio_formal": "Расскажите немного о себе (увлечения, интересы):",
+        "interests_detected": "✨ Определены интересы: {interests}",
+
+        # Feedback messages
+        "feedback_prompt": "Напиши своё предложение или идею:",
+        "feedback_prompt_formal": "Напишите Ваше предложение или идею:",
+        "feedback_sent": "Спасибо за обратную связь! 💝",
+        "feedback_category": "Категория: {category}",
+
+        # Help message
+        "help_title": "📋 Доступные команды:",
+        "help_start": "/start - Начать сначала",
+        "help_help": "/help - Показать справку",
+        "help_settings": "/settings - Настройки",
+        "help_stats": "/stats - Статистика",
+        "help_privacy": "/privacy - Политика конфиденциальности",
+        "help_export": "/export_data - Экспорт данных",
+        "help_delete": "/delete_data - Удаление данных",
+
+        # Privacy policy
+        "privacy_title": "🔒 Политика конфиденциальности",
+        "privacy_text": (
+            "Мы серьёзно относимся к вашей приватности.\n\n"
+            "📌 Какие данные мы храним:\n"
+            "• Ваши ответы на вопросы бота\n"
+            "• Настройки (часовой пояс, язык, интервал)\n"
+            "• Базовую информацию из Telegram профиля\n\n"
+            "🔐 Как мы используем данные:\n"
+            "• Только для персонализации вашего опыта\n"
+            "• Для напоминания о хороших моментах\n"
+            "• Данные не передаются третьим лицам\n\n"
+            "🗑 Ваши права:\n"
+            "• /export_data - экспортировать все данные\n"
+            "• /delete_data - удалить все данные"
+        ),
+
+        # Data export/delete
+        "export_confirm": "Экспортировать все твои данные?",
+        "export_confirm_formal": "Экспортировать все Ваши данные?",
+        "export_success": "Данные экспортированы",
+        "delete_confirm": "⚠️ Внимание! Это действие удалит ВСЕ твои данные безвозвратно. Продолжить?",
+        "delete_confirm_formal": "⚠️ Внимание! Это действие удалит ВСЕ Ваши данные безвозвратно. Продолжить?",
+        "delete_success": "Все данные удалены. До свидания! 👋",
+
+        # Timezone regions
+        "timezone_select_region": "Выбери регион:",
+        "timezone_select_region_formal": "Выберите регион:",
+
+        # Active hours
+        "select_start_hour": "Выбери начало активных часов:",
+        "select_start_hour_formal": "Выберите начало активных часов:",
+        "select_end_hour": "Выбери конец активных часов:",
+        "select_end_hour_formal": "Выберите конец активных часов:",
+
+        # Current settings display
+        "current_settings": (
+            "⚙️ Текущие настройки:\n\n"
+            "🕐 Активные часы: {start_hour}:00 - {end_hour}:00\n"
+            "⏰ Интервал: {interval}\n"
+            "🌍 Часовой пояс: {timezone}\n"
+            "🗣 Обращение: {address}\n"
+            "🚻 Пол: {gender}\n"
+            "🔔 Уведомления: {notifications}\n"
+            "🌐 Язык: {language}"
+        ),
+    },
+    "en": {
+        # Status messages
+        "saved": "Saved!",
+        "error": "Error",
+        "success": "Success!",
+        "cancelled": "Cancelled",
+        "loading": "Loading...",
+
+        # Settings messages
+        "active_hours_set": "Active hours set: {start} - {end}",
+        "interval_set": "Notification interval: {interval}",
+        "timezone_set": "Timezone set: {timezone}",
+        "notifications_enabled": "🔔 Notifications enabled",
+        "notifications_disabled": "🔕 Notifications disabled",
+        "settings_reset": "Settings reset to defaults",
+        "language_changed": "Language changed to English",
+        "address_changed_informal": "I'll use informal communication",
+        "address_changed_formal": "I'll use formal communication",
+        "gender_set_male": "Gender set: male",
+        "gender_set_female": "Gender set: female",
+
+        # Moments messages
+        "no_moments": "You don't have any saved moments yet. Tell me what good happened today!",
+        "no_moments_formal": "You don't have any saved moments yet. Please tell me what good happened today!",
+        "moment_deleted": "Moment deleted",
+        "moments_count": "Found moments: {count}",
+        "random_moment_title": "🎲 Random happy moment:",
+
+        # Stats messages
+        "stats_title": "📊 Your statistics",
+        "stats_title_formal": "📊 Your statistics",
+        "stats_total_moments": "Total moments: {count}",
+        "stats_current_streak": "Current streak: {days} days",
+        "stats_longest_streak": "Best streak: {days} days",
+        "stats_response_rate": "Response rate: {rate}%",
+        "stats_not_available": "Statistics not available yet",
+
+        # Dialog messages
+        "dialog_started": "💬 Dialog mode. I'm listening. Write 'exit' or press the button to exit.",
+        "dialog_started_formal": "💬 Dialog mode. I'm listening. Please write 'exit' or press the button to exit.",
+        "dialog_ended": "Dialog ended. Returning to main menu.",
+
+        # Social profile messages
+        "social_profile_updated": "Profile updated",
+        "social_link_removed": "Link removed",
+        "enter_social_link": "Send a link to your social media profile:",
+        "enter_social_link_formal": "Please send a link to your social media profile:",
+        "enter_bio": "Tell me a bit about yourself (hobbies, interests):",
+        "enter_bio_formal": "Please tell me a bit about yourself (hobbies, interests):",
+        "interests_detected": "✨ Interests detected: {interests}",
+
+        # Feedback messages
+        "feedback_prompt": "Write your suggestion or idea:",
+        "feedback_prompt_formal": "Please write your suggestion or idea:",
+        "feedback_sent": "Thanks for your feedback! 💝",
+        "feedback_category": "Category: {category}",
+
+        # Help message
+        "help_title": "📋 Available commands:",
+        "help_start": "/start - Start over",
+        "help_help": "/help - Show help",
+        "help_settings": "/settings - Settings",
+        "help_stats": "/stats - Statistics",
+        "help_privacy": "/privacy - Privacy policy",
+        "help_export": "/export_data - Export data",
+        "help_delete": "/delete_data - Delete data",
+
+        # Privacy policy
+        "privacy_title": "🔒 Privacy Policy",
+        "privacy_text": (
+            "We take your privacy seriously.\n\n"
+            "📌 What data we store:\n"
+            "• Your responses to bot questions\n"
+            "• Settings (timezone, language, interval)\n"
+            "• Basic Telegram profile information\n\n"
+            "🔐 How we use data:\n"
+            "• Only for personalizing your experience\n"
+            "• To remind you of good moments\n"
+            "• Data is not shared with third parties\n\n"
+            "🗑 Your rights:\n"
+            "• /export_data - export all your data\n"
+            "• /delete_data - delete all your data"
+        ),
+
+        # Data export/delete
+        "export_confirm": "Export all your data?",
+        "export_confirm_formal": "Export all your data?",
+        "export_success": "Data exported",
+        "delete_confirm": "⚠️ Warning! This will permanently delete ALL your data. Continue?",
+        "delete_confirm_formal": "⚠️ Warning! This will permanently delete ALL your data. Continue?",
+        "delete_success": "All data deleted. Goodbye! 👋",
+
+        # Timezone regions
+        "timezone_select_region": "Select a region:",
+        "timezone_select_region_formal": "Please select a region:",
+
+        # Active hours
+        "select_start_hour": "Select start hour:",
+        "select_start_hour_formal": "Please select start hour:",
+        "select_end_hour": "Select end hour:",
+        "select_end_hour_formal": "Please select end hour:",
+
+        # Current settings display
+        "current_settings": (
+            "⚙️ Current settings:\n\n"
+            "🕐 Active hours: {start_hour}:00 - {end_hour}:00\n"
+            "⏰ Interval: {interval}\n"
+            "🌍 Timezone: {timezone}\n"
+            "🗣 Address form: {address}\n"
+            "🚻 Gender: {gender}\n"
+            "🔔 Notifications: {notifications}\n"
+            "🌐 Language: {language}"
+        ),
+    },
+    "uk": {
+        # Status messages
+        "saved": "Збережено!",
+        "error": "Помилка",
+        "success": "Успішно!",
+        "cancelled": "Скасовано",
+        "loading": "Завантаження...",
+
+        # Settings messages
+        "active_hours_set": "Активні години встановлено: {start} - {end}",
+        "interval_set": "Інтервал сповіщень: {interval}",
+        "timezone_set": "Часовий пояс встановлено: {timezone}",
+        "notifications_enabled": "🔔 Сповіщення увімкнено",
+        "notifications_disabled": "🔕 Сповіщення вимкнено",
+        "settings_reset": "Налаштування скинуто до значень за замовчуванням",
+        "language_changed": "Мову змінено на українську",
+        "address_changed_informal": "Буду звертатися на «ти»",
+        "address_changed_formal": "Буду звертатися на «ви»",
+        "gender_set_male": "Стать встановлено: чоловіча",
+        "gender_set_female": "Стать встановлено: жіноча",
+
+        # Moments messages
+        "no_moments": "У тебе поки немає збережених моментів. Розкажи, що хорошого сталося сьогодні!",
+        "no_moments_formal": "У Вас поки немає збережених моментів. Розкажіть, що хорошого сталося сьогодні!",
+        "moment_deleted": "Момент видалено",
+        "moments_count": "Знайдено моментів: {count}",
+        "random_moment_title": "🎲 Випадковий радісний момент:",
+
+        # Stats messages
+        "stats_title": "📊 Твоя статистика",
+        "stats_title_formal": "📊 Ваша статистика",
+        "stats_total_moments": "Всього моментів: {count}",
+        "stats_current_streak": "Поточна серія: {days} дн.",
+        "stats_longest_streak": "Найкраща серія: {days} дн.",
+        "stats_response_rate": "Відсоток відповідей: {rate}%",
+        "stats_not_available": "Статистика поки недоступна",
+
+        # Dialog messages
+        "dialog_started": "💬 Режим діалогу. Я слухаю тебе. Напиши «вихід» або натисни кнопку, щоб вийти.",
+        "dialog_started_formal": "💬 Режим діалогу. Я слухаю Вас. Напишіть «вихід» або натисніть кнопку, щоб вийти.",
+        "dialog_ended": "Діалог завершено. Повертаю до головного меню.",
+
+        # Social profile messages
+        "social_profile_updated": "Профіль оновлено",
+        "social_link_removed": "Посилання видалено",
+        "enter_social_link": "Надішли посилання на свій профіль у соціальній мережі:",
+        "enter_social_link_formal": "Надішліть посилання на Ваш профіль у соціальній мережі:",
+        "enter_bio": "Розкажи трохи про себе (захоплення, інтереси):",
+        "enter_bio_formal": "Розкажіть трохи про себе (захоплення, інтереси):",
+        "interests_detected": "✨ Визначено інтереси: {interests}",
+
+        # Feedback messages
+        "feedback_prompt": "Напиши свою пропозицію або ідею:",
+        "feedback_prompt_formal": "Напишіть Вашу пропозицію або ідею:",
+        "feedback_sent": "Дякуємо за зворотний зв'язок! 💝",
+        "feedback_category": "Категорія: {category}",
+
+        # Help message
+        "help_title": "📋 Доступні команди:",
+        "help_start": "/start - Почати спочатку",
+        "help_help": "/help - Показати довідку",
+        "help_settings": "/settings - Налаштування",
+        "help_stats": "/stats - Статистика",
+        "help_privacy": "/privacy - Політика конфіденційності",
+        "help_export": "/export_data - Експорт даних",
+        "help_delete": "/delete_data - Видалення даних",
+
+        # Privacy policy
+        "privacy_title": "🔒 Політика конфіденційності",
+        "privacy_text": (
+            "Ми серйозно ставимося до вашої приватності.\n\n"
+            "📌 Які дані ми зберігаємо:\n"
+            "• Ваші відповіді на запитання бота\n"
+            "• Налаштування (часовий пояс, мова, інтервал)\n"
+            "• Базову інформацію з Telegram профілю\n\n"
+            "🔐 Як ми використовуємо дані:\n"
+            "• Тільки для персоналізації вашого досвіду\n"
+            "• Для нагадування про хороші моменти\n"
+            "• Дані не передаються третім особам\n\n"
+            "🗑 Ваші права:\n"
+            "• /export_data - експортувати всі дані\n"
+            "• /delete_data - видалити всі дані"
+        ),
+
+        # Data export/delete
+        "export_confirm": "Експортувати всі твої дані?",
+        "export_confirm_formal": "Експортувати всі Ваші дані?",
+        "export_success": "Дані експортовано",
+        "delete_confirm": "⚠️ Увага! Це видалить ВСІ твої дані безповоротно. Продовжити?",
+        "delete_confirm_formal": "⚠️ Увага! Це видалить ВСІ Ваші дані безповоротно. Продовжити?",
+        "delete_success": "Всі дані видалено. До побачення! 👋",
+
+        # Timezone regions
+        "timezone_select_region": "Вибери регіон:",
+        "timezone_select_region_formal": "Виберіть регіон:",
+
+        # Active hours
+        "select_start_hour": "Вибери початок активних годин:",
+        "select_start_hour_formal": "Виберіть початок активних годин:",
+        "select_end_hour": "Вибери кінець активних годин:",
+        "select_end_hour_formal": "Виберіть кінець активних годин:",
+
+        # Current settings display
+        "current_settings": (
+            "⚙️ Поточні налаштування:\n\n"
+            "🕐 Активні години: {start_hour}:00 - {end_hour}:00\n"
+            "⏰ Інтервал: {interval}\n"
+            "🌍 Часовий пояс: {timezone}\n"
+            "🗣 Звертання: {address}\n"
+            "🚻 Стать: {gender}\n"
+            "🔔 Сповіщення: {notifications}\n"
+            "🌐 Мова: {language}"
+        ),
+    },
+}
+
+
+def get_system_message(key: str, language_code: str, formal: bool = False, **kwargs) -> str:
+    """
+    Get localized system/status message.
+
+    Args:
+        key: Message key (e.g., "saved", "active_hours_set")
+        language_code: User's language code
+        formal: Whether to use formal version if available
+        **kwargs: Format parameters for the message
+
+    Returns:
+        Localized and formatted message
+    """
+    lang = get_language_code(language_code)
+    texts = SYSTEM_MESSAGES.get(lang, SYSTEM_MESSAGES["ru"])
+
+    # Try formal version first if requested
+    if formal:
+        formal_key = f"{key}_formal"
+        if formal_key in texts:
+            message = texts[formal_key]
+        else:
+            message = texts.get(key, SYSTEM_MESSAGES["ru"].get(key, key))
+    else:
+        message = texts.get(key, SYSTEM_MESSAGES["ru"].get(key, key))
+
+    # Format with kwargs if any
+    if kwargs:
+        try:
+            return message.format(**kwargs)
+        except (KeyError, ValueError):
+            return message
+
+    return message
+
+
 def detect_language_from_text(text: str) -> str:
     """
     Detect language from text based on character analysis.

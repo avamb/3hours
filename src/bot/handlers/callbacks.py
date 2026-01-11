@@ -27,7 +27,7 @@ from src.services.user_service import UserService
 from src.services.moment_service import MomentService
 from src.services.gdpr_service import GDPRService
 from src.services.social_profile_service import SocialProfileService
-from src.utils.localization import get_onboarding_text
+from src.utils.localization import get_onboarding_text, get_system_message, get_menu_text
 
 logger = logging.getLogger(__name__)
 router = Router(name="callbacks")
