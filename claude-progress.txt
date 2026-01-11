@@ -5,7 +5,39 @@
 ## Session 514 - January 11, 2026
 
 ### Regression Testing Performed:
-Verified 3 features to ensure system stability:
+Verified 3 features to ensure system stability (see below).
+
+### New Feature Work:
+**Feature #173 - Language set by menu** (IN PROGRESS)
+
+Analysis revealed that while menus and keyboards are localized (ru/en/uk), many bot messages were hardcoded in Russian.
+
+**Completed:**
+1. Added comprehensive `SYSTEM_MESSAGES` dictionary to `localization.py` with:
+   - Status messages (saved, error, success, cancelled, loading)
+   - Settings confirmations (active hours, interval, timezone, notifications)
+   - Moments messages (no_moments, deleted, count)
+   - Stats messages (title, total, streak, response rate)
+   - Dialog messages (started, ended)
+   - Social profile messages
+   - Feedback messages
+   - Help commands text
+   - Privacy policy text
+   - Data export/delete confirmations
+   - Timezone and active hours selection text
+   - Current settings display template
+
+2. Added `get_system_message(key, language_code, formal, **kwargs)` function
+3. Updated `/help` command to use localized messages
+4. Updated `/privacy` command to use localized messages
+
+**Still needed:**
+- Update callback handlers to use `get_system_message()` instead of hardcoded Russian
+- Update remaining commands (/settings, /stats, /moments, /talk, etc.)
+- Update settings display format messages
+- Test with English and Ukrainian users
+
+### Regression Features Verified:
 
 1. **Feature #135 - Create Message Templates CRUD in admin panel** ✅
    - Templates page accessible from navigation
