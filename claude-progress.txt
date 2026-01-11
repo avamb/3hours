@@ -2,32 +2,37 @@
 
 ## Current Status: 170/170 features passing (100% complete)
 
-## Session 480 - January 11, 2026
+## Session 481 - January 11, 2026
 
 ### Regression Testing Performed:
 Verified 3 random passing features to ensure system stability:
 
-1. **Feature #61 - Deep link support** ✅
-   - `/start` command handled via `CommandStart()` filter
-   - New users get onboarding flow with welcome image
-   - Existing users get welcome back message with main menu
+1. **Feature #132 - Create Moments page in admin panel** ✅
+   - Moments API endpoints working (showing 20 moments)
+   - Moments page component with full table view
+   - Topics Cloud visualization showing all extracted topics
+   - Filters working: User dropdown, Date range, Mood dropdown
+   - Export CSV button available
+   - Mood indicators (Very Positive, Positive, Neutral, Negative)
+   - Source type indicators (voice, text)
+   - Filter tested: "Very Positive (0.8+)" correctly shows 11 moments
 
-2. **Feature #130 - Feedback button in main menu** ✅
-   - Main menu keyboard has "💡 Предложить идею" button in 3rd row
-   - Admin panel Feedback page shows statistics (0 New, 4 Reviewed, 1 Implemented, 0 Rejected)
-   - Feedback table displays user submissions with categories (Bug/Idea)
+2. **Feature #50 - Inline buttons visibility** ✅
+   - Users page: "View", "Refresh", "Export CSV" buttons clearly visible
+   - User details modal: "×" close, "🚫 Block User", "📤 Send Message" buttons
+   - Notifications page: Filter dropdowns, "Refresh" button, pagination (1, 2, 3, Next)
+   - All buttons appropriately sized with readable text
 
-3. **Feature #170 - Voice input language detection** ✅
-   - Speech service auto-detects language using Whisper's `verbose_json` response format
-   - Language mapping from Whisper names to ISO codes (russian→ru, english→en, etc.)
-   - Multi-language conversations verified in Messages page:
-     - German: "Heute ist das Wetter..." → "Das klingt wirklich wunderbar!"
-     - Spanish: "Hoy hace un tiempo..." → "¡Qué alegría escuchar..."
-     - English conversations with appropriate responses
+3. **Feature #56 - Vector similarity search accuracy** ✅
+   - pgvector extension installed (v0.8.1)
+   - All 20 moments have embeddings (verified via database)
+   - IVFFlat index created for cosine similarity: `idx_moments_embedding`
+   - `find_similar_moments` function uses `cosine_distance` ordering
+   - Topics extracted for each moment in database
 
 ### System Health Verified:
 - All Docker services running:
-  - postgres: HEALTHY (10 MB)
+  - postgres: HEALTHY (pgvector 0.8.1)
   - admin: HEALTHY on port 18088
   - bot: RUNNING (8 pending notifications)
   - OpenAI: CONFIGURED
@@ -36,50 +41,26 @@ Verified 3 random passing features to ensure system stability:
 - 10 users, 20 moments in database
 
 ### Screenshots Captured:
-- regression-test-dashboard.png
-- regression-test-feedback.png
-- regression-test-messages-multilang.png
-- regression-test-messages-languages.png
+- regression-moments-page.png
+- regression-users-page.png
+- regression-user-modal.png
+- regression-notifications-page.png
+
+## Session 480 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 random passing features to ensure system stability:
+
+1. **Feature #61 - Deep link support** ✅
+2. **Feature #130 - Feedback button in main menu** ✅
+3. **Feature #170 - Voice input language detection** ✅
 
 ## Session 479 - January 11, 2026
 
 ### Regression Testing Performed:
-Verified 3 random passing features to ensure system stability:
-
 1. **Feature #4 - Main menu keyboard display** ✅
-   - All 4 main menu buttons verified in reply.py code:
-     - 📖 Мои моменты (My moments)
-     - 📊 Статистика (Statistics)
-     - ⚙️ Настройки (Settings)
-     - 💬 Поговорить (Talk)
-   - Plus bonus: 💡 Предложить идею (Feedback)
-
 2. **Feature #23 - Toggle notifications on/off** ✅
-   - User Details modal shows "Notifications: Enabled" badge
-   - Notification Interval: 1h displayed
-   - Active Hours: 08:00:00 - 23:00:00 shown
-   - 8 pending notifications in queue
-
 3. **Feature #48 - Emoji usage in messages** ✅
-   - Bot questions use emojis: 🌈, 💝
-   - Bot replies use emojis: 🌴🌞, 🎉, 😊
-   - Multi-language responses with appropriate emojis
-
-## Session 478 - January 11, 2026
-
-### Regression Testing Performed:
-Verified 3 random passing features to ensure system stability:
-
-1. **Feature #111 - Admin service port contract** ✅
-2. **Feature #75 - Moments grouping by topics** ✅
-3. **Feature #79 - Notification opt-out** ✅
-
-## Session 477 - January 11, 2026
-
-### Feature #170 Implemented: Voice Input Language Detection
-- Modified `speech_service.py` for auto-language detection
-- Modified `messages.py` for multi-language processing
-- Modified `personalization_service.py` for override_language support
 
 ## Key Milestones:
 - **100% Feature Completion achieved!** All 170 features passing
