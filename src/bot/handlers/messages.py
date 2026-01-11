@@ -183,7 +183,8 @@ async def handle_voice_message(message: Message) -> None:
         # Download and transcribe
         transcribed_text = await speech_service.transcribe_voice(
             bot=message.bot,
-            file_path=file_path
+            file_path=file_path,
+            telegram_id=message.from_user.id,
         )
 
         if not transcribed_text or transcribed_text.strip() == "":

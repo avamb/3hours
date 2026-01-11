@@ -3,6 +3,7 @@ MINDSETHAPPYBOT - Summary service
 Generates weekly and monthly summaries of user's positive moments
 """
 import logging
+import time
 from typing import Optional, List
 from datetime import datetime, timedelta
 from collections import Counter
@@ -19,6 +20,7 @@ from src.utils.text_filters import (
     apply_all_filters,
 )
 from src.services.personalization_service import LANGUAGE_INSTRUCTION, PROMPT_PROTECTION
+from src.services.api_usage_service import APIUsageService
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +61,12 @@ class SummaryService:
         """
         Generate a weekly summary of user's positive moments
         """
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
         try:
             async with get_session() as session:
                 # Get user
@@ -156,6 +164,11 @@ Be brief but warm (maximum 5-7 sentences).
                     temperature=0.7,
                 )
 
+                # Extract token usage
+                if response.usage:
+                    input_tokens = response.usage.prompt_tokens
+                    output_tokens = response.usage.completion_tokens
+
                 summary = apply_all_filters(response.choices[0].message.content.strip())
 
                 # Add header
@@ -164,7 +177,24 @@ Be brief but warm (maximum 5-7 sentences).
 
         except Exception as e:
             logger.error(f"Failed to generate weekly summary: {e}")
+            success = False
+            error_msg = str(e)
             return None
+
+        finally:
+            # Log API usage
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.model,
+                operation_type="weekly_summary",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                telegram_id=telegram_id,
+                success=success,
+                error_message=error_msg,
+            )
 
     async def generate_monthly_summary(
         self,
@@ -173,6 +203,12 @@ Be brief but warm (maximum 5-7 sentences).
         """
         Generate a monthly summary of user's positive moments
         """
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
         try:
             async with get_session() as session:
                 # Get user
@@ -276,6 +312,11 @@ Make this summary special and inspiring.
                     temperature=0.7,
                 )
 
+                # Extract token usage
+                if response.usage:
+                    input_tokens = response.usage.prompt_tokens
+                    output_tokens = response.usage.completion_tokens
+
                 summary = apply_all_filters(response.choices[0].message.content.strip())
 
                 # Add header with stats
@@ -285,4 +326,21 @@ Make this summary special and inspiring.
 
         except Exception as e:
             logger.error(f"Failed to generate monthly summary: {e}")
+            success = False
+            error_msg = str(e)
             return None
+
+        finally:
+            # Log API usage
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.model,
+                operation_type="monthly_summary",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                telegram_id=telegram_id,
+                success=success,
+                error_message=error_msg,
+            )

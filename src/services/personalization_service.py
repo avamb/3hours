@@ -3,6 +3,7 @@ MINDSETHAPPYBOT - Personalization service
 Generates personalized responses using GPT-4 and user history
 """
 import logging
+import time
 from typing import List, Optional
 
 from openai import AsyncOpenAI
@@ -17,6 +18,7 @@ from src.utils.text_filters import (
     apply_all_filters,
 )
 from src.utils.localization import get_language_code
+from src.services.api_usage_service import APIUsageService
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +71,12 @@ class PersonalizationService:
         """
         Generate a personalized positive response to user's moment
         """
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
         try:
             # Get user for personalization
             async with get_session() as session:
@@ -115,11 +123,33 @@ Don't ask questions, just support.
                 temperature=0.7,
             )
 
+            # Extract token usage
+            if response.usage:
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
+
             return apply_all_filters(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate response: {e}")
+            success = False
+            error_msg = str(e)
             return "Спасибо, что поделился! Это действительно здорово! 🌟"
+
+        finally:
+            # Log API usage
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.model,
+                operation_type="moment_response",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                telegram_id=telegram_id,
+                success=success,
+                error_message=error_msg,
+            )
 
     async def detect_negative_mood(self, text: str) -> bool:
         """
@@ -143,6 +173,12 @@ Don't ask questions, just support.
                 return True
 
         # Use GPT for more nuanced detection
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
         try:
             response = await self.client.chat.completions.create(
                 model=self.analysis_model,
@@ -160,12 +196,33 @@ Don't ask questions, just support.
                 temperature=0,
             )
 
+            # Extract token usage
+            if response.usage:
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
+
             result = response.choices[0].message.content.strip().upper()
             return result == "YES"
 
         except Exception as e:
             logger.error(f"Mood detection failed: {e}")
+            success = False
+            error_msg = str(e)
             return False
+
+        finally:
+            # Log API usage
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.analysis_model,
+                operation_type="mood_detection",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                success=success,
+                error_message=error_msg,
+            )
 
     async def generate_supportive_response(
         self,
@@ -176,6 +233,12 @@ Don't ask questions, just support.
         """
         Generate supportive response that reminds about past positive moments
         """
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
         try:
             # Get user for personalization
             async with get_session() as session:
@@ -234,13 +297,35 @@ User's past good moments / Прошлые хорошие моменты поль
                 temperature=0.7,
             )
 
+            # Extract token usage
+            if response.usage:
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
+
             return apply_all_filters(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate supportive response: {e}")
+            success = False
+            error_msg = str(e)
             return (
                 "Понимаю, бывают такие дни. 💝 "
                 "Помни, что раньше у тебя были прекрасные моменты, и они обязательно будут снова."
+            )
+
+        finally:
+            # Log API usage
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.model,
+                operation_type="supportive_response",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                telegram_id=telegram_id,
+                success=success,
+                error_message=error_msg,
             )
 
     async def generate_empathetic_response(
@@ -251,6 +336,12 @@ User's past good moments / Прошлые хорошие моменты поль
         """
         Generate empathetic response when no past moments available
         """
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
         try:
             async with get_session() as session:
                 result = await session.execute(
@@ -291,11 +382,33 @@ Reply briefly (2-3 sentences), warmly and with empathy.
                 temperature=0.7,
             )
 
+            # Extract token usage
+            if response.usage:
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
+
             return apply_all_filters(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate empathetic response: {e}")
+            success = False
+            error_msg = str(e)
             return "Понимаю тебя. Бывают разные дни. Я здесь, если захочешь поговорить. 💝"
+
+        finally:
+            # Log API usage
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.model,
+                operation_type="empathetic_response",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                telegram_id=telegram_id,
+                success=success,
+                error_message=error_msg,
+            )
 
     async def generate_dialog_response(
         self,
@@ -306,6 +419,12 @@ Reply briefly (2-3 sentences), warmly and with empathy.
         """
         Generate response for free dialog mode
         """
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
         try:
             async with get_session() as session:
                 result = await session.execute(
@@ -360,8 +479,30 @@ Remember: you're not a psychologist and don't give professional advice. You're j
                 temperature=0.7,
             )
 
+            # Extract token usage
+            if response.usage:
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
+
             return apply_all_filters(response.choices[0].message.content.strip())
 
         except Exception as e:
             logger.error(f"Failed to generate dialog response: {e}")
+            success = False
+            error_msg = str(e)
             return "Я тебя слышу. Расскажи больше, если хочешь. 💝"
+
+        finally:
+            # Log API usage
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.model,
+                operation_type="free_dialog",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                telegram_id=telegram_id,
+                success=success,
+                error_message=error_msg,
+            )
