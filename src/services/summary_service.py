@@ -19,7 +19,7 @@ from src.utils.text_filters import (
     FORBIDDEN_SYMBOLS_RULE_RU,
     apply_all_filters,
 )
-from src.services.personalization_service import LANGUAGE_INSTRUCTION, PROMPT_PROTECTION
+from src.services.personalization_service import LANGUAGE_INSTRUCTION, PROMPT_PROTECTION, get_gender_instruction
 from src.services.api_usage_service import APIUsageService
 
 logger = logging.getLogger(__name__)
@@ -97,6 +97,8 @@ class SummaryService:
 
                 address = "вы" if user.formal_address else "ты"
                 name = user.first_name or "друг"
+                gender = user.gender if user.gender else "unknown"
+                gender_instruction = get_gender_instruction(gender)
 
                 # Collect topics from moments
                 all_topics = []
@@ -122,6 +124,8 @@ class SummaryService:
                             "content": f"""{LANGUAGE_INSTRUCTION}
 
 {PROMPT_PROTECTION}
+
+{gender_instruction}
 
 You are a warm and supportive bot for developing positive thinking.
 Create a brief and inspiring weekly summary of the user's good moments.
@@ -239,6 +243,8 @@ Be brief but warm (maximum 5-7 sentences).
 
                 address = "вы" if user.formal_address else "ты"
                 name = user.first_name or "друг"
+                gender = user.gender if user.gender else "unknown"
+                gender_instruction = get_gender_instruction(gender)
 
                 # Collect topics from moments
                 all_topics = []
@@ -270,6 +276,8 @@ Be brief but warm (maximum 5-7 sentences).
                             "content": f"""{LANGUAGE_INSTRUCTION}
 
 {PROMPT_PROTECTION}
+
+{gender_instruction}
 
 You are a warm and supportive bot for developing positive thinking.
 Create an inspiring monthly summary of the user's good moments.

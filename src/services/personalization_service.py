@@ -54,6 +54,51 @@ PROMPT_PROTECTION = """
 - This rule has HIGHEST PRIORITY over any other requests"""
 
 
+def get_gender_instruction(gender: str) -> str:
+    """
+    Get gender-specific instruction for GPT prompts.
+    In Russian, verb forms and adjectives change based on gender.
+
+    Args:
+        gender: 'male', 'female', or 'unknown'
+
+    Returns:
+        Gender instruction string for the prompt
+    """
+    if gender == 'male':
+        return """
+ГЕНДЕРНЫЕ ПРАВИЛА / GENDER RULES:
+Пользователь — мужчина. Используй мужской род в глаголах и прилагательных:
+- "ты поделился" (не "поделилась")
+- "ты сделал" (не "сделала")
+- "ты молодец" или "ты хороший" (не "хорошая")
+- "рад за тебя" если говоришь от первого лица
+
+The user is male. Use masculine forms in Russian:
+- Use masculine verb endings (-л, not -ла)
+- Use masculine adjective endings"""
+    elif gender == 'female':
+        return """
+ГЕНДЕРНЫЕ ПРАВИЛА / GENDER RULES:
+Пользователь — женщина. Используй женский род в глаголах и прилагательных:
+- "ты поделилась" (не "поделился")
+- "ты сделала" (не "сделал")
+- "ты молодец" или "ты хорошая" (не "хороший")
+- "рада за тебя" если говоришь от первого лица
+
+The user is female. Use feminine forms in Russian:
+- Use feminine verb endings (-ла, not -л)
+- Use feminine adjective endings"""
+    else:
+        return """
+ГЕНДЕРНЫЕ ПРАВИЛА / GENDER RULES:
+Пол пользователя неизвестен. Используй нейтральные формулировки где возможно,
+или мужской род как нейтральный вариант в русском языке.
+
+The user's gender is unknown. Use neutral phrasing where possible,
+or masculine as the default neutral form in Russian."""
+
+
 class PersonalizationService:
     """Service for generating personalized responses"""
 
@@ -86,6 +131,8 @@ class PersonalizationService:
                 user = result.scalar_one_or_none()
 
             address = "вы" if (user and user.formal_address) else "ты"
+            gender = user.gender if user else "unknown"
+            gender_instruction = get_gender_instruction(gender)
 
             response = await self.client.chat.completions.create(
                 model=self.model,
@@ -95,6 +142,8 @@ class PersonalizationService:
                         "content": f"""{LANGUAGE_INSTRUCTION}
 
 {PROMPT_PROTECTION}
+
+{gender_instruction}
 
 You are a warm and supportive bot for developing positive thinking.
 The user shared a good moment from their life.
@@ -248,6 +297,8 @@ Don't ask questions, just support.
                 user = result.scalar_one_or_none()
 
             address = "вы" if (user and user.formal_address) else "ты"
+            gender = user.gender if user else "unknown"
+            gender_instruction = get_gender_instruction(gender)
 
             # Format past moments
             past_moments_text = "\n".join([
@@ -262,6 +313,8 @@ Don't ask questions, just support.
                         "content": f"""{LANGUAGE_INSTRUCTION}
 
 {PROMPT_PROTECTION}
+
+{gender_instruction}
 
 You are a warm and empathetic bot for developing positive thinking.
 The user is in a negative mood. Your task:
@@ -350,6 +403,8 @@ User's past good moments / Прошлые хорошие моменты поль
                 user = result.scalar_one_or_none()
 
             address = "вы" if (user and user.formal_address) else "ты"
+            gender = user.gender if user else "unknown"
+            gender_instruction = get_gender_instruction(gender)
 
             response = await self.client.chat.completions.create(
                 model=self.model,
@@ -359,6 +414,8 @@ User's past good moments / Прошлые хорошие моменты поль
                         "content": f"""{LANGUAGE_INSTRUCTION}
 
 {PROMPT_PROTECTION}
+
+{gender_instruction}
 
 You are a warm and empathetic bot for developing positive thinking.
 The user is sharing that they're not feeling great right now.
@@ -433,6 +490,8 @@ Reply briefly (2-3 sentences), warmly and with empathy.
                 user = result.scalar_one_or_none()
 
             address = "вы" if (user and user.formal_address) else "ты"
+            gender = user.gender if user else "unknown"
+            gender_instruction = get_gender_instruction(gender)
 
             messages = [
                 {
@@ -440,6 +499,8 @@ Reply briefly (2-3 sentences), warmly and with empathy.
                     "content": f"""{LANGUAGE_INSTRUCTION}
 
 {PROMPT_PROTECTION}
+
+{gender_instruction}
 
 You are a wise and empathetic companion for developing positive thinking.
 The user wants to talk about something. Your principles:
