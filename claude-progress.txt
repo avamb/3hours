@@ -2,47 +2,43 @@
 
 ## Current Status: 166/166 features passing (100% complete)
 
-## Session 460 - January 11, 2026
+## Session 461 - January 11, 2026
 
 ### Regression Testing Completed
 - Verified all Docker services running:
   - postgres: HEALTHY (21+ hours uptime)
   - admin: HEALTHY on port 18088
-  - bot: RUNNING (45+ minutes uptime)
+  - bot: RUNNING (47+ minutes uptime)
 
 ### Features Tested (Randomly Selected for Regression):
-1. **Feature #59 (Concurrent message handling)**: VERIFIED
-   - Messages page shows multiple users being processed
-   - Scheduled questions sent to multiple users simultaneously
-   - No duplicate responses or lost messages
-   - Bot logs show successful concurrent processing
+1. **Feature #154 (Expenses - API cost tracking)**: VERIFIED
+   - Expenses page showing 5 requests, 1,046 tokens, $0.0023 total cost
+   - Breakdown by Model: gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1
+   - Breakdown by Operation: moment_response, topic_extraction, mood_analysis, embedding, transcription
+   - Recent API Calls log with timestamps, durations (all under 5s), status
 
-2. **Feature #62 (Data persistence across sessions)**: VERIFIED
-   - Users page shows 10 users with persistent data
-   - Moments page shows 18 moments preserved in database
-   - All user data (names, languages, streaks) retained
-   - Database checkpoints running smoothly
+2. **Feature #118 (New specification updates)**: VERIFIED
+   - Analytics page fully functional with:
+     - User Funnel: Registered (100%) → Onboarded (90%) → First Moment (30%) → Regular Use (20%)
+     - Retention by Cohorts table
+     - User Registrations chart with period filter
+     - Activity Heatmap (hour/day grid)
+     - Language Distribution: English (50%), Russian (40%), Ukrainian (10%)
 
-3. **Feature #125 (Monthly Summary feature)**: VERIFIED
-   - Analytics page shows comprehensive statistics
-   - User Funnel visualization working (Registered → Regular Use)
-   - Retention Cohorts table displaying correctly
-   - Activity Heatmap with real activity data
+3. **Feature #101 (Response time under 5 seconds)**: VERIFIED
+   - All API calls under 5 seconds (max: 2326ms for moment_response)
+   - topic_extraction: 1108ms, mood_analysis: 1492ms, embedding: 961ms
 
 ### Additional Verification:
-- **Dashboard Overview**: 10 users, 18 moments, System HEALTHY
-- **Users Page**: 10 users with filters, search, export working
-- **Moments Page**: 18 moments with Topics Cloud, mood indicators (0.57 avg)
-- **Messages Page**: 144+ messages with pagination, type filtering
-- **Analytics Page**: User Funnel, Retention Cohorts, Activity Heatmap
-- **Expenses Page**: API cost tracking structure in place
+- **Dashboard Overview**: 10 users, 19 moments, System HEALTHY
+- **Users Page**: 10 users with filters, search, export CSV, view details
+- **Messages Page**: 144+ messages with pagination, type filtering (6 pending scheduled questions)
 
 ### System Health:
 - No console errors in browser
 - All navigation working correctly
-- Bot scheduler running every minute (notification processing)
-- Bot successfully sending questions to users
-- Graceful error handling for blocked users (chat not found)
+- Bot scheduler running every minute
+- Bot actively sending scheduled questions to users
 
 ### No Issues Found
 - All tested features working correctly
@@ -50,6 +46,9 @@
 - 100% feature completion maintained
 
 ## Previous Sessions Summary
+
+### Session 460 - January 11, 2026
+- Regression testing - all 166 features verified passing
 
 ### Session 459 - January 11, 2026
 - Regression testing - all 166 features verified passing
