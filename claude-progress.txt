@@ -2,6 +2,45 @@
 
 ## Current Status: 170/170 features passing (100% complete)
 
+## Session 480 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 random passing features to ensure system stability:
+
+1. **Feature #61 - Deep link support** ✅
+   - `/start` command handled via `CommandStart()` filter
+   - New users get onboarding flow with welcome image
+   - Existing users get welcome back message with main menu
+
+2. **Feature #130 - Feedback button in main menu** ✅
+   - Main menu keyboard has "💡 Предложить идею" button in 3rd row
+   - Admin panel Feedback page shows statistics (0 New, 4 Reviewed, 1 Implemented, 0 Rejected)
+   - Feedback table displays user submissions with categories (Bug/Idea)
+
+3. **Feature #170 - Voice input language detection** ✅
+   - Speech service auto-detects language using Whisper's `verbose_json` response format
+   - Language mapping from Whisper names to ISO codes (russian→ru, english→en, etc.)
+   - Multi-language conversations verified in Messages page:
+     - German: "Heute ist das Wetter..." → "Das klingt wirklich wunderbar!"
+     - Spanish: "Hoy hace un tiempo..." → "¡Qué alegría escuchar..."
+     - English conversations with appropriate responses
+
+### System Health Verified:
+- All Docker services running:
+  - postgres: HEALTHY (10 MB)
+  - admin: HEALTHY on port 18088
+  - bot: RUNNING (8 pending notifications)
+  - OpenAI: CONFIGURED
+- Zero JavaScript console errors
+- All navigation working correctly
+- 10 users, 20 moments in database
+
+### Screenshots Captured:
+- regression-test-dashboard.png
+- regression-test-feedback.png
+- regression-test-messages-multilang.png
+- regression-test-messages-languages.png
+
 ## Session 479 - January 11, 2026
 
 ### Regression Testing Performed:
@@ -26,95 +65,21 @@ Verified 3 random passing features to ensure system stability:
    - Bot replies use emojis: 🌴🌞, 🎉, 😊
    - Multi-language responses with appropriate emojis
 
-### System Health Verified:
-- All Docker services running:
-  - postgres: HEALTHY (10 MB)
-  - admin: HEALTHY on port 18088
-  - bot: RUNNING (8 pending notifications)
-  - OpenAI: CONFIGURED
-- Zero JavaScript console errors
-- All navigation working correctly
-- 10 users, 20 moments in database
-
-### Screenshots Captured:
-- regression-test-dashboard.png
-- regression-test-user-details.png
-- regression-test-messages-emojis.png
-- regression-test-templates.png
-
 ## Session 478 - January 11, 2026
 
 ### Regression Testing Performed:
 Verified 3 random passing features to ensure system stability:
 
 1. **Feature #111 - Admin service port contract** ✅
-   - Admin panel accessible on port 18088
-   - HEALTHY status indicator displayed
-   - Server properly bound to 0.0.0.0:PORT
-
 2. **Feature #75 - Moments grouping by topics** ✅
-   - Topics Cloud displays with counts (итоги (2), университет (2), парк (2), etc.)
-   - Clicking on topics filters the moments table correctly
-   - Multi-language topic extraction working (Russian, Spanish, English)
-
 3. **Feature #79 - Notification opt-out** ✅
-   - User settings show "Notifications: Enabled" toggle
-   - Setting visible in User Details modal
-   - Notifications page shows Pending/Sent status correctly
-
-### System Health Verified:
-- All Docker services running:
-  - postgres: HEALTHY (10 MB)
-  - admin: HEALTHY on port 18088
-  - bot: RUNNING (8 pending notifications)
-  - OpenAI: CONFIGURED
-- Zero JavaScript console errors
-- All navigation working correctly
-- 10 users, 20 moments in database
-
-### Screenshots Captured:
-- regression-test-admin-dashboard.png
-- regression-test-moments-topics.png
-- regression-test-user-details.png
 
 ## Session 477 - January 11, 2026
 
 ### Feature #170 Implemented: Voice Input Language Detection
-- **Requirement**: Transcribe voice messages in the language they were spoken, respond in that same language
-- **Implementation**:
-  1. Modified `speech_service.py`:
-     - Removed hardcoded `language="ru"` from Whisper API call
-     - Added `response_format="verbose_json"` to get detected language
-     - Returns tuple `(transcribed_text, language_code)` instead of just text
-     - Added language mapping (russian→ru, english→en, ukrainian→uk, etc.)
-
-  2. Modified `messages.py` (voice handler):
-     - Updated to handle new tuple return format
-     - Added multi-language processing messages (ru, en, uk, es, de)
-     - Updates user's language preference based on voice message language
-     - Passes `override_language` to response generator
-     - Uses detected language for UI elements
-
-  3. Modified `personalization_service.py`:
-     - Added `override_language` parameter to `generate_response()`
-     - Forces GPT to respond in specified language when override is set
-
-## Previous Sessions Summary
-
-### Session 476 - January 11, 2026
-- Regression testing - all 169 features verified passing
-
-### Session 475 - January 11, 2026
-- Regression testing - all 169 features verified passing
-
-### Session 474 - January 11, 2026
-- Regression testing - Features #28, #140, #110 verified
-
-### Session 455 - January 11, 2026
-- Fixed: User modal close button not working (Docker container cache issue)
-
-### Session 451 - January 11, 2026
-- Feature #166 Implemented: API Expenses Tracking
+- Modified `speech_service.py` for auto-language detection
+- Modified `messages.py` for multi-language processing
+- Modified `personalization_service.py` for override_language support
 
 ## Key Milestones:
 - **100% Feature Completion achieved!** All 170 features passing
