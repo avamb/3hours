@@ -76,6 +76,8 @@ MENU_TEXTS = {
         "interval_8h": "8 часов",
         "address_informal": "На «ты» 😊",
         "address_formal": "На «вы» 🤝",
+        "social_link_saved": "✅ Ссылка сохранена",
+        "social_parse_failed": "К сожалению, нам не удалось получить данные вашего профиля. Ссылка сохранена, но не будет использоваться для персонализации.",
     },
     "en": {
         "menu_moments": "📖 My moments",
@@ -126,6 +128,8 @@ MENU_TEXTS = {
         "interval_8h": "8 hours",
         "address_informal": "Informal 😊",
         "address_formal": "Formal 🤝",
+        "social_link_saved": "✅ Link saved",
+        "social_parse_failed": "Unfortunately, we couldn't get your profile data. The link has been saved, but won't be used for personalization.",
     },
     "uk": {
         "menu_moments": "📖 Мої моменти",
@@ -176,6 +180,8 @@ MENU_TEXTS = {
         "interval_8h": "8 годин",
         "address_informal": "На «ти» 😊",
         "address_formal": "На «ви» 🤝",
+        "social_link_saved": "✅ Посилання збережено",
+        "social_parse_failed": "На жаль, нам не вдалося отримати дані вашого профілю. Посилання збережено, але не буде використовуватися для персоналізації.",
     },
 }
 

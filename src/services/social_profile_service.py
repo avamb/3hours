@@ -4,7 +4,8 @@ Manages user social profiles and interest parsing
 """
 import logging
 import re
-from typing import Optional, List
+import aiohttp
+from typing import Optional, List, Tuple
 from datetime import datetime
 
 from sqlalchemy import select
@@ -96,18 +97,83 @@ class SocialProfileService:
             url = "https://" + url
         return url
 
+    async def attempt_parse_profile_data(self, url: str, network: str) -> Tuple[bool, Optional[str]]:
+        """
+        Attempt to fetch and parse profile data from a social network URL.
+
+        Due to social network API restrictions and anti-scraping measures,
+        this will typically fail for most profiles. When it fails, we return
+        False to indicate that the profile data couldn't be parsed.
+
+        Args:
+            url: The social network profile URL
+            network: The detected social network name
+
+        Returns:
+            Tuple of (success, parsed_data_or_None)
+        """
+        import asyncio
+
+        try:
+            # Attempt to fetch basic page info
+            # Note: Most social networks block scraping, so this will usually fail
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+                async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=5)) as response:
+                    if response.status != 200:
+                        logger.info(f"Social profile fetch failed for {network}: HTTP {response.status}")
+                        return False, None
+
+                    # Even if we get a 200 response, social networks typically return
+                    # login pages or limited data for non-authenticated requests
+                    content = await response.text()
+
+                    # Check for common indicators that we got a login/blocked page
+                    blocked_indicators = [
+                        "login", "sign in", "log in", "войти", "вход",
+                        "not available", "page not found", "access denied"
+                    ]
+                    content_lower = content.lower()
+
+                    for indicator in blocked_indicators:
+                        if indicator in content_lower[:5000]:  # Check first 5KB
+                            logger.info(f"Social profile parsing blocked for {network}: login/access page detected")
+                            return False, None
+
+                    # Even with content, we can't reliably extract profile data
+                    # without proper API access, so we return failure
+                    logger.info(f"Social profile data extraction not supported for {network}")
+                    return False, None
+
+        except aiohttp.ClientError as e:
+            logger.info(f"Network error fetching social profile for {network}: {e}")
+            return False, None
+        except asyncio.TimeoutError:
+            logger.info(f"Timeout fetching social profile for {network}")
+            return False, None
+        except Exception as e:
+            logger.error(f"Unexpected error parsing social profile for {network}: {e}")
+            return False, None
+
     async def add_social_link(
         self,
         telegram_id: int,
         url: str,
-    ) -> tuple[bool, str]:
+    ) -> Tuple[bool, str, bool]:
         """
-        Add a social network link to user's profile.
-        Returns (success, message)
+        Add a social network link to user's profile and attempt to parse profile data.
+
+        Returns:
+            Tuple of (success, message, profile_parse_failed)
+            - success: True if the link was saved successfully
+            - message: Status message (localization key or direct message)
+            - profile_parse_failed: True if we attempted to parse profile data but failed
         """
         network = self.detect_social_network(url)
         if not network:
-            return False, "Не удалось определить социальную сеть. Поддерживаются: Instagram, Facebook, Twitter/X, LinkedIn, VK, Telegram, YouTube, TikTok"
+            return False, "Не удалось определить социальную сеть. Поддерживаются: Instagram, Facebook, Twitter/X, LinkedIn, VK, Telegram, YouTube, TikTok", False
 
         normalized_url = self.normalize_url(url, network)
 
@@ -119,7 +185,7 @@ class SocialProfileService:
             user = result.scalar_one_or_none()
 
             if not user:
-                return False, "Пользователь не найден"
+                return False, "Пользователь не найден", False
 
             # Get or create profile
             result = await session.execute(
@@ -159,9 +225,16 @@ class SocialProfileService:
                     "youtube": "YouTube",
                     "tiktok": "TikTok",
                 }
-                return True, f"Добавлена ссылка на {network_names.get(network, network)}"
 
-            return False, "Неизвестная ошибка"
+                # Attempt to parse profile data from the social network
+                parse_success, parsed_data = await self.attempt_parse_profile_data(normalized_url, network)
+
+                # If parsing failed, we still saved the link but couldn't get profile data
+                profile_parse_failed = not parse_success
+
+                return True, f"Добавлена ссылка на {network_names.get(network, network)}", profile_parse_failed
+
+            return False, "Неизвестная ошибка", False
 
     async def remove_social_link(
         self,

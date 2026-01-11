@@ -85,6 +85,8 @@ async def cancel_social_profile_state(message: Message, state: FSMContext) -> No
 async def handle_social_link_input(message: Message, state: FSMContext) -> None:
     """Handle social network link input"""
     from src.services.user_service import UserService
+    from src.utils.localization import get_menu_text
+
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
@@ -92,14 +94,25 @@ async def handle_social_link_input(message: Message, state: FSMContext) -> None:
     url = message.text.strip()
 
     social_service = SocialProfileService()
-    success, result_message = await social_service.add_social_link(message.from_user.id, url)
+    success, result_message, profile_parse_failed = await social_service.add_social_link(message.from_user.id, url)
 
     await state.clear()
 
     if success:
         summary = await social_service.get_profile_summary(message.from_user.id)
+
+        # Build response message
+        response_parts = [f"✅ {result_message}"]
+
+        # If profile parsing failed, show the warning message
+        if profile_parse_failed:
+            parse_failed_msg = get_menu_text("social_parse_failed", language_code)
+            response_parts.append(f"\n⚠️ {parse_failed_msg}")
+
+        response_parts.append(f"\n\n👤 <b>Социальный профиль</b>\n\n{summary}")
+
         await message.answer(
-            f"✅ {result_message}\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
+            "".join(response_parts),
             reply_markup=get_social_profile_keyboard(language_code)
         )
     else:
