@@ -45,7 +45,7 @@ class EmbeddingService:
         try:
             settings = get_settings()
             response = await self.client.chat.completions.create(
-                model=settings.openai_chat_model,
+                model=settings.openai_analysis_model,
                 messages=[
                     {
                         "role": "system",
@@ -78,7 +78,7 @@ class EmbeddingService:
         try:
             settings = get_settings()
             response = await self.client.chat.completions.create(
-                model=settings.openai_chat_model,
+                model=settings.openai_analysis_model,
                 messages=[
                     {
                         "role": "system",

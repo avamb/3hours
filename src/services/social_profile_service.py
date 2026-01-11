@@ -37,7 +37,7 @@ class SocialProfileService:
     def __init__(self):
         settings = get_settings()
         self.client = AsyncOpenAI(api_key=settings.openai_api_key)
-        self.model = settings.openai_chat_model
+        self.model = settings.openai_analysis_model
 
     async def get_or_create_profile(self, telegram_id: int) -> Optional[SocialProfile]:
         """Get or create social profile for user"""

@@ -59,6 +59,7 @@ class PersonalizationService:
         settings = get_settings()
         self.client = AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = settings.openai_chat_model
+        self.analysis_model = settings.openai_analysis_model
 
     async def generate_response(
         self,
@@ -144,7 +145,7 @@ Don't ask questions, just support.
         # Use GPT for more nuanced detection
         try:
             response = await self.client.chat.completions.create(
-                model=self.model,
+                model=self.analysis_model,
                 messages=[
                     {
                         "role": "system",

@@ -64,6 +64,9 @@ TELEGRAM_BOT_TOKEN=your_bot_token_here
 
 # OpenAI
 OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_CHAT_MODEL=gpt-4o
+OPENAI_ANALYSIS_MODEL=gpt-4o-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
 # Database
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/mindsethappybot
