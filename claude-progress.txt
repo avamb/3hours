@@ -2,6 +2,46 @@
 
 ## Current Status: 175/175 features passing (100.0%) 🎉
 
+## Session 521 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 features to ensure system stability:
+
+1. **Feature #114 - Dokploy deployment metadata** ✅
+   - `deploy.dokploy.json` exists with proper configuration:
+     - admin service routable on port 8080
+     - healthcheck_path set to /health
+     - Required env vars: TELEGRAM_BOT_TOKEN, OPENAI_API_KEY
+   - `.env.example` exists with all necessary variables documented
+
+2. **Feature #116 - Timezone-aware weekly/monthly summaries** ✅
+   - Scheduler uses `get_user_local_now(user_timezone)` for timezone conversion
+   - `parse_timezone()` supports IANA names and UTC offsets
+   - `_check_summary_delivery()` runs hourly checking each user's local time
+   - Weekly summary: Sunday at 10:00 local time
+   - Monthly summary: 1st of month at 10:00 local time
+
+3. **Feature #41 - Conversation history saving** ✅
+   - Dialogs page shows 32 messages for andreiandreev62
+   - All message types saved correctly: bot_reply, user_response, bot_question, free_dialog, admin_message
+   - Timestamps preserved
+   - Multi-language conversations (Russian, English, Spanish, German)
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
+- 10 users, 23 moments, 8 pending notifications
+- 0 Errors (24h), 0 Warnings (24h), 44 Info logs
+- Console: Zero JavaScript errors
+- All Docker containers healthy (bot, admin, postgres)
+- 7 moments recorded today
+
+### Screenshots Captured:
+- regression-session521-dashboard.png
+- regression-session521-dialogs.png
+- regression-session521-logs.png
+
+---
+
 ## Session 520 - January 11, 2026
 
 ### Regression Testing Performed:
