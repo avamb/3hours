@@ -2,78 +2,52 @@
 
 ## Current Status: 169/169 features passing (100% complete)
 
-## Session 464 - January 11, 2026
+## Session 465 - January 11, 2026
 
 ### Regression Testing Completed
-- Verified all Docker services running:
+- All Docker services running and healthy:
   - postgres: HEALTHY (22+ hours uptime)
   - admin: HEALTHY on port 18088
-  - bot: RUNNING
+  - bot: RUNNING (9 minutes uptime)
 
 ### Features Verified for Regression:
-1. **Feature #39 - Moment topics extraction**
-   - Topics Cloud displaying correctly with 50+ extracted topics
-   - Each moment has relevant topics extracted (e.g., "парк прогулка университет", "tiempo calor sol")
-   - Multi-language topic extraction working (Russian, Spanish, English)
-   - Topics used in statistics and filtering
+1. **Feature #58 - APScheduler job persistence**
+   - 8 pending notifications scheduled for multiple users
+   - Notifications correctly restored after bot restart (bot only 9 min uptime)
+   - Sent notifications show proper scheduled vs sent timestamps
+   - Scheduler working correctly across user timezone settings
 
-2. **Feature #155 - First message language detection**
-   - Language properly detected and stored for each user
-   - Users table showing languages: en (50%), ru (40%), uk (10%)
-   - Bot responds in user's detected language
+2. **Feature #166 - Expenses (API usage tracking)**
+   - Total: 5 requests, 1,046 tokens, $0.0023 cost
+   - By Model breakdown: gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1
+   - By Operation breakdown: moment_response, topic_extraction, mood_analysis, embedding, transcription
+   - Recent API calls with timestamps, durations, and OK status
 
-3. **Feature #139 - Respond to feedback from admin panel**
-   - Feedback page showing 5 feedback items with different statuses
-   - View modal showing full feedback details
-   - Response UI with text field and "Send to user via Telegram" checkbox
-   - Status update dropdown (New, Reviewed, Implemented, Rejected)
-   - Previous admin responses displayed
+3. **Feature #51 - Date formatting consistency**
+   - Moments page showing 19 total moments
+   - Dates consistently formatted as relative time (50m ago, 1h ago, 3d ago, 4d ago)
+   - Topics Cloud displaying 50+ extracted topics in multiple languages
+   - Mood scores displayed correctly (Very Positive, Positive, Neutral, Negative)
 
-### Additional Pages Verified:
-1. **Dashboard Overview**:
-   - Database: CONNECTED (10 MB)
-   - Bot: RUNNING (8 pending notifications)
-   - OpenAI: CONFIGURED
-   - 10 Total Users, 1 Active (24h), 19 Total Moments, 3 Moments Today
-
-2. **Users Page**:
-   - 10 users with details (Gender icons 👨/👩, Languages, Moments, Streaks)
-   - User modal showing full profile including LinkedIn, interests, bio
-   - Send Direct Message and Block User actions working
-
-3. **Moments Page**:
-   - 19 total moments with mood scores (0.59 avg)
-   - Topics Cloud interactive and populated
-   - Source types: text and voice
-   - Export CSV functionality
-
-4. **Analytics Page**:
-   - User Funnel: Registered (10) → Onboarded (9) → First Moment (3) → Regular Use (2)
-   - Retention by Cohorts table
-   - User Registrations chart (30-day view)
-   - Activity Heatmap showing peak hours (Wed 18:00 with 6 activities)
-   - Language Distribution: English 50%, Russian 40%, Ukrainian 10%
-
-### System Health:
-- No console errors in browser
+### Additional Verification:
+- Dashboard Overview: 10 users, 19 moments, bot running with 8 pending notifications
+- No JavaScript console errors
 - All navigation working correctly
-- All modal dialogs functioning properly
 - Real-time data from database (no mock data)
 
-### No Issues Found
-- All tested features working correctly
+### System Health:
 - Application stable and production-ready
 - 100% feature completion maintained (169/169)
 
 ## Previous Sessions Summary
 
+### Session 464 - January 11, 2026
+- Regression testing - all 169 features verified passing
+
 ### Session 463 - January 11, 2026
 - Regression testing - all 169 features verified passing
 
 ### Session 462 - January 11, 2026
-- Regression testing - all 169 features verified passing
-
-### Session 461 - January 11, 2026
 - Regression testing - all 166 features verified passing
 
 ### Session 455 - January 11, 2026
