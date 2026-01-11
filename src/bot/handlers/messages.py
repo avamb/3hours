@@ -18,7 +18,7 @@ from src.services.speech_service import SpeechToTextService
 from src.services.personalization_service import PersonalizationService
 from src.services.conversation_log_service import ConversationLogService
 from src.services.social_profile_service import SocialProfileService
-from src.utils.localization import detect_and_update_language
+from src.utils.localization import detect_and_update_language, get_all_menu_button_texts
 
 logger = logging.getLogger(__name__)
 router = Router(name="messages")
@@ -27,44 +27,56 @@ dialog_service = DialogService.get_instance()
 conversation_log = ConversationLogService()
 
 
-@router.message(F.text == "📖 Мои моменты")
+@router.message(F.text.in_(get_all_menu_button_texts("menu_moments")))
 async def handle_moments_button(message: Message) -> None:
     """Handle 'My moments' button press"""
     from src.bot.handlers.commands import cmd_moments
     await cmd_moments(message)
 
 
-@router.message(F.text == "📊 Статистика")
+@router.message(F.text.in_(get_all_menu_button_texts("menu_stats")))
 async def handle_stats_button(message: Message) -> None:
     """Handle 'Statistics' button press"""
     from src.bot.handlers.commands import cmd_stats
     await cmd_stats(message)
 
 
-@router.message(F.text == "⚙️ Настройки")
+@router.message(F.text.in_(get_all_menu_button_texts("menu_settings")))
 async def handle_settings_button(message: Message) -> None:
     """Handle 'Settings' button press"""
     from src.bot.handlers.commands import cmd_settings
     await cmd_settings(message)
 
 
-@router.message(F.text == "💬 Поговорить")
+@router.message(F.text.in_(get_all_menu_button_texts("menu_talk")))
 async def handle_talk_button(message: Message) -> None:
     """Handle 'Talk' button press"""
     from src.bot.handlers.commands import cmd_talk
     await cmd_talk(message)
 
 
+@router.message(F.text.in_(get_all_menu_button_texts("menu_feedback")))
+async def handle_feedback_button(message: Message) -> None:
+    """Handle 'Feedback' button press"""
+    from src.bot.handlers.feedback import cmd_feedback
+    await cmd_feedback(message)
+
+
 # Cancel command for FSM states
 @router.message(Command("cancel"), StateFilter(SocialProfileStates))
 async def cancel_social_profile_state(message: Message, state: FSMContext) -> None:
     """Cancel social profile input"""
+    from src.services.user_service import UserService
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     await state.clear()
     social_service = SocialProfileService()
     summary = await social_service.get_profile_summary(message.from_user.id)
     await message.answer(
         f"❌ Отменено.\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
-        reply_markup=get_social_profile_keyboard()
+        reply_markup=get_social_profile_keyboard(language_code)
     )
 
 
@@ -72,6 +84,11 @@ async def cancel_social_profile_state(message: Message, state: FSMContext) -> No
 @router.message(StateFilter(SocialProfileStates.waiting_for_social_link))
 async def handle_social_link_input(message: Message, state: FSMContext) -> None:
     """Handle social network link input"""
+    from src.services.user_service import UserService
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     url = message.text.strip()
 
     social_service = SocialProfileService()
@@ -83,18 +100,23 @@ async def handle_social_link_input(message: Message, state: FSMContext) -> None:
         summary = await social_service.get_profile_summary(message.from_user.id)
         await message.answer(
             f"✅ {result_message}\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
-            reply_markup=get_social_profile_keyboard()
+            reply_markup=get_social_profile_keyboard(language_code)
         )
     else:
         await message.answer(
             f"❌ {result_message}",
-            reply_markup=get_social_profile_keyboard()
+            reply_markup=get_social_profile_keyboard(language_code)
         )
 
 
 @router.message(StateFilter(SocialProfileStates.waiting_for_bio))
 async def handle_bio_input(message: Message, state: FSMContext) -> None:
     """Handle bio text input"""
+    from src.services.user_service import UserService
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     bio_text = message.text.strip()
 
     if len(bio_text) > 1000:
@@ -113,12 +135,12 @@ async def handle_bio_input(message: Message, state: FSMContext) -> None:
         summary = await social_service.get_profile_summary(message.from_user.id)
         await message.answer(
             f"✅ {result_message}\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
-            reply_markup=get_social_profile_keyboard()
+            reply_markup=get_social_profile_keyboard(language_code)
         )
     else:
         await message.answer(
             f"❌ {result_message}",
-            reply_markup=get_social_profile_keyboard()
+            reply_markup=get_social_profile_keyboard(language_code)
         )
 
 
@@ -130,6 +152,11 @@ async def handle_voice_message(message: Message) -> None:
     - Transcribe using Whisper API
     - Process as text response
     """
+    from src.services.user_service import UserService
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     await message.answer("🎙 Распознаю голосовое сообщение...")
 
     speech_service = SpeechToTextService()
@@ -181,7 +208,7 @@ async def handle_voice_message(message: Message) -> None:
 
         await message.answer(
             f"✅ Распознано: «{transcribed_text}»\n\n{response}",
-            reply_markup=get_main_menu_keyboard()
+            reply_markup=get_main_menu_keyboard(language_code)
         )
 
         await conversation_log.log(
@@ -233,8 +260,12 @@ async def handle_text_message(message: Message) -> None:
         )
         return
 
+    language_code = user.language_code if user else "ru"
+
     # Detect and update language based on user's message
-    await detect_and_update_language(message.from_user.id, text)
+    detected_lang = await detect_and_update_language(message.from_user.id, text)
+    if detected_lang:
+        language_code = detected_lang
 
     # Dialog mode: route to DialogService (persists to conversations)
     if dialog_service.is_in_dialog(message.from_user.id):
@@ -245,7 +276,7 @@ async def handle_text_message(message: Message) -> None:
             telegram_id=message.from_user.id,
             message=text,
         )
-        await message.answer(response, reply_markup=get_dialog_keyboard())
+        await message.answer(response, reply_markup=get_dialog_keyboard(language_code))
         return
 
     # Normal mode: log to conversations for admin visibility
@@ -289,7 +320,7 @@ async def handle_text_message(message: Message) -> None:
                 text=text
             )
 
-        await message.answer(response, reply_markup=get_main_menu_keyboard())
+        await message.answer(response, reply_markup=get_main_menu_keyboard(language_code))
         await conversation_log.log(
             telegram_id=message.from_user.id,
             message_type="bot_reply",
@@ -313,7 +344,7 @@ async def handle_text_message(message: Message) -> None:
             moment_content=text
         )
 
-        await message.answer(response, reply_markup=get_main_menu_keyboard())
+        await message.answer(response, reply_markup=get_main_menu_keyboard(language_code))
         await conversation_log.log(
             telegram_id=message.from_user.id,
             message_type="bot_reply",

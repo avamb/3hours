@@ -102,31 +102,36 @@ async def cmd_start(message: Message) -> None:
     """
     user_service = UserService()
     user = await user_service.get_or_create_user(message.from_user)
+    language_code = user.language_code if user else "ru"
 
     if not user.onboarding_completed:
         # New user - send welcome image first
         await send_welcome_image(message)
 
         # Get localized welcome text based on user's language
-        welcome_text = get_localized_welcome_text(user.first_name, user.language_code)
+        welcome_text = get_localized_welcome_text(user.first_name, language_code)
 
         await message.answer(
             welcome_text,
-            reply_markup=get_onboarding_keyboard(user.language_code)
+            reply_markup=get_onboarding_keyboard(language_code)
         )
     else:
         # Existing user - welcome back
-        welcome_back_text = get_localized_welcome_back_text(user.first_name, user.language_code)
+        welcome_back_text = get_localized_welcome_back_text(user.first_name, language_code)
 
         await message.answer(
             welcome_back_text,
-            reply_markup=get_main_menu_keyboard()
+            reply_markup=get_main_menu_keyboard(language_code)
         )
 
 
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     """Handle /help command - show available commands and usage"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     help_text = (
         "📚 <b>Команды бота</b>\n\n"
         "/start - Начать заново\n"
@@ -144,7 +149,7 @@ async def cmd_help(message: Message) -> None:
         "Я сохраню твои радостные моменты и напомню о них, "
         "когда будет нужна поддержка. 🌟"
     )
-    await message.answer(help_text, reply_markup=get_main_menu_keyboard())
+    await message.answer(help_text, reply_markup=get_main_menu_keyboard(language_code))
 
 
 @router.message(Command("settings"))
@@ -159,6 +164,8 @@ async def cmd_settings(message: Message) -> None:
         )
         return
 
+    language_code = user.language_code if user else "ru"
+
     settings_text = (
         "⚙️ <b>Настройки</b>\n\n"
         f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
@@ -167,7 +174,7 @@ async def cmd_settings(message: Message) -> None:
         f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
         f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
     )
-    await message.answer(settings_text, reply_markup=get_settings_keyboard())
+    await message.answer(settings_text, reply_markup=get_settings_keyboard(language_code))
 
 
 @router.message(Command("moments"))
@@ -175,6 +182,10 @@ async def cmd_moments(message: Message) -> None:
     """Handle /moments command - show user's moment history"""
     from src.services.moment_service import MomentService
     from src.bot.keyboards.inline import get_moments_keyboard
+
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
 
     moment_service = MomentService()
     moments = await moment_service.get_user_moments(
@@ -195,7 +206,7 @@ async def cmd_moments(message: Message) -> None:
         content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
         moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
 
-    await message.answer(moments_text, reply_markup=get_moments_keyboard())
+    await message.answer(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
 
 
 @router.message(Command("stats"))
@@ -235,6 +246,10 @@ async def cmd_talk(message: Message) -> None:
     from src.bot.keyboards.inline import get_dialog_keyboard
     from src.services.dialog_service import DialogService
 
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     dialog_intro = (
         "💬 <b>Режим диалога</b>\n\n"
         "Я готов выслушать тебя. Расскажи, что у тебя на душе. "
@@ -243,7 +258,7 @@ async def cmd_talk(message: Message) -> None:
         "Чтобы выйти из режима диалога, нажми кнопку ниже."
     )
     DialogService.get_instance().start_dialog(message.from_user.id)
-    await message.answer(dialog_intro, reply_markup=get_dialog_keyboard())
+    await message.answer(dialog_intro, reply_markup=get_dialog_keyboard(language_code))
 
 
 @router.message(Command("privacy"))
@@ -295,6 +310,10 @@ async def cmd_delete_data(message: Message) -> None:
     """Handle /delete_data command - request data deletion (GDPR)"""
     from src.bot.keyboards.inline import get_delete_confirmation_keyboard
 
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     confirm_text = (
         "⚠️ <b>Удаление данных</b>\n\n"
         "Ты уверен, что хочешь удалить ВСЕ свои данные?\n\n"
@@ -305,7 +324,7 @@ async def cmd_delete_data(message: Message) -> None:
         "• Сбросит настройки\n\n"
         "⚠️ <b>Это действие необратимо!</b>"
     )
-    await message.answer(confirm_text, reply_markup=get_delete_confirmation_keyboard())
+    await message.answer(confirm_text, reply_markup=get_delete_confirmation_keyboard(language_code))
 
 
 @router.message(Command("summary"))
@@ -313,10 +332,14 @@ async def cmd_summary(message: Message) -> None:
     """Handle /summary command - get weekly or monthly summary of moments"""
     from src.bot.keyboards.inline import get_summary_keyboard
 
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     summary_intro = (
         "📊 <b>Саммари моментов</b>\n\n"
         "Выбери тип саммари, который хочешь получить:\n\n"
         "📅 <b>Еженедельное</b> — обзор хороших моментов за последнюю неделю\n"
         "🗓 <b>Месячное</b> — итоги за последний месяц"
     )
-    await message.answer(summary_intro, reply_markup=get_summary_keyboard())
+    await message.answer(summary_intro, reply_markup=get_summary_keyboard(language_code))

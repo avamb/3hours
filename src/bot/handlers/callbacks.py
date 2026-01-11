@@ -30,6 +30,13 @@ logger = logging.getLogger(__name__)
 router = Router(name="callbacks")
 
 
+async def get_user_language(telegram_id: int) -> str:
+    """Helper to get user's language code"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(telegram_id)
+    return user.language_code if user else "ru"
+
+
 # Onboarding callbacks
 @router.callback_query(F.data == "address_informal")
 async def callback_address_informal(callback: CallbackQuery) -> None:
@@ -47,7 +54,7 @@ async def callback_address_informal(callback: CallbackQuery) -> None:
 
     await callback.message.edit_text(
         confirm_text,
-        reply_markup=get_main_menu_inline()
+        reply_markup=get_main_menu_inline(language_code)
     )
 
     await user_service.complete_onboarding(callback.from_user.id)
@@ -90,7 +97,7 @@ async def callback_address_formal(callback: CallbackQuery) -> None:
 
     await callback.message.edit_text(
         confirm_text,
-        reply_markup=get_main_menu_inline()
+        reply_markup=get_main_menu_inline(language_code)
     )
 
     await user_service.complete_onboarding(callback.from_user.id)
@@ -121,10 +128,11 @@ async def callback_address_formal(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "settings_hours")
 async def callback_settings_hours(callback: CallbackQuery) -> None:
     """Show hours settings"""
+    language_code = await get_user_language(callback.from_user.id)
     await callback.message.edit_text(
         "🕐 <b>Активные часы</b>\n\n"
         "Выбери время начала активного периода:",
-        reply_markup=get_hours_keyboard("start")
+        reply_markup=get_hours_keyboard("start", language_code=language_code)
     )
     await callback.answer()
 
@@ -133,11 +141,12 @@ async def callback_settings_hours(callback: CallbackQuery) -> None:
 async def callback_hour_start(callback: CallbackQuery) -> None:
     """Set start hour"""
     hour = callback.data.split("_")[2]
+    language_code = await get_user_language(callback.from_user.id)
     # Store temporarily and show end hour selection
     await callback.message.edit_text(
         f"🕐 Начало: {hour}:00\n\n"
         "Теперь выбери время окончания:",
-        reply_markup=get_hours_keyboard("end", start_hour=hour)
+        reply_markup=get_hours_keyboard("end", start_hour=hour, language_code=language_code)
     )
     await callback.answer()
 
@@ -156,9 +165,10 @@ async def callback_hour_end(callback: CallbackQuery) -> None:
         active_hours_end=f"{end_hour}:00"
     )
 
+    language_code = await get_user_language(callback.from_user.id)
     await callback.message.edit_text(
         f"✅ Активные часы установлены: {start_hour}:00 - {end_hour}:00",
-        reply_markup=get_settings_keyboard()
+        reply_markup=get_settings_keyboard(language_code)
     )
     await callback.answer("Сохранено!")
 
@@ -166,10 +176,11 @@ async def callback_hour_end(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "settings_interval")
 async def callback_settings_interval(callback: CallbackQuery) -> None:
     """Show interval settings"""
+    language_code = await get_user_language(callback.from_user.id)
     await callback.message.edit_text(
         "⏰ <b>Интервал между вопросами</b>\n\n"
         "Как часто мне спрашивать о хорошем?",
-        reply_markup=get_interval_keyboard()
+        reply_markup=get_interval_keyboard(language_code)
     )
     await callback.answer()
 
@@ -185,9 +196,10 @@ async def callback_set_interval(callback: CallbackQuery) -> None:
         notification_interval_hours=hours
     )
 
+    language_code = await get_user_language(callback.from_user.id)
     await callback.message.edit_text(
         f"✅ Интервал установлен: каждые {hours} ч.",
-        reply_markup=get_settings_keyboard()
+        reply_markup=get_settings_keyboard(language_code)
     )
     await callback.answer("Сохранено!")
 
@@ -195,10 +207,11 @@ async def callback_set_interval(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "settings_address")
 async def callback_settings_address(callback: CallbackQuery) -> None:
     """Show address form settings"""
+    language_code = await get_user_language(callback.from_user.id)
     await callback.message.edit_text(
         "🗣 <b>Форма обращения</b>\n\n"
         "Как тебе удобнее?",
-        reply_markup=get_address_form_keyboard()
+        reply_markup=get_address_form_keyboard(language_code)
     )
     await callback.answer()
 
@@ -208,6 +221,7 @@ async def callback_settings_notifications(callback: CallbackQuery) -> None:
     """Toggle notifications"""
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
 
     new_state = not user.notifications_enabled
     await user_service.update_user_settings(
@@ -218,7 +232,7 @@ async def callback_settings_notifications(callback: CallbackQuery) -> None:
     status = "включены" if new_state else "выключены"
     await callback.message.edit_text(
         f"🔔 Уведомления {status}",
-        reply_markup=get_settings_keyboard()
+        reply_markup=get_settings_keyboard(language_code)
     )
     await callback.answer("Сохранено!")
 
@@ -228,13 +242,14 @@ async def callback_settings_timezone(callback: CallbackQuery) -> None:
     """Show timezone settings"""
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
 
     current_tz = user.timezone if user else "UTC"
     await callback.message.edit_text(
         f"🌍 <b>Часовой пояс</b>\n\n"
         f"Текущий: <code>{current_tz}</code>\n\n"
         "Выбери свой часовой пояс:",
-        reply_markup=get_timezone_keyboard()
+        reply_markup=get_timezone_keyboard(language_code)
     )
     await callback.answer()
 
@@ -243,6 +258,7 @@ async def callback_settings_timezone(callback: CallbackQuery) -> None:
 async def callback_set_timezone(callback: CallbackQuery) -> None:
     """Set user timezone"""
     timezone = callback.data.replace("timezone_", "")
+    language_code = await get_user_language(callback.from_user.id)
 
     user_service = UserService()
     try:
@@ -253,13 +269,13 @@ async def callback_set_timezone(callback: CallbackQuery) -> None:
 
         await callback.message.edit_text(
             f"✅ Часовой пояс установлен: {timezone}",
-            reply_markup=get_settings_keyboard()
+            reply_markup=get_settings_keyboard(language_code)
         )
         await callback.answer("Сохранено!")
     except ValueError as e:
         await callback.message.edit_text(
             f"❌ Ошибка: неверный часовой пояс",
-            reply_markup=get_settings_keyboard()
+            reply_markup=get_settings_keyboard(language_code)
         )
         await callback.answer("Ошибка!")
 
@@ -268,12 +284,13 @@ async def callback_set_timezone(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "settings_social")
 async def callback_settings_social(callback: CallbackQuery) -> None:
     """Show social profile settings"""
+    language_code = await get_user_language(callback.from_user.id)
     social_service = SocialProfileService()
     summary = await social_service.get_profile_summary(callback.from_user.id)
 
     await callback.message.edit_text(
         f"👤 <b>Социальный профиль</b>\n\n{summary}",
-        reply_markup=get_social_profile_keyboard()
+        reply_markup=get_social_profile_keyboard(language_code)
     )
     await callback.answer()
 
@@ -315,6 +332,7 @@ async def callback_social_bio(callback: CallbackQuery, state: FSMContext) -> Non
 @router.callback_query(F.data == "social_parse")
 async def callback_social_parse(callback: CallbackQuery) -> None:
     """Parse interests from profile"""
+    language_code = await get_user_language(callback.from_user.id)
     await callback.message.edit_text("🔍 Анализирую профиль...")
 
     social_service = SocialProfileService()
@@ -326,13 +344,13 @@ async def callback_social_parse(callback: CallbackQuery) -> None:
             f"✅ <b>Интересы определены!</b>\n\n"
             f"Твои интересы: {interests_text}\n\n"
             f"Эта информация будет использоваться для персонализации нашего общения.",
-            reply_markup=get_social_profile_keyboard()
+            reply_markup=get_social_profile_keyboard(language_code)
         )
     else:
         await callback.message.edit_text(
             "❌ Не удалось определить интересы.\n\n"
             "Добавь больше информации в свой профиль: ссылки на соцсети или биографию.",
-            reply_markup=get_social_profile_keyboard()
+            reply_markup=get_social_profile_keyboard(language_code)
         )
     await callback.answer()
 
@@ -340,20 +358,21 @@ async def callback_social_parse(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "social_remove")
 async def callback_social_remove(callback: CallbackQuery) -> None:
     """Show list of social links to remove"""
+    language_code = await get_user_language(callback.from_user.id)
     social_service = SocialProfileService()
     profile = await social_service.get_profile(callback.from_user.id)
 
     if not profile:
         await callback.message.edit_text(
             "У тебя нет добавленных соцсетей.",
-            reply_markup=get_social_profile_keyboard()
+            reply_markup=get_social_profile_keyboard(language_code)
         )
     else:
         urls = profile.get_all_urls()
         await callback.message.edit_text(
             "🗑 <b>Удаление ссылки</b>\n\n"
             "Выбери соцсеть для удаления:",
-            reply_markup=get_social_remove_keyboard(urls)
+            reply_markup=get_social_remove_keyboard(urls, language_code)
         )
     await callback.answer()
 
@@ -361,6 +380,7 @@ async def callback_social_remove(callback: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("social_del_"))
 async def callback_social_delete(callback: CallbackQuery) -> None:
     """Delete a social network link"""
+    language_code = await get_user_language(callback.from_user.id)
     network = callback.data.replace("social_del_", "")
 
     social_service = SocialProfileService()
@@ -369,12 +389,12 @@ async def callback_social_delete(callback: CallbackQuery) -> None:
     if success:
         await callback.message.edit_text(
             f"✅ {message}",
-            reply_markup=get_social_profile_keyboard()
+            reply_markup=get_social_profile_keyboard(language_code)
         )
     else:
         await callback.message.edit_text(
             f"❌ {message}",
-            reply_markup=get_social_profile_keyboard()
+            reply_markup=get_social_profile_keyboard(language_code)
         )
     await callback.answer()
 
@@ -382,12 +402,13 @@ async def callback_social_delete(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "social_back")
 async def callback_social_back(callback: CallbackQuery) -> None:
     """Go back to social profile menu"""
+    language_code = await get_user_language(callback.from_user.id)
     social_service = SocialProfileService()
     summary = await social_service.get_profile_summary(callback.from_user.id)
 
     await callback.message.edit_text(
         f"👤 <b>Социальный профиль</b>\n\n{summary}",
-        reply_markup=get_social_profile_keyboard()
+        reply_markup=get_social_profile_keyboard(language_code)
     )
     await callback.answer()
 
@@ -398,6 +419,7 @@ async def callback_settings_back(callback: CallbackQuery) -> None:
     from src.bot.handlers.commands import cmd_settings
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
 
     settings_text = (
         "⚙️ <b>Настройки</b>\n\n"
@@ -407,7 +429,7 @@ async def callback_settings_back(callback: CallbackQuery) -> None:
         f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
         f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
     )
-    await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard())
+    await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard(language_code))
     await callback.answer()
 
 
@@ -420,6 +442,7 @@ async def callback_settings_reset(callback: CallbackQuery) -> None:
     if success:
         # Fetch updated user to show new settings
         user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+        language_code = user.language_code if user else "ru"
         settings_text = (
             "✅ <b>Настройки сброшены!</b>\n\n"
             f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
@@ -428,12 +451,13 @@ async def callback_settings_reset(callback: CallbackQuery) -> None:
             f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
             f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
         )
-        await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard())
+        await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard(language_code))
         await callback.answer("Настройки сброшены!")
     else:
+        language_code = await get_user_language(callback.from_user.id)
         await callback.message.edit_text(
             "😔 Не удалось сбросить настройки. Попробуй позже.",
-            reply_markup=get_settings_keyboard()
+            reply_markup=get_settings_keyboard(language_code)
         )
         await callback.answer("Ошибка")
 
@@ -457,6 +481,7 @@ async def callback_moments_random(callback: CallbackQuery) -> None:
     """Show random moment with delete option"""
     from src.bot.keyboards.inline import get_random_moment_keyboard
 
+    language_code = await get_user_language(callback.from_user.id)
     moment_service = MomentService()
     moment = await moment_service.get_random_moment(callback.from_user.id)
 
@@ -466,7 +491,7 @@ async def callback_moments_random(callback: CallbackQuery) -> None:
             f"🎲 <b>Случайный хороший момент</b>\n\n"
             f"📅 {date_str}\n\n"
             f"«{moment.content}»",
-            reply_markup=get_random_moment_keyboard(moment.id)
+            reply_markup=get_random_moment_keyboard(moment.id, language_code)
         )
     else:
         await callback.message.answer("У тебя пока нет сохранённых моментов.")
@@ -510,6 +535,7 @@ async def callback_moment_delete_confirm(callback: CallbackQuery) -> None:
     """Show confirmation dialog for deleting a moment"""
     from src.bot.keyboards.inline import get_moment_delete_confirm_keyboard
 
+    language_code = await get_user_language(callback.from_user.id)
     moment_id = int(callback.data.replace("moment_delete_confirm_", ""))
     moment_service = MomentService()
 
@@ -528,7 +554,7 @@ async def callback_moment_delete_confirm(callback: CallbackQuery) -> None:
     if not target_moment:
         await callback.message.edit_text(
             "😔 Момент не найден.",
-            reply_markup=get_moments_keyboard()
+            reply_markup=get_moments_keyboard(language_code=language_code)
         )
         await callback.answer()
         return
@@ -539,7 +565,7 @@ async def callback_moment_delete_confirm(callback: CallbackQuery) -> None:
         f"🗑️ <b>Удалить момент?</b>\n\n"
         f"«{preview}»\n\n"
         f"⚠️ Это действие необратимо!",
-        reply_markup=get_moment_delete_confirm_keyboard(moment_id)
+        reply_markup=get_moment_delete_confirm_keyboard(moment_id, language_code)
     )
     await callback.answer()
 
@@ -547,6 +573,7 @@ async def callback_moment_delete_confirm(callback: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("moment_delete_") & ~F.data.startswith("moment_delete_confirm_"))
 async def callback_moment_delete(callback: CallbackQuery) -> None:
     """Actually delete a moment"""
+    language_code = await get_user_language(callback.from_user.id)
     moment_id = int(callback.data.replace("moment_delete_", ""))
     moment_service = MomentService()
 
@@ -558,12 +585,12 @@ async def callback_moment_delete(callback: CallbackQuery) -> None:
     if success:
         await callback.message.edit_text(
             "✅ Момент удалён.",
-            reply_markup=get_moments_keyboard()
+            reply_markup=get_moments_keyboard(language_code=language_code)
         )
     else:
         await callback.message.edit_text(
             "😔 Не удалось удалить момент.",
-            reply_markup=get_moments_keyboard()
+            reply_markup=get_moments_keyboard(language_code=language_code)
         )
 
     await callback.answer()
@@ -576,10 +603,11 @@ async def callback_dialog_exit(callback: CallbackQuery) -> None:
     from src.bot.keyboards.reply import get_main_menu_keyboard
     from src.services.dialog_service import DialogService
 
+    language_code = await get_user_language(callback.from_user.id)
     DialogService.get_instance().end_dialog(callback.from_user.id)
     await callback.message.answer(
         "Вернулись в обычный режим. Чем могу помочь? 😊",
-        reply_markup=get_main_menu_keyboard()
+        reply_markup=get_main_menu_keyboard(language_code)
     )
     await callback.answer()
 
@@ -588,9 +616,10 @@ async def callback_dialog_exit(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "main_menu")
 async def callback_main_menu(callback: CallbackQuery) -> None:
     """Return to main menu"""
+    language_code = await get_user_language(callback.from_user.id)
     await callback.message.edit_text(
         "Чем могу помочь? 😊",
-        reply_markup=get_main_menu_inline()
+        reply_markup=get_main_menu_inline(language_code)
     )
     await callback.answer()
 
@@ -601,6 +630,7 @@ async def callback_menu_moments(callback: CallbackQuery) -> None:
     """Show moments list"""
     from src.bot.keyboards.inline import get_moments_keyboard
 
+    language_code = await get_user_language(callback.from_user.id)
     moment_service = MomentService()
     moments = await moment_service.get_user_moments(
         telegram_id=callback.from_user.id,
@@ -611,7 +641,7 @@ async def callback_menu_moments(callback: CallbackQuery) -> None:
         await callback.message.edit_text(
             "📖 У тебя пока нет сохранённых моментов.\n"
             "Когда придёт время вопроса, поделись чем-то хорошим! 🌟",
-            reply_markup=get_main_menu_inline()
+            reply_markup=get_main_menu_inline(language_code)
         )
     else:
         moments_text = "📖 <b>Твои хорошие моменты</b>\n\n"
@@ -619,7 +649,7 @@ async def callback_menu_moments(callback: CallbackQuery) -> None:
             date_str = moment.created_at.strftime("%d.%m.%Y")
             content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
             moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
-        await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard())
+        await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
 
     await callback.answer()
 
@@ -629,6 +659,7 @@ async def callback_menu_stats(callback: CallbackQuery) -> None:
     """Show statistics"""
     from src.services.stats_service import StatsService
 
+    language_code = await get_user_language(callback.from_user.id)
     stats_service = StatsService()
     stats = await stats_service.get_user_stats(callback.from_user.id)
 
@@ -636,7 +667,7 @@ async def callback_menu_stats(callback: CallbackQuery) -> None:
         await callback.message.edit_text(
             "📊 Статистика пока недоступна.\n"
             "Начни отвечать на вопросы, и здесь появится твой прогресс! ✨",
-            reply_markup=get_main_menu_inline()
+            reply_markup=get_main_menu_inline(language_code)
         )
     else:
         stats_text = (
@@ -650,7 +681,7 @@ async def callback_menu_stats(callback: CallbackQuery) -> None:
         if stats.total_questions_sent > 0:
             answer_rate = (stats.total_questions_answered / stats.total_questions_sent) * 100
             stats_text += f"📈 Процент ответов: {answer_rate:.1f}%\n"
-        await callback.message.edit_text(stats_text, reply_markup=get_main_menu_inline())
+        await callback.message.edit_text(stats_text, reply_markup=get_main_menu_inline(language_code))
 
     await callback.answer()
 
@@ -660,11 +691,12 @@ async def callback_menu_settings(callback: CallbackQuery) -> None:
     """Show settings menu"""
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
 
     if not user:
         await callback.message.edit_text(
             "Пожалуйста, сначала запусти бота командой /start",
-            reply_markup=get_main_menu_inline()
+            reply_markup=get_main_menu_inline(language_code)
         )
     else:
         settings_text = (
@@ -675,7 +707,7 @@ async def callback_menu_settings(callback: CallbackQuery) -> None:
             f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
             f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
         )
-        await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard())
+        await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard(language_code))
 
     await callback.answer()
 
@@ -686,6 +718,7 @@ async def callback_menu_talk(callback: CallbackQuery) -> None:
     from src.bot.keyboards.inline import get_dialog_keyboard
     from src.services.dialog_service import DialogService
 
+    language_code = await get_user_language(callback.from_user.id)
     DialogService.get_instance().start_dialog(callback.from_user.id)
     dialog_intro = (
         "💬 <b>Режим диалога</b>\n\n"
@@ -694,7 +727,7 @@ async def callback_menu_talk(callback: CallbackQuery) -> None:
         "но помни — все решения принимаешь ты сам. 💝\n\n"
         "Чтобы выйти из режима диалога, нажми кнопку ниже."
     )
-    await callback.message.edit_text(dialog_intro, reply_markup=get_dialog_keyboard())
+    await callback.message.edit_text(dialog_intro, reply_markup=get_dialog_keyboard(language_code))
     await callback.answer()
 
 
@@ -702,6 +735,7 @@ async def callback_menu_talk(callback: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("filter_"))
 async def callback_filter_moments(callback: CallbackQuery) -> None:
     """Filter moments by period"""
+    language_code = await get_user_language(callback.from_user.id)
     period = callback.data.replace("filter_", "")
     moment_service = MomentService()
     moments = await moment_service.get_user_moments(
@@ -716,7 +750,7 @@ async def callback_filter_moments(callback: CallbackQuery) -> None:
     if not moments:
         await callback.message.edit_text(
             f"📖 Нет моментов {period_name}.",
-            reply_markup=get_moments_keyboard()
+            reply_markup=get_moments_keyboard(language_code=language_code)
         )
     else:
         moments_text = f"📖 <b>Моменты {period_name}</b>\n\n"
@@ -724,7 +758,7 @@ async def callback_filter_moments(callback: CallbackQuery) -> None:
             date_str = moment.created_at.strftime("%d.%m.%Y")
             content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
             moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
-        await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard())
+        await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
 
     await callback.answer()
 
@@ -752,6 +786,7 @@ async def callback_summary_weekly(callback: CallbackQuery) -> None:
     """Generate and show weekly summary"""
     from src.services.summary_service import SummaryService
 
+    language_code = await get_user_language(callback.from_user.id)
     await callback.message.edit_text(
         "⏳ Готовлю еженедельное саммари..."
     )
@@ -762,13 +797,13 @@ async def callback_summary_weekly(callback: CallbackQuery) -> None:
     if summary:
         await callback.message.edit_text(
             summary,
-            reply_markup=get_main_menu_inline()
+            reply_markup=get_main_menu_inline(language_code)
         )
     else:
         await callback.message.edit_text(
             "📅 Недостаточно моментов для еженедельного саммари.\n\n"
             "Когда у тебя будет больше записей, я смогу создать красивый обзор! 🌟",
-            reply_markup=get_main_menu_inline()
+            reply_markup=get_main_menu_inline(language_code)
         )
 
     await callback.answer()
@@ -779,6 +814,7 @@ async def callback_summary_monthly(callback: CallbackQuery) -> None:
     """Generate and show monthly summary"""
     from src.services.summary_service import SummaryService
 
+    language_code = await get_user_language(callback.from_user.id)
     await callback.message.edit_text(
         "⏳ Готовлю месячное саммари..."
     )
@@ -789,13 +825,13 @@ async def callback_summary_monthly(callback: CallbackQuery) -> None:
     if summary:
         await callback.message.edit_text(
             summary,
-            reply_markup=get_main_menu_inline()
+            reply_markup=get_main_menu_inline(language_code)
         )
     else:
         await callback.message.edit_text(
             "🗓 Недостаточно моментов для месячного саммари.\n\n"
             "Когда у тебя будет больше записей, я смогу создать красивый обзор! 🌟",
-            reply_markup=get_main_menu_inline()
+            reply_markup=get_main_menu_inline(language_code)
         )
 
     await callback.answer()

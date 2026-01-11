@@ -4,7 +4,7 @@ Inline buttons for various bot interactions
 """
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from src.utils.localization import get_onboarding_text
+from src.utils.localization import get_onboarding_text, get_menu_text
 
 
 def get_onboarding_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
@@ -27,81 +27,81 @@ def get_onboarding_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     return keyboard
 
 
-def get_main_menu_inline() -> InlineKeyboardMarkup:
+def get_main_menu_inline(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create inline main menu keyboard"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="📖 Мои моменты", callback_data="menu_moments"),
-                InlineKeyboardButton(text="📊 Статистика", callback_data="menu_stats"),
+                InlineKeyboardButton(text=get_menu_text("menu_moments", language_code), callback_data="menu_moments"),
+                InlineKeyboardButton(text=get_menu_text("menu_stats", language_code), callback_data="menu_stats"),
             ],
             [
-                InlineKeyboardButton(text="⚙️ Настройки", callback_data="menu_settings"),
-                InlineKeyboardButton(text="💬 Поговорить", callback_data="menu_talk"),
+                InlineKeyboardButton(text=get_menu_text("menu_settings", language_code), callback_data="menu_settings"),
+                InlineKeyboardButton(text=get_menu_text("menu_talk", language_code), callback_data="menu_talk"),
             ],
         ]
     )
     return keyboard
 
 
-def get_settings_keyboard() -> InlineKeyboardMarkup:
+def get_settings_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create settings menu keyboard"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="🕐 Активные часы", callback_data="settings_hours"),
+                InlineKeyboardButton(text=get_menu_text("settings_hours", language_code), callback_data="settings_hours"),
             ],
             [
-                InlineKeyboardButton(text="⏰ Интервал", callback_data="settings_interval"),
+                InlineKeyboardButton(text=get_menu_text("settings_interval", language_code), callback_data="settings_interval"),
             ],
             [
-                InlineKeyboardButton(text="🌍 Часовой пояс", callback_data="settings_timezone"),
+                InlineKeyboardButton(text=get_menu_text("settings_timezone", language_code), callback_data="settings_timezone"),
             ],
             [
-                InlineKeyboardButton(text="👤 Социальный профиль", callback_data="settings_social"),
+                InlineKeyboardButton(text=get_menu_text("settings_social", language_code), callback_data="settings_social"),
             ],
             [
-                InlineKeyboardButton(text="🗣 Форма обращения", callback_data="settings_address"),
+                InlineKeyboardButton(text=get_menu_text("settings_address", language_code), callback_data="settings_address"),
             ],
             [
-                InlineKeyboardButton(text="🔔 Уведомления", callback_data="settings_notifications"),
+                InlineKeyboardButton(text=get_menu_text("settings_notifications", language_code), callback_data="settings_notifications"),
             ],
             [
-                InlineKeyboardButton(text="🔄 Сбросить настройки", callback_data="settings_reset"),
+                InlineKeyboardButton(text=get_menu_text("settings_reset", language_code), callback_data="settings_reset"),
             ],
             [
-                InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu"),
+                InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="main_menu"),
             ],
         ]
     )
     return keyboard
 
 
-def get_social_profile_keyboard() -> InlineKeyboardMarkup:
+def get_social_profile_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for social profile settings"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="➕ Добавить соцсеть", callback_data="social_add"),
+                InlineKeyboardButton(text=get_menu_text("social_add", language_code), callback_data="social_add"),
             ],
             [
-                InlineKeyboardButton(text="📝 Редактировать био", callback_data="social_bio"),
+                InlineKeyboardButton(text=get_menu_text("social_bio", language_code), callback_data="social_bio"),
             ],
             [
-                InlineKeyboardButton(text="🔍 Определить интересы", callback_data="social_parse"),
+                InlineKeyboardButton(text=get_menu_text("social_parse", language_code), callback_data="social_parse"),
             ],
             [
-                InlineKeyboardButton(text="🗑 Удалить ссылку", callback_data="social_remove"),
+                InlineKeyboardButton(text=get_menu_text("social_remove", language_code), callback_data="social_remove"),
             ],
             [
-                InlineKeyboardButton(text="⬅️ Назад", callback_data="settings_back"),
+                InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back"),
             ],
         ]
     )
     return keyboard
 
 
-def get_social_remove_keyboard(profile_urls: dict) -> InlineKeyboardMarkup:
+def get_social_remove_keyboard(profile_urls: dict, language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for removing social links"""
     network_names = {
         "instagram": "Instagram",
@@ -124,15 +124,15 @@ def get_social_remove_keyboard(profile_urls: dict) -> InlineKeyboardMarkup:
 
     if not rows:
         rows.append([
-            InlineKeyboardButton(text="Нет добавленных соцсетей", callback_data="noop")
+            InlineKeyboardButton(text=get_menu_text("no_social_links", language_code), callback_data="noop")
         ])
 
-    rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="social_back")])
+    rows.append([InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="social_back")])
 
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def get_timezone_keyboard() -> InlineKeyboardMarkup:
+def get_timezone_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for selecting timezone"""
     # Common timezones relevant for Russian-speaking users
     timezones = [
@@ -163,12 +163,12 @@ def get_timezone_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text=label, callback_data=f"timezone_{tz}")
         ])
 
-    rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="settings_back")])
+    rows.append([InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back")])
 
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def get_hours_keyboard(mode: str, start_hour: str = None) -> InlineKeyboardMarkup:
+def get_hours_keyboard(mode: str, start_hour: str = None, language_code: str = "ru") -> InlineKeyboardMarkup:
     """
     Create keyboard for selecting hours
     mode: 'start' or 'end'
@@ -187,60 +187,60 @@ def get_hours_keyboard(mode: str, start_hour: str = None) -> InlineKeyboardMarku
             row.append(InlineKeyboardButton(text=f"{hour}:00", callback_data=callback_data))
         rows.append(row)
 
-    rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="settings_back")])
+    rows.append([InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back")])
 
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def get_interval_keyboard() -> InlineKeyboardMarkup:
+def get_interval_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for selecting notification interval"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="1 час", callback_data="interval_1"),
-                InlineKeyboardButton(text="2 часа", callback_data="interval_2"),
+                InlineKeyboardButton(text=get_menu_text("interval_1h", language_code), callback_data="interval_1"),
+                InlineKeyboardButton(text=get_menu_text("interval_2h", language_code), callback_data="interval_2"),
             ],
             [
-                InlineKeyboardButton(text="3 часа", callback_data="interval_3"),
-                InlineKeyboardButton(text="4 часа", callback_data="interval_4"),
+                InlineKeyboardButton(text=get_menu_text("interval_3h", language_code), callback_data="interval_3"),
+                InlineKeyboardButton(text=get_menu_text("interval_4h", language_code), callback_data="interval_4"),
             ],
             [
-                InlineKeyboardButton(text="6 часов", callback_data="interval_6"),
-                InlineKeyboardButton(text="8 часов", callback_data="interval_8"),
+                InlineKeyboardButton(text=get_menu_text("interval_6h", language_code), callback_data="interval_6"),
+                InlineKeyboardButton(text=get_menu_text("interval_8h", language_code), callback_data="interval_8"),
             ],
             [
-                InlineKeyboardButton(text="⬅️ Назад", callback_data="settings_back"),
+                InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back"),
             ],
         ]
     )
     return keyboard
 
 
-def get_address_form_keyboard() -> InlineKeyboardMarkup:
+def get_address_form_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for address form selection"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="На «ты» 😊", callback_data="address_informal"),
-                InlineKeyboardButton(text="На «вы» 🤝", callback_data="address_formal"),
+                InlineKeyboardButton(text=get_menu_text("address_informal", language_code), callback_data="address_informal"),
+                InlineKeyboardButton(text=get_menu_text("address_formal", language_code), callback_data="address_formal"),
             ],
             [
-                InlineKeyboardButton(text="⬅️ Назад", callback_data="settings_back"),
+                InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back"),
             ],
         ]
     )
     return keyboard
 
 
-def get_moments_keyboard(page: int = 1, total_pages: int = 1) -> InlineKeyboardMarkup:
+def get_moments_keyboard(page: int = 1, total_pages: int = 1, language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for moments list navigation"""
     buttons = []
 
     # Filter buttons row
     buttons.append([
-        InlineKeyboardButton(text="Сегодня", callback_data="filter_today"),
-        InlineKeyboardButton(text="Неделя", callback_data="filter_week"),
-        InlineKeyboardButton(text="Месяц", callback_data="filter_month"),
+        InlineKeyboardButton(text=get_menu_text("filter_today", language_code), callback_data="filter_today"),
+        InlineKeyboardButton(text=get_menu_text("filter_week", language_code), callback_data="filter_week"),
+        InlineKeyboardButton(text=get_menu_text("filter_month", language_code), callback_data="filter_month"),
     ])
 
     # Navigation row (if multiple pages)
@@ -255,153 +255,153 @@ def get_moments_keyboard(page: int = 1, total_pages: int = 1) -> InlineKeyboardM
 
     # Random moment button
     buttons.append([
-        InlineKeyboardButton(text="🎲 Случайный момент", callback_data="moments_random"),
+        InlineKeyboardButton(text=get_menu_text("random_moment", language_code), callback_data="moments_random"),
     ])
 
     # Back button
     buttons.append([
-        InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu"),
+        InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="main_menu"),
     ])
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def get_dialog_keyboard() -> InlineKeyboardMarkup:
+def get_dialog_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for free dialog mode"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="🚪 Выйти из диалога", callback_data="dialog_exit"),
+                InlineKeyboardButton(text=get_menu_text("exit_dialog", language_code), callback_data="dialog_exit"),
             ],
         ]
     )
     return keyboard
 
 
-def get_delete_confirmation_keyboard() -> InlineKeyboardMarkup:
+def get_delete_confirmation_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for delete data confirmation"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="❌ Да, удалить всё", callback_data="delete_confirm"),
+                InlineKeyboardButton(text=get_menu_text("confirm_delete", language_code), callback_data="delete_confirm"),
             ],
             [
-                InlineKeyboardButton(text="✅ Нет, отменить", callback_data="delete_cancel"),
+                InlineKeyboardButton(text=get_menu_text("cancel_delete", language_code), callback_data="delete_cancel"),
             ],
         ]
     )
     return keyboard
 
 
-def get_question_keyboard() -> InlineKeyboardMarkup:
+def get_question_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for scheduled question (with skip option)"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="⏭ Пропустить", callback_data="question_skip"),
+                InlineKeyboardButton(text=get_menu_text("skip_question", language_code), callback_data="question_skip"),
             ],
         ]
     )
     return keyboard
 
 
-def get_moment_delete_confirm_keyboard(moment_id: int) -> InlineKeyboardMarkup:
+def get_moment_delete_confirm_keyboard(moment_id: int, language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for confirming moment deletion"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="✅ Да, удалить", callback_data=f"moment_delete_{moment_id}"),
-                InlineKeyboardButton(text="❌ Отмена", callback_data="moments_random"),
+                InlineKeyboardButton(text=get_menu_text("confirm_delete_moment", language_code), callback_data=f"moment_delete_{moment_id}"),
+                InlineKeyboardButton(text=get_menu_text("cancel", language_code), callback_data="moments_random"),
             ],
         ]
     )
     return keyboard
 
 
-def get_random_moment_keyboard(moment_id: int) -> InlineKeyboardMarkup:
+def get_random_moment_keyboard(moment_id: int, language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for random moment view with delete option"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="🎲 Ещё случайный", callback_data="moments_random"),
+                InlineKeyboardButton(text=get_menu_text("another_random", language_code), callback_data="moments_random"),
             ],
             [
-                InlineKeyboardButton(text="🗑️ Удалить", callback_data=f"moment_delete_confirm_{moment_id}"),
+                InlineKeyboardButton(text=get_menu_text("delete_moment", language_code), callback_data=f"moment_delete_confirm_{moment_id}"),
             ],
             [
-                InlineKeyboardButton(text="📖 Все моменты", callback_data="menu_moments"),
+                InlineKeyboardButton(text=get_menu_text("all_moments", language_code), callback_data="menu_moments"),
             ],
             [
-                InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu"),
+                InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="main_menu"),
             ],
         ]
     )
     return keyboard
 
 
-def get_feedback_category_keyboard() -> InlineKeyboardMarkup:
+def get_feedback_category_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for selecting feedback category"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="💡 Идея/предложение", callback_data="feedback_suggestion"),
+                InlineKeyboardButton(text=get_menu_text("feedback_suggestion", language_code), callback_data="feedback_suggestion"),
             ],
             [
-                InlineKeyboardButton(text="🐛 Сообщить об ошибке", callback_data="feedback_bug"),
+                InlineKeyboardButton(text=get_menu_text("feedback_bug", language_code), callback_data="feedback_bug"),
             ],
             [
-                InlineKeyboardButton(text="💬 Другое", callback_data="feedback_other"),
+                InlineKeyboardButton(text=get_menu_text("feedback_other", language_code), callback_data="feedback_other"),
             ],
             [
-                InlineKeyboardButton(text="⬅️ Отмена", callback_data="feedback_cancel"),
+                InlineKeyboardButton(text=get_menu_text("feedback_cancel", language_code), callback_data="feedback_cancel"),
             ],
         ]
     )
     return keyboard
 
 
-def get_feedback_confirm_keyboard() -> InlineKeyboardMarkup:
+def get_feedback_confirm_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for confirming feedback submission"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="✅ Отправить", callback_data="feedback_submit"),
+                InlineKeyboardButton(text=get_menu_text("feedback_submit", language_code), callback_data="feedback_submit"),
             ],
             [
-                InlineKeyboardButton(text="❌ Отмена", callback_data="feedback_cancel"),
+                InlineKeyboardButton(text=get_menu_text("cancel", language_code), callback_data="feedback_cancel"),
             ],
         ]
     )
     return keyboard
 
 
-def get_feedback_thanks_keyboard() -> InlineKeyboardMarkup:
+def get_feedback_thanks_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard after feedback submission"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="💡 Предложить ещё", callback_data="feedback_new"),
+                InlineKeyboardButton(text=get_menu_text("feedback_new", language_code), callback_data="feedback_new"),
             ],
             [
-                InlineKeyboardButton(text="⬅️ В меню", callback_data="main_menu"),
+                InlineKeyboardButton(text=get_menu_text("feedback_menu", language_code), callback_data="main_menu"),
             ],
         ]
     )
     return keyboard
 
 
-def get_summary_keyboard() -> InlineKeyboardMarkup:
+def get_summary_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
     """Create keyboard for selecting summary type"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="📅 Еженедельное", callback_data="summary_weekly"),
+                InlineKeyboardButton(text=get_menu_text("summary_weekly", language_code), callback_data="summary_weekly"),
             ],
             [
-                InlineKeyboardButton(text="🗓 Месячное", callback_data="summary_monthly"),
+                InlineKeyboardButton(text=get_menu_text("summary_monthly", language_code), callback_data="summary_monthly"),
             ],
             [
-                InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu"),
+                InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="main_menu"),
             ],
         ]
     )
