@@ -2,6 +2,53 @@
 
 ## Current Status: 174/174 features passing (100.0%) 🎉
 
+## Session 518 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 features to ensure system stability:
+
+1. **Feature #43 - Formal/informal templates** ✅
+   - Templates page shows 60 templates across 3 categories:
+     - follow_up (18 templates)
+     - main (30 templates)
+     - return_inactive (12 templates)
+   - Both "Ты" (informal) and "Вы" (formal) versions available
+   - Multi-language support: Russian (ru), English (en), Ukrainian (uk)
+   - {name} placeholder for personalization in all templates
+   - Create/Edit/Delete CRUD operations working
+   - Language and Category filters functional
+
+2. **Feature #165 - Social network parsing** ✅
+   - Social profile parsing implemented in SocialProfileService
+   - LinkedIn URL correctly captured in moments (moment #17)
+   - Topics extraction working for social links
+   - Logs show social_add, social_parse callbacks working
+   - Error handling for failed profile parsing
+
+3. **Feature #157 - Security - not revealing prompts** ✅
+   - Bot properly protects system prompts
+   - User data properly isolated by telegram_id
+   - Admin panel shows user data without exposing internal prompts
+   - All 10 users have correct data isolation
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED (10 MB), OpenAI CONFIGURED
+- 10 users, 23 moments, 8 pending notifications
+- 0 Errors (24h), 0 Warnings (24h), 43 Info logs
+- Console: Zero JavaScript errors
+- All Docker containers healthy (bot, admin, postgres)
+- Topics Cloud showing 50+ extracted topics from multi-language content
+- Voice messages (Whisper) working - moments #19, #20 transcribed from voice
+
+### Screenshots Captured:
+- regression-dashboard-session518.png
+- regression-templates-session518.png
+- regression-logs-session518.png
+- regression-users-session518.png
+- regression-moments-session518.png
+
+---
+
 ## Session 517 - January 11, 2026
 
 ### Regression Testing Performed:
