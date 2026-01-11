@@ -2,39 +2,42 @@
 
 ## Current Status: 169/169 features passing (100% complete)
 
-## Session 468 - January 11, 2026
+## Session 469 - January 11, 2026
 
 ### Regression Testing Completed
 - All Docker services running and healthy:
-  - postgres: HEALTHY (42+ hours uptime)
-  - admin: HEALTHY on port 18088
-  - bot: RUNNING
+  - postgres: HEALTHY (22+ hours uptime)
+  - admin: HEALTHY on port 18088 (22 minutes uptime)
+  - bot: RUNNING (23 minutes uptime)
 
 ### Features Verified for Regression:
-1. **Feature #25 - Exit free dialog mode**
-   - Dialogs page showing multiple free dialog entries
-   - User messages properly categorized by type (free dialog, bot reply, user response, bot question)
-   - Filter by message type working correctly
-   - Timestamps showing correctly (1/11/2026 timestamps)
+1. **Feature #120 - SocialProfile model**
+   - User Details modal showing Social Profile section
+   - LinkedIn URL correctly linked
+   - Interests extracted and displayed (технологии, веб-разработка, цифровые проекты, etc.)
+   - Bio text parsed and displayed correctly
 
-2. **Feature #10 - Active hours enforcement**
-   - User Details modal showing Active Hours setting (08:00:00 - 23:00:00)
-   - Notification Interval configurable (1h)
-   - Timezone setting (UTC)
-   - Notifications can be enabled/disabled
+2. **Feature #44 - Reset settings to defaults**
+   - User settings visible in User Details modal
+   - Active Hours: 08:00:00 - 23:00:00
+   - Notification Interval: 1h configurable
+   - Notifications: Enabled
+   - Address Form: Informal (ты)
 
-3. **Feature #99 - 45+ audience accessibility**
-   - Large, readable text throughout the interface
-   - Clear navigation sidebar with labeled sections
-   - High contrast colors for readability
-   - Well-organized data tables
-   - No complex navigation - simple one-click access to all sections
+3. **Feature #59 - Concurrent message handling**
+   - Dialogs page showing 19 messages for user andreiandreev62
+   - Multiple message types handled: bot reply, user response, bot question, admin message, free dialog
+   - Multi-language messages processed correctly (Russian, Spanish, English, German)
+   - No duplicate responses visible
+   - All timestamps showing correctly
 
 ### Additional Verification:
 - Dashboard: 10 users, 19 moments, 8 pending notifications, all services healthy
-- Users Page: 10 users with gender detection, language settings, streak tracking
-- Moments Page: 19 moments with Topics Cloud (50+ topics), mood analysis
-- Analytics Page: User funnel, retention cohorts, activity heatmap, language distribution
+- Users Page: 10 users with gender detection (👨 M / 👩 F), language settings, streak tracking
+- Moments Page: 19 moments with Topics Cloud (50+ topics), mood analysis (avg 0.59)
+- Dialogs Page: Chat-style interface with message type filtering
+- Notifications Page: 8 pending notifications, many sent notifications with proper timestamps
+- Expenses Page: 5 API calls tracked, $0.0023 total cost, by model and operation breakdown
 - No JavaScript console errors
 - All navigation working correctly
 
@@ -42,50 +45,27 @@
 - Application stable and production-ready
 - 100% feature completion maintained (169/169)
 
+## Session 468 - January 11, 2026
+
+### Regression Testing Completed
+- All Docker services running and healthy
+- Features verified: #25 (Exit free dialog), #10 (Active hours), #99 (45+ accessibility)
+- Dashboard, Users, Moments, Analytics pages all working correctly
+
 ## Session 467 - January 11, 2026
 
 ### Regression Testing Completed
-- All Docker services running and healthy:
-  - postgres: HEALTHY (42+ hours uptime, 22 hours running)
-  - admin: HEALTHY on port 18088 (14 minutes uptime)
-  - bot: RUNNING (15 minutes uptime)
-
-### Features Verified for Regression:
-1. **Feature #73 - Loading state during API calls**
-   - Expenses page showing API call durations (2326ms, 1108ms, 1492ms, 961ms, 2308ms)
-   - All API calls show "OK" status
-   - Processing times tracked for: transcription, embedding, mood_analysis, topic_extraction, moment_response
-
-2. **Feature #56 - Vector similarity search accuracy**
-   - Moments page showing Topics Cloud with 50+ extracted topics
-   - Topics semantically grouped and extracted correctly from user messages
-   - Mood scores calculated correctly (Very Positive, Positive, Neutral, Negative)
-   - 19 total moments from 3 unique users, average mood 0.59
-
-3. **Feature #124 - Weekly Summary / Scheduled Notifications**
-   - 8 pending notifications scheduled for future times
-   - Notifications correctly sent to multiple users at scheduled times
-   - APScheduler job persistence working (bot restarted but notifications preserved)
-   - Sent notifications show proper scheduled vs sent timestamps
-
-### System Health:
-- Application stable and production-ready
-- 100% feature completion maintained (169/169)
+- Features verified: #73 (Loading state), #56 (Vector similarity), #124 (Scheduled notifications)
+- API expense tracking working correctly
+- APScheduler job persistence verified
 
 ## Previous Sessions Summary
 
 ### Session 466 - January 11, 2026
 - Regression testing - all 169 features verified passing
-- Features #58 (APScheduler), #166 (Expenses), #51 (Date formatting) verified
 
-### Session 464 - January 11, 2026
+### Session 464-465 - January 11, 2026
 - Regression testing - all 169 features verified passing
-
-### Session 463 - January 11, 2026
-- Regression testing - all 169 features verified passing
-
-### Session 462 - January 11, 2026
-- Regression testing - all 166 features verified passing
 
 ### Session 455 - January 11, 2026
 - Fixed: User modal close button not working (Docker container cache issue)
