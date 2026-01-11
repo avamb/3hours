@@ -2,6 +2,41 @@
 
 ## Current Status: 170/170 features passing (100% complete)
 
+## Session 478 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 random passing features to ensure system stability:
+
+1. **Feature #111 - Admin service port contract** ✅
+   - Admin panel accessible on port 18088
+   - HEALTHY status indicator displayed
+   - Server properly bound to 0.0.0.0:PORT
+
+2. **Feature #75 - Moments grouping by topics** ✅
+   - Topics Cloud displays with counts (итоги (2), университет (2), парк (2), etc.)
+   - Clicking on topics filters the moments table correctly
+   - Multi-language topic extraction working (Russian, Spanish, English)
+
+3. **Feature #79 - Notification opt-out** ✅
+   - User settings show "Notifications: Enabled" toggle
+   - Setting visible in User Details modal
+   - Notifications page shows Pending/Sent status correctly
+
+### System Health Verified:
+- All Docker services running:
+  - postgres: HEALTHY (10 MB)
+  - admin: HEALTHY on port 18088
+  - bot: RUNNING (8 pending notifications)
+  - OpenAI: CONFIGURED
+- Zero JavaScript console errors
+- All navigation working correctly
+- 10 users, 20 moments in database
+
+### Screenshots Captured:
+- regression-test-admin-dashboard.png
+- regression-test-moments-topics.png
+- regression-test-user-details.png
+
 ## Session 477 - January 11, 2026
 
 ### Feature #170 Implemented: Voice Input Language Detection
@@ -24,21 +59,6 @@
      - Added `override_language` parameter to `generate_response()`
      - Forces GPT to respond in specified language when override is set
 
-### Regression Testing Verified:
-- Admin panel fully operational (HEALTHY status)
-- Users page: Shows 10 users with correct languages, genders, statistics
-- Moments page: 20 moments with voice/text sources, mood scoring, topics cloud
-- Dialogs page: Shows multi-language conversations (Russian, Spanish, German, English)
-- Bot responding correctly in detected languages
-
-### System Health:
-- All Docker services running:
-  - postgres: HEALTHY
-  - admin: HEALTHY on port 18088
-  - bot: RUNNING
-- Zero JavaScript console errors
-- All navigation working correctly
-
 ## Previous Sessions Summary
 
 ### Session 476 - January 11, 2026
@@ -49,9 +69,6 @@
 
 ### Session 474 - January 11, 2026
 - Regression testing - Features #28, #140, #110 verified
-
-### Session 473 - January 11, 2026
-- Regression testing - Features #135, #140, #89 verified
 
 ### Session 455 - January 11, 2026
 - Fixed: User modal close button not working (Docker container cache issue)
