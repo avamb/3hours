@@ -2,6 +2,44 @@
 
 ## Current Status: 172/172 features passing (100% complete!)
 
+## Session 493 - January 11, 2026
+
+### Regression Testing Performed:
+Verified 3 random passing features to ensure system stability:
+
+1. **Feature #162 - Языки меню (Language menu)** ✅
+   - Users page shows Language column with values: ru, en, uk
+   - Language filter dropdown working: All Languages, Russian, English, Ukrainian
+   - 10 users with various language settings properly displayed
+
+2. **Feature #116 - Timezone-aware weekly/monthly summaries** ✅
+   - Scheduled Notifications page shows 6 pending, many sent notifications
+   - Per-user scheduling working (notifications scheduled individually)
+   - Scheduler runs `_check_summary_delivery()` for timezone-aware delivery
+   - Weekly: Sunday at 10:00 local time, Monthly: 1st of month at 10:00 local time
+
+3. **Feature #123 - Daily Summary feature** ✅
+   - SummaryService implemented in `src/services/summary_service.py`
+   - `generate_weekly_summary()` and `generate_monthly_summary()` using GPT-4
+   - Log entry confirmed: "Daily summary generation started" from scheduler
+   - `/summary` command and callback handlers working
+
+### System Health Check:
+- Dashboard: Bot RUNNING, Database CONNECTED, OpenAI CONFIGURED
+- System Logs: 0 errors (24h), 0 warnings (24h), 40 info logs, 48 total
+- 10 users, 22 moments, 6 pending notifications
+- Console: No JavaScript errors
+- Moments page: Topics cloud working, mood analysis functional, multi-language content
+
+### Screenshots Captured:
+- regression-dashboard-session493.png
+- regression-users-languages-session493.png
+- regression-notifications-session493.png
+- regression-logs-session493.png
+- regression-moments-session493.png
+
+---
+
 ## Session 492 - January 11, 2026
 
 ### Regression Testing Performed:
@@ -23,39 +61,14 @@ Verified 3 random passing features to ensure system stability:
    - Scheduler runs on Sundays (weekday() == 6)
    - GPT-4 generates personalized summaries with emojis
 
-### System Health Check:
-- Dashboard: Bot RUNNING, Database CONNECTED, OpenAI CONFIGURED
-- System Logs: 0 errors in 24h, 0 warnings in 24h, 40 info logs
-- 10 users, 22 moments, 6 pending notifications
-- Console: No JavaScript errors
-
-### Screenshots Captured:
-- regression-dashboard.png
-- regression-logs.png
-- regression-notifications.png
-- regression-messages.png
-
 ---
 
 ## Session 491 - January 11, 2026
 
 ### Regression Testing Performed:
-Verified 3 random passing features to ensure system stability:
-
 1. **Feature #153 - Personalization (Social Profile)** ✅
-   - LinkedIn URL stored and displayed in User Details modal
-   - Interests extracted
-   - Bio parsed from LinkedIn profile
-   - Admin panel shows social profile section with all data
-
 2. **Feature #161 - Language Options** ✅
-   - Bot processes messages in multiple languages (Russian, English, Spanish, German)
-   - Language column in Users table shows user languages (ru, en, uk)
-   - Language filter dropdown working in admin panel
-
 3. **Feature #128 - Social profile parsing** ✅
-   - Logs show social_parse and social_add callbacks
-   - LinkedIn bio parsing working correctly
 
 ## Session 490 - January 11, 2026
 
