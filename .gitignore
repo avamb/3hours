@@ -94,3 +94,8 @@ app/node_modules/
 
 admin/static_old/
 alembic/versions_archive/
+
+# Playwright / regression artifacts
+.playwright-mcp/
+playwright-report/
+test-results/

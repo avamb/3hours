@@ -17,9 +17,7 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      dokploy-network:
-        aliases:
-          - postgres
+      - app
 
   admin:
     build:
@@ -66,6 +64,7 @@ services:
       - traefik.http.routers.mindsethappybot-3hours-efm68q-31-websecure.tls.certresolver=letsencrypt
       - traefik.enable=true
     networks:
+      - app
       - dokploy-network
 
   bot:
@@ -83,7 +82,7 @@ services:
       
     restart: unless-stopped
     networks:
-      - dokploy-network
+      - app
 
 volumes:
   postgres_data: null
@@ -91,5 +90,6 @@ volumes:
 networks:
   dokploy-network:
     external: true
+  app: {}
       
 
