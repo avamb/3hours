@@ -1,31 +1,31 @@
 # MindsetHappyBot Progress Notes
 
-## Session 405 - January 11, 2026
+## Session 407 - January 11, 2026
 
 ### Status: ALL 154 FEATURES PASSING (100%)
 
 ### Regression Testing Completed:
-- **Feature #146: Display system status in admin dashboard** - VERIFIED PASSING
-  - Database: CONNECTED (10 MB)
-  - Bot: RUNNING (8 pending notifications)
-  - OpenAI: CONFIGURED (API key set)
-  - HEALTHY status badge visible in header
-- **Feature #75: Moments grouping by topics** - VERIFIED PASSING
-  - Topics Cloud displays all extracted topics with counts
-  - Topics like "работа (2)", "итоги (2)" show correct grouping
-  - Each moment has extracted topics displayed as tags
-  - Real data from database (16 moments)
-- **Feature #119: User model summary settings** - VERIFIED PASSING
-  - Database connected and storing user data properly
-  - 10 users with valid fields (language, telegram_id, name)
-- **Feature #46: Questions answered percentage** - VERIFIED PASSING
-  - Analytics page shows user funnel with percentages
-  - Retention rate tracking working (10%)
+- **Feature #152: Timezone settings (Часовой пояс)** - VERIFIED PASSING
+  - User details modal shows individual timezone setting (UTC)
+  - Active hours configurable per user (08:00:00 - 23:00:00)
+  - Notification interval configurable (1h)
+  - Address form (Informal/Formal) shown
+  
+- **Feature #51: Date formatting consistency** - VERIFIED PASSING
+  - Moments table shows consistent relative dates ("1d ago", "3d ago")
+  - Date picker fields use dd/mm/yyyy format
+  - User details show full date format (1/7/2026, 10:27:33 AM)
+  
+- **Feature #31: Personalized question generation** - VERIFIED PASSING
+  - 40 templates with {name} placeholders for personalization
+  - Language support: Russian (ru) and English (en)
+  - Formal/Informal forms: Ты and Вы for Russian
+  - Categories: main (20), follow_up (12), return_inactive (8)
 
 ### System Status:
 - **Admin Panel**: HEALTHY (http://localhost:18088)
 - **Database**: CONNECTED (PostgreSQL with pgvector, 10 MB)
-- **Bot**: RUNNING (Notification scheduler executing every minute)
+- **Bot**: RUNNING (8 pending notifications)
 - **OpenAI**: CONFIGURED (API key set)
 - **Docker Containers**: All running (bot, admin, postgres)
 - **Console Errors**: NONE
@@ -35,19 +35,17 @@
 - 16 Moments with Topics Cloud
 - Average Mood: 0.58
 - 3 Unique Users with moments
-- User Funnel: 10 Registered → 9 Onboarded → 3 First Moment → 2 Regular Use
-- Language Distribution: Russian 50%, English 40%, Ukrainian 10%
+- Topics Cloud working with extracted topics
 
 ### Git:
 - Branch: dev
 - All commits up to date
 
 ### Previous Sessions:
+- Session 406: Regression testing - all 154 features verified passing
+- Session 405: Regression testing - all 154 features verified passing
 - Session 404: Regression testing - all 154 features verified passing
 - Session 403: Regression testing - all 154 features verified passing
-- Session 402: Regression testing - all 154 features verified passing
-- Session 401: Regression testing - all 154 features verified passing
-- Session 400: Regression testing - all 154 features verified passing
 
 ### Notes:
 - Application is production-ready
