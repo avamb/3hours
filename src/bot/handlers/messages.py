@@ -5,13 +5,20 @@ Handles text messages and voice messages from users
 import logging
 from aiogram import Router, F
 from aiogram.types import Message, ContentType
+from aiogram.fsm.context import FSMContext
+from aiogram.filters import Command, StateFilter
+from aiogram.enums import ChatAction
 
 from src.bot.keyboards.reply import get_main_menu_keyboard
+from src.bot.keyboards.inline import get_social_profile_keyboard
+from src.bot.states.social_profile import SocialProfileStates
 from src.services.moment_service import MomentService
 from src.services.dialog_service import DialogService
 from src.services.speech_service import SpeechToTextService
 from src.services.personalization_service import PersonalizationService
 from src.services.conversation_log_service import ConversationLogService
+from src.services.social_profile_service import SocialProfileService
+from src.utils.localization import detect_and_update_language, get_all_menu_button_texts, get_language_code, get_menu_text
 
 logger = logging.getLogger(__name__)
 router = Router(name="messages")
@@ -20,32 +27,134 @@ dialog_service = DialogService.get_instance()
 conversation_log = ConversationLogService()
 
 
-@router.message(F.text == "📖 Мои моменты")
+@router.message(F.text.in_(get_all_menu_button_texts("menu_moments")))
 async def handle_moments_button(message: Message) -> None:
     """Handle 'My moments' button press"""
     from src.bot.handlers.commands import cmd_moments
     await cmd_moments(message)
 
 
-@router.message(F.text == "📊 Статистика")
+@router.message(F.text.in_(get_all_menu_button_texts("menu_stats")))
 async def handle_stats_button(message: Message) -> None:
     """Handle 'Statistics' button press"""
     from src.bot.handlers.commands import cmd_stats
     await cmd_stats(message)
 
 
-@router.message(F.text == "⚙️ Настройки")
+@router.message(F.text.in_(get_all_menu_button_texts("menu_settings")))
 async def handle_settings_button(message: Message) -> None:
     """Handle 'Settings' button press"""
     from src.bot.handlers.commands import cmd_settings
     await cmd_settings(message)
 
 
-@router.message(F.text == "💬 Поговорить")
+@router.message(F.text.in_(get_all_menu_button_texts("menu_talk")))
 async def handle_talk_button(message: Message) -> None:
     """Handle 'Talk' button press"""
     from src.bot.handlers.commands import cmd_talk
     await cmd_talk(message)
+
+
+@router.message(F.text.in_(get_all_menu_button_texts("menu_feedback")))
+async def handle_feedback_button(message: Message) -> None:
+    """Handle 'Feedback' button press"""
+    from src.bot.handlers.feedback import cmd_feedback
+    await cmd_feedback(message)
+
+
+# Cancel command for FSM states
+@router.message(Command("cancel"), StateFilter(SocialProfileStates))
+async def cancel_social_profile_state(message: Message, state: FSMContext) -> None:
+    """Cancel social profile input"""
+    from src.services.user_service import UserService
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
+    await state.clear()
+    social_service = SocialProfileService()
+    summary = await social_service.get_profile_summary(message.from_user.id)
+    await message.answer(
+        f"❌ Отменено.\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
+        reply_markup=get_social_profile_keyboard(language_code)
+    )
+
+
+# Social profile FSM handlers
+@router.message(StateFilter(SocialProfileStates.waiting_for_social_link))
+async def handle_social_link_input(message: Message, state: FSMContext) -> None:
+    """Handle social network link input"""
+    from src.services.user_service import UserService
+    from src.utils.localization import get_menu_text
+
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
+    url = message.text.strip()
+
+    social_service = SocialProfileService()
+    success, result_message, profile_parse_failed = await social_service.add_social_link(message.from_user.id, url)
+
+    await state.clear()
+
+    if success:
+        summary = await social_service.get_profile_summary(message.from_user.id)
+
+        # Build response message
+        response_parts = [f"✅ {result_message}"]
+
+        # If profile parsing failed, show the warning message
+        if profile_parse_failed:
+            parse_failed_msg = get_menu_text("social_parse_failed", language_code)
+            response_parts.append(f"\n⚠️ {parse_failed_msg}")
+
+        response_parts.append(f"\n\n👤 <b>Социальный профиль</b>\n\n{summary}")
+
+        await message.answer(
+            "".join(response_parts),
+            reply_markup=get_social_profile_keyboard(language_code)
+        )
+    else:
+        await message.answer(
+            f"❌ {result_message}",
+            reply_markup=get_social_profile_keyboard(language_code)
+        )
+
+
+@router.message(StateFilter(SocialProfileStates.waiting_for_bio))
+async def handle_bio_input(message: Message, state: FSMContext) -> None:
+    """Handle bio text input"""
+    from src.services.user_service import UserService
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
+    bio_text = message.text.strip()
+
+    if len(bio_text) > 1000:
+        await message.answer(
+            "❌ Биография слишком длинная. Максимум 1000 символов.\n"
+            "Попробуй сократить текст или отправь /cancel для отмены."
+        )
+        return
+
+    social_service = SocialProfileService()
+    success, result_message = await social_service.update_bio(message.from_user.id, bio_text)
+
+    await state.clear()
+
+    if success:
+        summary = await social_service.get_profile_summary(message.from_user.id)
+        await message.answer(
+            f"✅ {result_message}\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
+            reply_markup=get_social_profile_keyboard(language_code)
+        )
+    else:
+        await message.answer(
+            f"❌ {result_message}",
+            reply_markup=get_social_profile_keyboard(language_code)
+        )
 
 
 @router.message(F.voice)
@@ -53,10 +162,23 @@ async def handle_voice_message(message: Message) -> None:
     """
     Handle voice messages
     - Download voice file
-    - Transcribe using Whisper API
-    - Process as text response
+    - Transcribe using Whisper API with auto language detection
+    - Respond in the same language as the voice message
     """
-    await message.answer("🎙 Распознаю голосовое сообщение...")
+    from src.services.user_service import UserService
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
+    # Processing messages in different languages
+    processing_messages = {
+        "ru": "🎙 Распознаю голосовое сообщение...",
+        "en": "🎙 Recognizing voice message...",
+        "uk": "🎙 Розпізнаю голосове повідомлення...",
+        "es": "🎙 Reconociendo mensaje de voz...",
+        "de": "🎙 Sprachnachricht wird erkannt...",
+    }
+    await message.answer(processing_messages.get(language_code, processing_messages["ru"]))
 
     speech_service = SpeechToTextService()
 
@@ -66,17 +188,39 @@ async def handle_voice_message(message: Message) -> None:
         file = await message.bot.get_file(voice.file_id)
         file_path = file.file_path
 
-        # Download and transcribe
-        transcribed_text = await speech_service.transcribe_voice(
+        # Download and transcribe - now returns (text, detected_language)
+        transcribed_text, detected_language = await speech_service.transcribe_voice(
             bot=message.bot,
-            file_path=file_path
+            file_path=file_path,
+            telegram_id=message.from_user.id,
         )
 
         if not transcribed_text or transcribed_text.strip() == "":
-            await message.answer(
-                "😔 Не удалось распознать голос. Попробуй ещё раз или напиши текстом."
-            )
+            # Error messages in different languages
+            error_messages = {
+                "ru": "😔 Не удалось распознать голос. Попробуй ещё раз или напиши текстом.",
+                "en": "😔 Couldn't recognize voice. Please try again or type your message.",
+                "uk": "😔 Не вдалося розпізнати голос. Спробуй ще раз або напиши текстом.",
+                "es": "😔 No se pudo reconocer la voz. Intenta de nuevo o escribe tu mensaje.",
+                "de": "😔 Spracherkennung fehlgeschlagen. Bitte versuche es erneut oder schreibe.",
+            }
+            await message.answer(error_messages.get(language_code, error_messages["ru"]))
             return
+
+        # Update user's language preference based on the voice message language
+        # This ensures responses match the language the user spoke in
+        voice_language = get_language_code(detected_language) if detected_language else language_code
+
+        # Update user language if it differs from detected voice language
+        if detected_language and voice_language != language_code:
+            await user_service.update_user_settings(
+                telegram_id=message.from_user.id,
+                language_code=voice_language
+            )
+            logger.info(f"Updated user {message.from_user.id} language to {voice_language} based on voice message")
+
+        # Use the detected language for responses
+        response_language = voice_language
 
         # Process as moment
         moment_service = MomentService()
@@ -86,7 +230,7 @@ async def handle_voice_message(message: Message) -> None:
             telegram_id=message.from_user.id,
             message_type="user_response",
             content=transcribed_text,
-            metadata={"source": "voice", "voice_file_id": voice.file_id},
+            metadata={"source": "voice", "voice_file_id": voice.file_id, "detected_language": detected_language},
         )
 
         moment = await moment_service.create_moment(
@@ -96,30 +240,49 @@ async def handle_voice_message(message: Message) -> None:
             voice_file_id=voice.file_id
         )
 
-        # Generate personalized response
+        # Show typing indicator while generating response
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+
+        # Generate personalized response in the detected language
         response = await personalization_service.generate_response(
             telegram_id=message.from_user.id,
-            moment_content=transcribed_text
+            moment_content=transcribed_text,
+            override_language=response_language  # Force response in voice message language
         )
 
+        # "Recognized" prefix in different languages
+        recognized_prefix = {
+            "ru": "✅ Распознано",
+            "en": "✅ Recognized",
+            "uk": "✅ Розпізнано",
+            "es": "✅ Reconocido",
+            "de": "✅ Erkannt",
+        }
+        prefix = recognized_prefix.get(response_language, recognized_prefix["ru"])
+
         await message.answer(
-            f"✅ Распознано: «{transcribed_text}»\n\n{response}",
-            reply_markup=get_main_menu_keyboard()
+            f"{prefix}: «{transcribed_text}»\n\n{response}",
+            reply_markup=get_main_menu_keyboard(response_language)
         )
 
         await conversation_log.log(
             telegram_id=message.from_user.id,
             message_type="bot_reply",
             content=response,
-            metadata={"source": "voice"},
+            metadata={"source": "voice", "response_language": response_language},
         )
 
     except Exception as e:
         logger.error(f"Voice processing error: {e}")
-        await message.answer(
-            "😔 Произошла ошибка при обработке голосового сообщения. "
-            "Попробуй ещё раз или напиши текстом."
-        )
+        # Error messages in different languages
+        error_messages = {
+            "ru": "😔 Произошла ошибка при обработке голосового сообщения. Попробуй ещё раз или напиши текстом.",
+            "en": "😔 An error occurred while processing the voice message. Please try again or type your message.",
+            "uk": "😔 Сталася помилка при обробці голосового повідомлення. Спробуй ще раз або напиши текстом.",
+            "es": "😔 Ocurrió un error al procesar el mensaje de voz. Intenta de nuevo o escribe tu mensaje.",
+            "de": "😔 Bei der Verarbeitung der Sprachnachricht ist ein Fehler aufgetreten. Bitte versuche es erneut oder schreibe.",
+        }
+        await message.answer(error_messages.get(language_code, error_messages["ru"]))
 
 
 @router.message(F.text)
@@ -156,14 +319,23 @@ async def handle_text_message(message: Message) -> None:
         )
         return
 
+    language_code = user.language_code if user else "ru"
+
+    # Detect and update language based on user's message
+    detected_lang = await detect_and_update_language(message.from_user.id, text)
+    if detected_lang:
+        language_code = detected_lang
+
     # Dialog mode: route to DialogService (persists to conversations)
     if dialog_service.is_in_dialog(message.from_user.id):
         from src.bot.keyboards.inline import get_dialog_keyboard
+        # Show typing indicator while generating AI response
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
         response = await dialog_service.process_dialog_message(
             telegram_id=message.from_user.id,
             message=text,
         )
-        await message.answer(response, reply_markup=get_dialog_keyboard())
+        await message.answer(response, reply_markup=get_dialog_keyboard(language_code))
         return
 
     # Normal mode: log to conversations for admin visibility
@@ -177,6 +349,9 @@ async def handle_text_message(message: Message) -> None:
     moment_service = MomentService()
     personalization_service = PersonalizationService()
 
+    # Show typing indicator while processing AI tasks
+    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+
     # Check for negative mood
     is_negative = await personalization_service.detect_negative_mood(text)
 
@@ -189,19 +364,22 @@ async def handle_text_message(message: Message) -> None:
         )
 
         if similar_moments:
-            # Remind about past positive moments
+            # Remind about past positive moments - refresh typing indicator
+            await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
             response = await personalization_service.generate_supportive_response(
                 telegram_id=message.from_user.id,
                 current_text=text,
                 past_moments=similar_moments
             )
         else:
+            # Refresh typing indicator before generating response
+            await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
             response = await personalization_service.generate_empathetic_response(
                 telegram_id=message.from_user.id,
                 text=text
             )
 
-        await message.answer(response, reply_markup=get_main_menu_keyboard())
+        await message.answer(response, reply_markup=get_main_menu_keyboard(language_code))
         await conversation_log.log(
             telegram_id=message.from_user.id,
             message_type="bot_reply",
@@ -216,13 +394,16 @@ async def handle_text_message(message: Message) -> None:
             source_type="text"
         )
 
+        # Refresh typing indicator before generating response
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+
         # Generate personalized positive response
         response = await personalization_service.generate_response(
             telegram_id=message.from_user.id,
             moment_content=text
         )
 
-        await message.answer(response, reply_markup=get_main_menu_keyboard())
+        await message.answer(response, reply_markup=get_main_menu_keyboard(language_code))
         await conversation_log.log(
             telegram_id=message.from_user.id,
             message_type="bot_reply",

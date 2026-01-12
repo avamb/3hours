@@ -7,6 +7,8 @@ from src.db.models.scheduled_notification import ScheduledNotification
 from src.db.models.question_template import QuestionTemplate
 from src.db.models.feedback import Feedback
 from src.db.models.system_log import SystemLog
+from src.db.models.social_profile import SocialProfile
+from src.db.models.api_usage import APIUsage
 
 __all__ = [
     "User",
@@ -17,4 +19,6 @@ __all__ = [
     "QuestionTemplate",
     "Feedback",
     "SystemLog",
+    "SocialProfile",
+    "APIUsage",
 ]

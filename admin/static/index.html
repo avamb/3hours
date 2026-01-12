@@ -54,6 +54,7 @@
                 <li><a href="#" data-page="logs" class="nav-link">Logs</a></li>
                 <li><a href="#" data-page="notifications" class="nav-link">Notifications</a></li>
                 <li><a href="#" data-page="feedback" class="nav-link">Feedback</a></li>
+                <li><a href="#" data-page="expenses" class="nav-link">Expenses</a></li>
                 <li><a href="#" data-page="settings" class="nav-link">Settings</a></li>
             </ul>
         </nav>
@@ -133,6 +134,27 @@
                 <h2>Users</h2>
                 <div class="toolbar">
                     <input type="text" id="user-search" placeholder="Search users..." class="search-input">
+                    <select id="user-language-filter" class="select-input">
+                        <option value="">All Languages</option>
+                        <option value="ru">Russian (ru)</option>
+                        <option value="en">English (en)</option>
+                        <option value="uk">Ukrainian (uk)</option>
+                    </select>
+                    <select id="user-status-filter" class="select-input">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active (7d)</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="onboarded">Onboarded</option>
+                        <option value="not_onboarded">Not Onboarded</option>
+                    </select>
+                    <select id="user-sort-filter" class="select-input">
+                        <option value="">Sort By</option>
+                        <option value="created_desc">Newest First</option>
+                        <option value="created_asc">Oldest First</option>
+                        <option value="moments_desc">Most Moments</option>
+                        <option value="streak_desc">Highest Streak</option>
+                        <option value="active_desc">Recently Active</option>
+                    </select>
                     <button id="refresh-users" class="btn btn-secondary">Refresh</button>
                     <button id="export-users" class="btn btn-secondary">📥 Export CSV</button>
                 </div>
@@ -144,6 +166,7 @@
                                 <th>Telegram ID</th>
                                 <th>Username</th>
                                 <th>Name</th>
+                                <th>Gender</th>
                                 <th>Language</th>
                                 <th>Moments</th>
                                 <th>Streak</th>
@@ -152,7 +175,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="9" class="loading">Loading...</td></tr>
+                            <tr><td colspan="10" class="loading">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -381,6 +404,7 @@
                                 <select id="template-language" name="language_code" class="select-input">
                                     <option value="ru">Russian (ru)</option>
                                     <option value="en">English (en)</option>
+                                    <option value="uk">Ukrainian (uk)</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -413,6 +437,7 @@
                         <option value="">All Languages</option>
                         <option value="ru">Russian</option>
                         <option value="en">English</option>
+                        <option value="uk">Ukrainian</option>
                     </select>
                     <select id="templates-category-filter" class="select-input">
                         <option value="">All Categories</option>
@@ -528,10 +553,16 @@
             <div id="page-notifications" class="page">
                 <h2>Scheduled Notifications</h2>
                 <div class="toolbar">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="pending-only-filter">
-                        Pending Only
-                    </label>
+                    <select id="notifications-user-filter" class="select-input">
+                        <option value="">All Users</option>
+                    </select>
+                    <select id="notifications-status-filter" class="select-input">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="sent">Sent</option>
+                    </select>
+                    <input type="date" id="notifications-date-from" class="date-input" placeholder="From date">
+                    <input type="date" id="notifications-date-to" class="date-input" placeholder="To date">
                     <button id="refresh-notifications" class="btn btn-secondary">Refresh</button>
                 </div>
                 <div class="table-container">
@@ -550,6 +581,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="pagination" id="notifications-pagination"></div>
             </div>
 
             <!-- Feedback Page -->
@@ -669,6 +701,23 @@
                     </div>
                 </div>
 
+                <!-- Users per Day Chart -->
+                <div class="analytics-section">
+                    <div class="analytics-section-header">
+                        <h3>User Registrations</h3>
+                        <select id="users-chart-period" class="select-input select-small">
+                            <option value="7">Last 7 days</option>
+                            <option value="14">Last 14 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                        </select>
+                    </div>
+                    <div class="users-chart-container" id="users-chart-container">
+                        <div class="users-chart" id="users-chart">
+                            <p class="loading">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Two Column Layout for Heatmap and Languages -->
                 <div class="analytics-row">
                     <!-- Heatmap Section -->
@@ -694,6 +743,60 @@
 
                 <div class="toolbar analytics-toolbar">
                     <button id="refresh-analytics" class="btn btn-secondary">Refresh Analytics</button>
+                </div>
+            </div>
+
+            <!-- Expenses Page -->
+            <div id="page-expenses" class="page">
+                <h2>API Expenses</h2>
+
+                <div class="expenses-controls">
+                    <div class="filter-row">
+                        <select id="expenses-period" class="select-input">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                        <button id="refresh-expenses" class="btn btn-secondary">Refresh</button>
+                    </div>
+                </div>
+
+                <div class="stats-grid expenses-stats">
+                    <div class="stat-card">
+                        <h3>Total Requests</h3>
+                        <div id="expense-total-requests" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Tokens</h3>
+                        <div id="expense-total-tokens" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card cost-card">
+                        <h3>Total Cost</h3>
+                        <div id="expense-total-cost" class="stat-value">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="expenses-grid">
+                    <div class="expenses-section">
+                        <h3>By Model</h3>
+                        <div id="expenses-by-model" class="expenses-table-container">
+                            <p class="loading">Loading...</p>
+                        </div>
+                    </div>
+
+                    <div class="expenses-section">
+                        <h3>By Operation</h3>
+                        <div id="expenses-by-operation" class="expenses-table-container">
+                            <p class="loading">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="expenses-section full-width">
+                    <h3>Recent API Calls</h3>
+                    <div id="expenses-recent" class="expenses-table-container">
+                        <p class="loading">Loading...</p>
+                    </div>
                 </div>
             </div>
 

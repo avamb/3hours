@@ -20,8 +20,12 @@ class Settings(BaseSettings):
         description="OpenAI embedding model"
     )
     openai_chat_model: str = Field(
-        default="gpt-4",
-        description="OpenAI chat completion model"
+        default="gpt-4o",
+        description="OpenAI chat completion model (user-facing responses)"
+    )
+    openai_analysis_model: str = Field(
+        default="gpt-4o-mini",
+        description="OpenAI model for cheap classification/extraction (non user-facing)"
     )
 
     # Database Configuration

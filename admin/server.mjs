@@ -170,28 +170,217 @@ const routes = {
         }
     },
 
+    // API Usage / Expenses
+    'GET /api/expenses': async (req, res) => {
+        const query = parseQuery(req.url);
+        const days = parseInt(query.days) || 30;
+        const client = await pool.connect();
+
+        try {
+            const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+            // Check if table exists
+            const tableCheck = await client.query(`
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_name = 'api_usage'
+                )
+            `);
+
+            if (!tableCheck.rows[0].exists) {
+                sendJson(res, {
+                    period: { start: startDate.toISOString(), end: new Date().toISOString() },
+                    totals: { requests: 0, tokens: 0, cost: 0 },
+                    by_model: [],
+                    by_operation: [],
+                    daily: [],
+                    recent: [],
+                });
+                return;
+            }
+
+            // Total stats
+            const totals = await client.query(`
+                SELECT
+                    COUNT(*) as total_requests,
+                    COALESCE(SUM(total_tokens), 0) as total_tokens,
+                    COALESCE(SUM(cost_usd), 0) as total_cost
+                FROM api_usage
+                WHERE created_at >= $1
+            `, [startDate]);
+
+            // Stats by model
+            const byModel = await client.query(`
+                SELECT
+                    model,
+                    COUNT(*) as requests,
+                    COALESCE(SUM(total_tokens), 0) as tokens,
+                    COALESCE(SUM(cost_usd), 0) as cost
+                FROM api_usage
+                WHERE created_at >= $1
+                GROUP BY model
+                ORDER BY SUM(cost_usd) DESC
+            `, [startDate]);
+
+            // Stats by operation type
+            const byOperation = await client.query(`
+                SELECT
+                    operation_type as operation,
+                    COUNT(*) as requests,
+                    COALESCE(SUM(total_tokens), 0) as tokens,
+                    COALESCE(SUM(cost_usd), 0) as cost
+                FROM api_usage
+                WHERE created_at >= $1
+                GROUP BY operation_type
+                ORDER BY SUM(cost_usd) DESC
+            `, [startDate]);
+
+            // Daily stats
+            const daily = await client.query(`
+                SELECT
+                    DATE_TRUNC('day', created_at) as date,
+                    COUNT(*) as requests,
+                    COALESCE(SUM(total_tokens), 0) as tokens,
+                    COALESCE(SUM(cost_usd), 0) as cost
+                FROM api_usage
+                WHERE created_at >= $1
+                GROUP BY DATE_TRUNC('day', created_at)
+                ORDER BY date ASC
+            `, [startDate]);
+
+            // Recent usage
+            const recent = await client.query(`
+                SELECT
+                    id, user_id, api_provider, model, operation_type,
+                    input_tokens, output_tokens, total_tokens,
+                    cost_usd, duration_ms, success, created_at
+                FROM api_usage
+                ORDER BY created_at DESC
+                LIMIT 50
+            `);
+
+            sendJson(res, {
+                period: {
+                    start: startDate.toISOString(),
+                    end: new Date().toISOString(),
+                },
+                totals: {
+                    requests: parseInt(totals.rows[0].total_requests) || 0,
+                    tokens: parseInt(totals.rows[0].total_tokens) || 0,
+                    cost: parseFloat(totals.rows[0].total_cost) || 0,
+                },
+                by_model: byModel.rows.map(r => ({
+                    model: r.model,
+                    requests: parseInt(r.requests),
+                    tokens: parseInt(r.tokens),
+                    cost: parseFloat(r.cost),
+                })),
+                by_operation: byOperation.rows.map(r => ({
+                    operation: r.operation,
+                    requests: parseInt(r.requests),
+                    tokens: parseInt(r.tokens),
+                    cost: parseFloat(r.cost),
+                })),
+                daily: daily.rows.map(r => ({
+                    date: r.date?.toISOString(),
+                    requests: parseInt(r.requests),
+                    tokens: parseInt(r.tokens),
+                    cost: parseFloat(r.cost),
+                })),
+                recent: recent.rows.map(r => ({
+                    id: r.id,
+                    user_id: r.user_id,
+                    api_provider: r.api_provider,
+                    model: r.model,
+                    operation_type: r.operation_type,
+                    input_tokens: r.input_tokens,
+                    output_tokens: r.output_tokens,
+                    total_tokens: r.total_tokens,
+                    cost_usd: parseFloat(r.cost_usd) || 0,
+                    duration_ms: r.duration_ms,
+                    success: r.success,
+                    created_at: r.created_at?.toISOString(),
+                })),
+            });
+        } finally {
+            client.release();
+        }
+    },
+
     // Users list
     'GET /api/users': async (req, res) => {
         const query = parseQuery(req.url);
         const limit = Math.min(parseInt(query.limit) || 50, 100);
         const offset = parseInt(query.offset) || 0;
         const search = query.search || '';
+        const language = query.language || '';
+        const status = query.status || '';
+        const sort = query.sort || '';
 
         const client = await pool.connect();
         try {
-            let whereClause = '';
-            let countWhereClause = '';
+            const conditions = [];
+            const countConditions = [];
             const params = [limit, offset];
+            let paramIndex = 3;
 
+            // Search filter
             if (search) {
-                whereClause = `WHERE u.username ILIKE $3 OR u.first_name ILIKE $3 OR CAST(u.telegram_id AS TEXT) LIKE $3`;
-                countWhereClause = `WHERE u.username ILIKE $1 OR u.first_name ILIKE $1 OR CAST(u.telegram_id AS TEXT) LIKE $1`;
+                conditions.push(`(u.username ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR CAST(u.telegram_id AS TEXT) LIKE $${paramIndex})`);
+                countConditions.push(`(u.username ILIKE $${paramIndex - 2} OR u.first_name ILIKE $${paramIndex - 2} OR CAST(u.telegram_id AS TEXT) LIKE $${paramIndex - 2})`);
                 params.push(`%${search}%`);
+                paramIndex++;
+            }
+
+            // Language filter
+            if (language) {
+                conditions.push(`u.language_code = $${paramIndex}`);
+                countConditions.push(`u.language_code = $${paramIndex - 2}`);
+                params.push(language);
+                paramIndex++;
+            }
+
+            // Status filter
+            const now = new Date();
+            const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+            if (status === 'active') {
+                conditions.push(`u.last_active_at > $${paramIndex}`);
+                countConditions.push(`u.last_active_at > $${paramIndex - 2}`);
+                params.push(weekAgo);
+                paramIndex++;
+            } else if (status === 'inactive') {
+                conditions.push(`(u.last_active_at IS NULL OR u.last_active_at <= $${paramIndex})`);
+                countConditions.push(`(u.last_active_at IS NULL OR u.last_active_at <= $${paramIndex - 2})`);
+                params.push(weekAgo);
+                paramIndex++;
+            } else if (status === 'onboarded') {
+                conditions.push('u.onboarding_completed = true');
+                countConditions.push('u.onboarding_completed = true');
+            } else if (status === 'not_onboarded') {
+                conditions.push('u.onboarding_completed = false');
+                countConditions.push('u.onboarding_completed = false');
+            }
+
+            const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+            const countWhereClause = countConditions.length > 0 ? 'WHERE ' + countConditions.join(' AND ') : '';
+
+            // Sort order
+            let orderBy = 'u.last_active_at DESC NULLS LAST';
+            if (sort === 'created_desc') {
+                orderBy = 'u.created_at DESC';
+            } else if (sort === 'created_asc') {
+                orderBy = 'u.created_at ASC';
+            } else if (sort === 'moments_desc') {
+                orderBy = 'total_moments DESC';
+            } else if (sort === 'streak_desc') {
+                orderBy = 'current_streak DESC';
+            } else if (sort === 'active_desc') {
+                orderBy = 'u.last_active_at DESC NULLS LAST';
             }
 
             const result = await client.query(`
                 SELECT
-                    u.id, u.telegram_id, u.username, u.first_name,
+                    u.id, u.telegram_id, u.username, u.first_name, u.gender,
                     u.language_code, u.notifications_enabled, u.created_at,
                     u.last_active_at, u.onboarding_completed, u.is_blocked,
                     COALESCE(s.total_moments, 0) as total_moments,
@@ -199,13 +388,15 @@ const routes = {
                 FROM users u
                 LEFT JOIN user_stats s ON u.id = s.user_id
                 ${whereClause}
-                ORDER BY u.last_active_at DESC NULLS LAST
+                ORDER BY ${orderBy}
                 LIMIT $1 OFFSET $2
             `, params);
 
+            // Build count params (without limit/offset)
+            const countParams = params.slice(2);
             const countResult = await client.query(
-                `SELECT COUNT(*) FROM users u ${countWhereClause}`,
-                search ? [`%${search}%`] : []
+                `SELECT COUNT(*) FROM users u LEFT JOIN user_stats s ON u.id = s.user_id ${countWhereClause}`,
+                countParams
             );
 
             sendJson(res, {
@@ -214,6 +405,7 @@ const routes = {
                     telegram_id: row.telegram_id.toString(),
                     username: row.username,
                     first_name: row.first_name,
+                    gender: row.gender || 'unknown',
                     language_code: row.language_code,
                     notifications_enabled: row.notifications_enabled,
                     created_at: row.created_at?.toISOString(),
@@ -335,7 +527,7 @@ const routes = {
         try {
             const result = await client.query(`
                 SELECT
-                    u.id, u.telegram_id, u.username, u.first_name,
+                    u.id, u.telegram_id, u.username, u.first_name, u.gender,
                     u.language_code, u.formal_address, u.active_hours_start,
                     u.active_hours_end, u.notification_interval_hours,
                     u.notifications_enabled, u.timezone, u.created_at,
@@ -344,9 +536,14 @@ const routes = {
                     COALESCE(s.current_streak, 0) as current_streak,
                     COALESCE(s.longest_streak, 0) as longest_streak,
                     COALESCE(s.total_questions_sent, 0) as total_questions_sent,
-                    COALESCE(s.total_questions_answered, 0) as total_questions_answered
+                    COALESCE(s.total_questions_answered, 0) as total_questions_answered,
+                    sp.instagram_url, sp.facebook_url, sp.twitter_url,
+                    sp.linkedin_url, sp.vk_url, sp.telegram_channel_url,
+                    sp.youtube_url, sp.tiktok_url, sp.bio_text,
+                    sp.interests, sp.communication_style
                 FROM users u
                 LEFT JOIN user_stats s ON u.id = s.user_id
+                LEFT JOIN social_profiles sp ON u.id = sp.user_id
                 WHERE u.id = $1
             `, [userId]);
 
@@ -356,11 +553,31 @@ const routes = {
             }
 
             const user = result.rows[0];
+
+            // Build social profile object
+            const socialProfile = {
+                instagram_url: user.instagram_url,
+                facebook_url: user.facebook_url,
+                twitter_url: user.twitter_url,
+                linkedin_url: user.linkedin_url,
+                vk_url: user.vk_url,
+                telegram_channel_url: user.telegram_channel_url,
+                youtube_url: user.youtube_url,
+                tiktok_url: user.tiktok_url,
+                bio_text: user.bio_text,
+                interests: user.interests,
+                communication_style: user.communication_style,
+            };
+
+            // Check if any social profile data exists
+            const hasSocialProfile = Object.values(socialProfile).some(v => v !== null && v !== undefined);
+
             sendJson(res, {
                 id: user.id,
                 telegram_id: user.telegram_id.toString(),
                 username: user.username,
                 first_name: user.first_name,
+                gender: user.gender || 'unknown',
                 language_code: user.language_code,
                 formal_address: user.formal_address,
                 active_hours_start: user.active_hours_start?.toString(),
@@ -377,6 +594,7 @@ const routes = {
                 longest_streak: parseInt(user.longest_streak),
                 total_questions_sent: parseInt(user.total_questions_sent),
                 total_questions_answered: parseInt(user.total_questions_answered),
+                social_profile: hasSocialProfile ? socialProfile : null,
             });
         } finally {
             client.release();
@@ -984,14 +1202,47 @@ const routes = {
     'GET /api/system/notifications': async (req, res) => {
         const query = parseQuery(req.url);
         const limit = Math.min(parseInt(query.limit) || 50, 100);
-        const pendingOnly = query.pending_only === 'true';
+        const offset = parseInt(query.offset) || 0;
+        const userId = query.user_id || '';
+        const status = query.status || '';
+        const dateFrom = query.date_from || '';
+        const dateTo = query.date_to || '';
 
         const client = await pool.connect();
         try {
-            let whereClause = '';
-            if (pendingOnly) {
-                whereClause = 'WHERE n.sent = false';
+            const conditions = [];
+            const params = [limit, offset];
+            let paramIndex = 3;
+
+            // User filter
+            if (userId) {
+                conditions.push(`n.user_id = $${paramIndex}`);
+                params.push(parseInt(userId));
+                paramIndex++;
             }
+
+            // Status filter
+            if (status === 'pending') {
+                conditions.push('n.sent = false');
+            } else if (status === 'sent') {
+                conditions.push('n.sent = true');
+            }
+
+            // Date range filter
+            if (dateFrom) {
+                conditions.push(`n.scheduled_time >= $${paramIndex}`);
+                params.push(new Date(dateFrom));
+                paramIndex++;
+            }
+            if (dateTo) {
+                const toDate = new Date(dateTo);
+                toDate.setHours(23, 59, 59, 999);
+                conditions.push(`n.scheduled_time <= $${paramIndex}`);
+                params.push(toDate);
+                paramIndex++;
+            }
+
+            const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
             const result = await client.query(`
                 SELECT
@@ -1001,8 +1252,20 @@ const routes = {
                 JOIN users u ON n.user_id = u.id
                 ${whereClause}
                 ORDER BY n.scheduled_time DESC
-                LIMIT $1
-            `, [limit]);
+                LIMIT $1 OFFSET $2
+            `, params);
+
+            // Get total count with same filters
+            const countParams = params.slice(2);
+            const countWhereClause = conditions.length > 0
+                ? 'WHERE ' + conditions.map((c, i) => c.replace(/\$\d+/g, `$${i + 1}`)).join(' AND ')
+                : '';
+
+            let countQuery = `SELECT COUNT(*) FROM scheduled_notifications n JOIN users u ON n.user_id = u.id ${whereClause}`;
+            const countResult = await client.query(
+                `SELECT COUNT(*) FROM scheduled_notifications n JOIN users u ON n.user_id = u.id ${whereClause.replace(/\$(\d+)/g, (_, num) => '$' + (parseInt(num) - 2))}`,
+                countParams
+            );
 
             sendJson(res, {
                 notifications: result.rows.map(row => ({
@@ -1015,6 +1278,7 @@ const routes = {
                     sent_at: row.sent_at?.toISOString(),
                     created_at: row.created_at?.toISOString(),
                 })),
+                total: parseInt(countResult.rows[0].count),
             });
         } finally {
             client.release();
@@ -1239,26 +1503,61 @@ const routes = {
                 WHERE id = $2
             `, [response.trim(), feedbackId]);
 
-            // If send_to_user is true, mark that user should receive the response
-            // The actual sending would be handled by the bot service checking for new responses
+            // If send_to_user is true, send the response to user via Telegram
             let messageSent = false;
-            if (send_to_user && feedback.telegram_id) {
-                // For now, we mark the response as pending delivery
-                // The bot can poll for undelivered responses or use a webhook
-                // We'll use a simple flag in the feedback table
-                await client.query(`
-                    UPDATE feedback
-                    SET admin_response_sent = false
-                    WHERE id = $1
-                `, [feedbackId]);
-                messageSent = true;
+            let telegramError = null;
+            if (send_to_user && feedback.telegram_id && TELEGRAM_BOT_TOKEN) {
+                try {
+                    // Format the response message
+                    const messageText = `💬 <b>Ответ на ваш отзыв:</b>\n\n${response.trim()}`;
+
+                    // Send message via Telegram API
+                    const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+                    const telegramResponse = await fetch(telegramUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: feedback.telegram_id.toString(),
+                            text: messageText,
+                            parse_mode: 'HTML',
+                        }),
+                    });
+
+                    const telegramResult = await telegramResponse.json();
+
+                    if (telegramResult.ok) {
+                        messageSent = true;
+                        // Mark response as sent
+                        await client.query(`
+                            UPDATE feedback
+                            SET admin_response_sent = true
+                            WHERE id = $1
+                        `, [feedbackId]);
+
+                        // Log the message in conversations table
+                        await client.query(`
+                            INSERT INTO conversations (user_id, message_type, content, metadata, created_at)
+                            VALUES ($1, 'admin_feedback_response', $2, $3, NOW())
+                        `, [feedback.user_id, response.trim(), JSON.stringify({
+                            source: 'admin_panel',
+                            feedback_id: feedbackId
+                        })]);
+                    } else {
+                        telegramError = telegramResult.description || 'Unknown Telegram error';
+                        console.error('Telegram API error sending feedback response:', telegramResult);
+                    }
+                } catch (error) {
+                    telegramError = error.message;
+                    console.error('Error sending feedback response via Telegram:', error);
+                }
             }
 
             sendJson(res, {
                 success: true,
                 feedback_id: feedbackId,
                 response_saved: true,
-                message_queued: messageSent,
+                message_sent: messageSent,
+                telegram_error: telegramError,
                 telegram_id: feedback.telegram_id?.toString(),
             });
         } finally {
@@ -2428,6 +2727,43 @@ const routes = {
                 active_users_7d: parseInt(stats.active_users_week),
                 onboarded_users: onboardedUsers,
                 notifications_enabled: parseInt(stats.notifications_enabled),
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Analytics - Users added per day (registration chart)
+    'GET /api/analytics/users-per-day': async (req, res) => {
+        const query = parseQuery(req.url);
+        const days = Math.min(Math.max(parseInt(query.days) || 30, 7), 90);
+
+        const client = await pool.connect();
+        try {
+            // Get user registrations per day for the specified period
+            const result = await client.query(`
+                WITH date_series AS (
+                    SELECT generate_series(
+                        (NOW() - INTERVAL '${days} days')::date,
+                        NOW()::date,
+                        '1 day'::interval
+                    )::date as date
+                )
+                SELECT
+                    ds.date,
+                    COALESCE(COUNT(u.id), 0) as count
+                FROM date_series ds
+                LEFT JOIN users u ON DATE(u.created_at) = ds.date
+                GROUP BY ds.date
+                ORDER BY ds.date ASC
+            `);
+
+            sendJson(res, {
+                period_days: days,
+                data: result.rows.map(row => ({
+                    date: row.date.toISOString().split('T')[0],
+                    count: parseInt(row.count),
+                })),
             });
         } finally {
             client.release();

@@ -16,6 +16,8 @@ from src.bot.keyboards.inline import (
     get_feedback_thanks_keyboard,
 )
 from src.services.feedback_service import FeedbackService
+from src.services.user_service import UserService
+from src.utils.localization import get_all_menu_button_texts
 
 logger = logging.getLogger(__name__)
 router = Router(name="feedback")
@@ -55,9 +57,17 @@ def is_awaiting_feedback(telegram_id: int) -> bool:
     return state is not None and state.awaiting_content
 
 
-@router.message(F.text == "💡 Предложить идею")
-async def handle_feedback_button(message: Message) -> None:
-    """Handle 'Suggest idea' button press - start feedback flow"""
+async def get_user_language(telegram_id: int) -> str:
+    """Helper to get user's language code"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(telegram_id)
+    return user.language_code if user else "ru"
+
+
+async def cmd_feedback(message: Message) -> None:
+    """Start feedback flow - called from messages handler"""
+    language_code = await get_user_language(message.from_user.id)
+
     feedback_text = (
         "💡 <b>Предложить идею</b>\n\n"
         "Я буду рад услышать твои идеи и предложения!\n"
@@ -65,13 +75,14 @@ async def handle_feedback_button(message: Message) -> None:
     )
     await message.answer(
         feedback_text,
-        reply_markup=get_feedback_category_keyboard()
+        reply_markup=get_feedback_category_keyboard(language_code)
     )
 
 
 @router.callback_query(F.data == "feedback_new")
 async def callback_feedback_new(callback: CallbackQuery) -> None:
     """Start new feedback from 'suggest more' button"""
+    language_code = await get_user_language(callback.from_user.id)
     clear_feedback_state(callback.from_user.id)
 
     feedback_text = (
@@ -81,7 +92,7 @@ async def callback_feedback_new(callback: CallbackQuery) -> None:
     )
     await callback.message.edit_text(
         feedback_text,
-        reply_markup=get_feedback_category_keyboard()
+        reply_markup=get_feedback_category_keyboard(language_code)
     )
     await callback.answer()
 
@@ -152,12 +163,13 @@ async def callback_feedback_cancel(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "feedback_submit")
 async def callback_feedback_submit(callback: CallbackQuery) -> None:
     """User confirmed feedback submission"""
+    language_code = await get_user_language(callback.from_user.id)
     state = get_feedback_state(callback.from_user.id)
 
     if not state or not state.content:
         await callback.message.edit_text(
             "😔 Что-то пошло не так. Попробуй ещё раз.",
-            reply_markup=get_feedback_category_keyboard()
+            reply_markup=get_feedback_category_keyboard(language_code)
         )
         await callback.answer()
         return
@@ -185,12 +197,12 @@ async def callback_feedback_submit(callback: CallbackQuery) -> None:
             f"📂 Категория: {category_name}\n"
             f"📝 Сообщение: {state.content[:100]}{'...' if len(state.content) > 100 else ''}\n\n"
             f"Твоё сообщение сохранено и будет рассмотрено. 💝",
-            reply_markup=get_feedback_thanks_keyboard()
+            reply_markup=get_feedback_thanks_keyboard(language_code)
         )
     else:
         await callback.message.edit_text(
             "😔 Не удалось сохранить отзыв. Попробуй позже.",
-            reply_markup=get_feedback_thanks_keyboard()
+            reply_markup=get_feedback_thanks_keyboard(language_code)
         )
 
     await callback.answer()
@@ -208,6 +220,7 @@ async def handle_feedback_text(message: Message) -> bool:
     if not state or not state.awaiting_content:
         return False
 
+    language_code = await get_user_language(message.from_user.id)
     content = message.text.strip()
     if not content:
         await message.answer("🤔 Кажется, сообщение пустое. Напиши текстом, что именно ты хотел(а) сообщить.")
@@ -236,12 +249,12 @@ async def handle_feedback_text(message: Message) -> bool:
             f"📂 Категория: {category_name}\n"
             f"📝 Сообщение: {content[:100]}{'...' if len(content) > 100 else ''}\n\n"
             f"Сохранил — скоро посмотрим. 💝",
-            reply_markup=get_feedback_thanks_keyboard(),
+            reply_markup=get_feedback_thanks_keyboard(language_code),
         )
     else:
         await message.answer(
             "😔 Не удалось сохранить отзыв. Попробуй позже.",
-            reply_markup=get_feedback_thanks_keyboard(),
+            reply_markup=get_feedback_thanks_keyboard(language_code),
         )
 
     return True

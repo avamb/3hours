@@ -13,6 +13,7 @@ from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
 from src.db.repositories.user_repository import UserRepository
 from src.services.user_service import UserService
+from src.utils.localization import get_system_message
 
 logger = logging.getLogger(__name__)
 router = Router(name="commands")
@@ -102,49 +103,94 @@ async def cmd_start(message: Message) -> None:
     """
     user_service = UserService()
     user = await user_service.get_or_create_user(message.from_user)
+    language_code = user.language_code if user else "ru"
 
     if not user.onboarding_completed:
         # New user - send welcome image first
         await send_welcome_image(message)
 
         # Get localized welcome text based on user's language
-        welcome_text = get_localized_welcome_text(user.first_name, user.language_code)
+        welcome_text = get_localized_welcome_text(user.first_name, language_code)
 
         await message.answer(
             welcome_text,
-            reply_markup=get_onboarding_keyboard()
+            reply_markup=get_onboarding_keyboard(language_code)
         )
     else:
         # Existing user - welcome back
-        welcome_back_text = get_localized_welcome_back_text(user.first_name, user.language_code)
+        welcome_back_text = get_localized_welcome_back_text(user.first_name, language_code)
 
         await message.answer(
             welcome_back_text,
-            reply_markup=get_main_menu_keyboard()
+            reply_markup=get_main_menu_keyboard(language_code)
         )
 
 
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     """Handle /help command - show available commands and usage"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
+
+    # Build help text from localized messages
+    help_title = get_system_message("help_title", language_code)
+    help_start = get_system_message("help_start", language_code)
+    help_help = get_system_message("help_help", language_code)
+    help_settings = get_system_message("help_settings", language_code)
+    help_stats = get_system_message("help_stats", language_code)
+    help_privacy = get_system_message("help_privacy", language_code)
+    help_export = get_system_message("help_export", language_code)
+    help_delete = get_system_message("help_delete", language_code)
+
+    # Additional commands (not in SYSTEM_MESSAGES yet, so use inline approach)
+    if language_code.startswith("en"):
+        help_moments = "/moments - View moment history"
+        help_talk = "/talk - Start free dialog"
+        how_it_works_title = "💡 <b>How it works</b>"
+        how_it_works = (
+            "Every few hours I'll ask: \"What good happened?\" "
+            "You can reply with text or voice message. "
+            "I'll save your happy moments and remind you of them "
+            "when you need support. 🌟"
+        )
+    elif language_code.startswith("uk"):
+        help_moments = "/moments - Переглянути історію моментів"
+        help_talk = "/talk - Почати вільний діалог"
+        how_it_works_title = "💡 <b>Як це працює</b>"
+        how_it_works = (
+            "Кожні кілька годин я запитаю: «Що хорошого сталося?» "
+            "Ти можеш відповісти текстом або голосовим повідомленням. "
+            "Я збережу твої радісні моменти і нагадаю про них, "
+            "коли потрібна підтримка. 🌟"
+        )
+    else:
+        help_moments = "/moments - Просмотреть историю моментов"
+        help_talk = "/talk - Начать свободный диалог"
+        how_it_works_title = "💡 <b>Как это работает</b>"
+        how_it_works = (
+            "Каждые несколько часов я спрошу тебя: «Что хорошего произошло?» "
+            "Ты можешь ответить текстом или голосовым сообщением. "
+            "Я сохраню твои радостные моменты и напомню о них, "
+            "когда будет нужна поддержка. 🌟"
+        )
+
     help_text = (
-        "📚 <b>Команды бота</b>\n\n"
-        "/start - Начать заново\n"
-        "/help - Показать эту справку\n"
-        "/moments - Просмотреть историю моментов\n"
-        "/stats - Посмотреть статистику\n"
-        "/settings - Настройки\n"
-        "/talk - Начать свободный диалог\n"
-        "/privacy - Политика конфиденциальности\n"
-        "/export_data - Экспортировать свои данные\n"
-        "/delete_data - Удалить все свои данные\n\n"
-        "💡 <b>Как это работает</b>\n"
-        "Каждые несколько часов я спрошу тебя: «Что хорошего произошло?» "
-        "Ты можешь ответить текстом или голосовым сообщением. "
-        "Я сохраню твои радостные моменты и напомню о них, "
-        "когда будет нужна поддержка. 🌟"
+        f"📚 <b>{help_title}</b>\n\n"
+        f"{help_start}\n"
+        f"{help_help}\n"
+        f"{help_moments}\n"
+        f"{help_stats}\n"
+        f"{help_settings}\n"
+        f"{help_talk}\n"
+        f"{help_privacy}\n"
+        f"{help_export}\n"
+        f"{help_delete}\n\n"
+        f"{how_it_works_title}\n"
+        f"{how_it_works}"
     )
-    await message.answer(help_text, reply_markup=get_main_menu_keyboard())
+    await message.answer(help_text, reply_markup=get_main_menu_keyboard(language_code))
 
 
 @router.message(Command("settings"))
@@ -159,15 +205,17 @@ async def cmd_settings(message: Message) -> None:
         )
         return
 
+    language_code = user.language_code if user else "ru"
+
     settings_text = (
         "⚙️ <b>Настройки</b>\n\n"
         f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
         f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
+        f"🌍 Часовой пояс: {user.timezone}\n"
         f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
         f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
-        f"🌍 Язык: {user.language_code}\n"
     )
-    await message.answer(settings_text, reply_markup=get_settings_keyboard())
+    await message.answer(settings_text, reply_markup=get_settings_keyboard(language_code))
 
 
 @router.message(Command("moments"))
@@ -175,6 +223,10 @@ async def cmd_moments(message: Message) -> None:
     """Handle /moments command - show user's moment history"""
     from src.services.moment_service import MomentService
     from src.bot.keyboards.inline import get_moments_keyboard
+
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
 
     moment_service = MomentService()
     moments = await moment_service.get_user_moments(
@@ -195,7 +247,7 @@ async def cmd_moments(message: Message) -> None:
         content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
         moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
 
-    await message.answer(moments_text, reply_markup=get_moments_keyboard())
+    await message.answer(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
 
 
 @router.message(Command("stats"))
@@ -235,6 +287,10 @@ async def cmd_talk(message: Message) -> None:
     from src.bot.keyboards.inline import get_dialog_keyboard
     from src.services.dialog_service import DialogService
 
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     dialog_intro = (
         "💬 <b>Режим диалога</b>\n\n"
         "Я готов выслушать тебя. Расскажи, что у тебя на душе. "
@@ -243,30 +299,20 @@ async def cmd_talk(message: Message) -> None:
         "Чтобы выйти из режима диалога, нажми кнопку ниже."
     )
     DialogService.get_instance().start_dialog(message.from_user.id)
-    await message.answer(dialog_intro, reply_markup=get_dialog_keyboard())
+    await message.answer(dialog_intro, reply_markup=get_dialog_keyboard(language_code))
 
 
 @router.message(Command("privacy"))
 async def cmd_privacy(message: Message) -> None:
     """Handle /privacy command - show privacy policy"""
-    privacy_text = (
-        "🔒 <b>Политика конфиденциальности</b>\n\n"
-        "Я храню твои данные только для того, чтобы делать наше общение "
-        "более персональным и полезным для тебя.\n\n"
-        "<b>Что я сохраняю:</b>\n"
-        "• Твои ответы о хороших моментах\n"
-        "• Историю наших диалогов\n"
-        "• Настройки (часы, интервал, язык)\n\n"
-        "<b>Как использую:</b>\n"
-        "• Только для персонализации нашего общения\n"
-        "• Чтобы напоминать тебе о прошлых радостях\n"
-        "• Данные НЕ передаются третьим лицам\n\n"
-        "<b>Твои права:</b>\n"
-        "• /export_data — скачать все свои данные\n"
-        "• /delete_data — полностью удалить всё\n\n"
-        "Вопросы? Напиши мне в свободном диалоге! 💝"
-    )
-    await message.answer(privacy_text)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
+    privacy_title = get_system_message("privacy_title", language_code)
+    privacy_text = get_system_message("privacy_text", language_code)
+
+    await message.answer(f"{privacy_title}\n\n{privacy_text}")
 
 
 @router.message(Command("export_data"))
@@ -295,6 +341,10 @@ async def cmd_delete_data(message: Message) -> None:
     """Handle /delete_data command - request data deletion (GDPR)"""
     from src.bot.keyboards.inline import get_delete_confirmation_keyboard
 
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     confirm_text = (
         "⚠️ <b>Удаление данных</b>\n\n"
         "Ты уверен, что хочешь удалить ВСЕ свои данные?\n\n"
@@ -305,7 +355,7 @@ async def cmd_delete_data(message: Message) -> None:
         "• Сбросит настройки\n\n"
         "⚠️ <b>Это действие необратимо!</b>"
     )
-    await message.answer(confirm_text, reply_markup=get_delete_confirmation_keyboard())
+    await message.answer(confirm_text, reply_markup=get_delete_confirmation_keyboard(language_code))
 
 
 @router.message(Command("summary"))
@@ -313,10 +363,14 @@ async def cmd_summary(message: Message) -> None:
     """Handle /summary command - get weekly or monthly summary of moments"""
     from src.bot.keyboards.inline import get_summary_keyboard
 
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     summary_intro = (
         "📊 <b>Саммари моментов</b>\n\n"
         "Выбери тип саммари, который хочешь получить:\n\n"
         "📅 <b>Еженедельное</b> — обзор хороших моментов за последнюю неделю\n"
         "🗓 <b>Месячное</b> — итоги за последний месяц"
     )
-    await message.answer(summary_intro, reply_markup=get_summary_keyboard())
+    await message.answer(summary_intro, reply_markup=get_summary_keyboard(language_code))
