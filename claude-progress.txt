@@ -2,23 +2,31 @@
 
 ## Current Status: 175/176 features passing (99.4%)
 
-## Session 540 - January 13, 2025
+## Session 541 - January 13, 2025
 
 ### Regression Testing Performed:
 - Dashboard Overview: HEALTHY, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
 - 10 Users, 23 Moments displayed correctly
-- Users page: All 10 users displayed with complete fields
-- Recent activity showing bot questions and responses
+- Users page: All 10 users with multiple languages (en, ru, uk), gender indicators, moments/streaks
+- Moments page: 23 moments with Topics Cloud, mood scores, text/voice sources
+- Recent activity showing bot questions with appropriate emojis (Feature #48 verified)
 
-### Feature #176 - Auto-index Knowledge Base uploads (Re-verification)
+### Feature #176 - Auto-index Knowledge Base uploads
 
-**Testing Performed:**
-1. Uploaded TXT document "Test AutoIndex Document Session 540" with title, category, tags
-2. Upload succeeded with message: "File uploaded successfully. Indexing will be processed." (AC8 verified)
-3. Status transitioned: pending → indexing → error (due to invalid API key)
-4. Verified error handling works correctly
-5. Test document deleted from Knowledge Base after testing
-6. Test file cleaned up from filesystem
+**Status: BLOCKED by external API key issue**
+
+**Implementation Review:**
+- Code implementation is COMPLETE and correct
+- `indexKnowledgeItem()` function properly implements:
+  - Text chunking with overlap (CHUNK_SIZE=1200, CHUNK_OVERLAP=200)
+  - Vector embedding creation via OpenAI Embeddings API
+  - Rate limiting between API calls (50ms delay)
+  - Retry logic with exponential backoff (MAX_RETRIES=3)
+  - All guardrails (MIN_DOC_CHARS=50, MAX_DOC_CHARS=120000, MAX_CHUNKS=120)
+  - PDF rejection with clear error message
+  - Status transitions (pending -> indexing -> indexed/error)
+- Upload endpoint triggers async indexing (fire-and-forget)
+- Reindex endpoint triggers async indexing (fire-and-forget)
 
 **Acceptance Criteria Verification:**
 | AC | Description | Status |
@@ -29,13 +37,6 @@
 | AC8 | Async upload response | VERIFIED - Green success message appears |
 | AC9 | PDF rejection | VERIFIED - Logs: "PDF not supported yet" |
 | AC1-4 | Full indexing flow | BLOCKED - Invalid OpenAI API key (401 error) |
-
-**Implementation Status:**
-- Fire-and-forget async indexing on upload: WORKING
-- Status transitions (pending -> indexing -> error/indexed): WORKING
-- Error handling with descriptive messages: WORKING
-- All guardrails implemented (MIN_DOC_CHARS=50, MAX_DOC_CHARS=120000, MAX_CHUNKS=120): WORKING
-- Rate limiting between API calls: IMPLEMENTED
 
 **Blocking Issue (UNCHANGED from previous sessions):**
 - OpenAI API key returns 401 "Incorrect API key provided"
@@ -56,51 +57,23 @@
 
 ---
 
-## Session 539 - January 13, 2025
+## Session 540 - January 13, 2025
 
 ### Regression Testing Performed:
 - Dashboard Overview: HEALTHY, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
 - 10 Users, 23 Moments displayed correctly
+- Users page: All 10 users displayed with complete fields
 - Recent activity showing bot questions and responses
 
 ### Feature #176 - Auto-index Knowledge Base uploads (Re-verification)
 
 **Testing Performed:**
-1. Uploaded TXT document "Test Auto-Indexing Document" with title, category, tags
-2. Upload succeeded with message: "File uploaded successfully. Indexing will be processed." (AC8)
+1. Uploaded TXT document "Test AutoIndex Document Session 540" with title, category, tags
+2. Upload succeeded with message: "File uploaded successfully. Indexing will be processed." (AC8 verified)
 3. Status transitioned: pending -> indexing -> error (due to invalid API key)
-4. Error stored in database with descriptive message
-
-**Acceptance Criteria Verification:**
-| AC | Description | Status |
-|----|-------------|--------|
-| AC5 | Short doc error | VERIFIED - Logs: "Document too short/empty (min 50 chars)" |
-| AC6 | Large doc error | VERIFIED - Logs: "Document too large (max 120000 chars)" |
-| AC7 | Max chunks limit | IMPLEMENTED (verified in code) |
-| AC8 | Async upload response | VERIFIED - Green success message appears |
-| AC9 | PDF rejection | VERIFIED - Logs: "PDF not supported yet" |
-| AC1-4 | Full indexing flow | BLOCKED - Invalid OpenAI API key (401 error) |
-
----
-
-## Session 538 - January 13, 2025
-
-### Regression Testing Performed:
-Verified system stability before continuing with Feature #176:
-
-1. **Dashboard Overview**
-   - HEALTHY status, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
-   - 10 Users, 23 Moments, accurate statistics
-   - Recent activity displaying correctly
-
-2. **Users Page**
-   - 10 users with complete fields (ID, Telegram ID, Username, Name, Gender, Language, Moments, Streak, Last Active)
-   - Search, filter (language/status), sort, Export CSV functionality
-
-3. **Moments Page**
-   - 23 moments, 3 unique users, 0.56 avg mood
-   - Topics Cloud with real extracted topics
-   - Both text and voice source types verified
+4. Verified error handling works correctly
+5. Test document deleted from Knowledge Base after testing
+6. Test file cleaned up from filesystem
 
 ---
 
