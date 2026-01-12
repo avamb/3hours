@@ -3,7 +3,7 @@ services:
   # - Separate Postgres volume
   # - Separate default DB name
   # - No fixed host port bindings (use Dokploy Domains to expose admin:8080)
-  postgres:
+  postgres_dev:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -28,11 +28,11 @@ services:
       context: ./admin
       dockerfile: Dockerfile
     depends_on:
-      postgres:
+      postgres_dev:
         condition: service_healthy
     environment:
       - PORT=8080
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-mindsethappybot_dev}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres_dev:5432/${POSTGRES_DB:-mindsethappybot_dev}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -57,7 +57,7 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      postgres:
+      postgres_dev:
         condition: service_healthy
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
@@ -65,7 +65,7 @@ services:
       - OPENAI_CHAT_MODEL=${OPENAI_CHAT_MODEL:-gpt-4o}
       - OPENAI_ANALYSIS_MODEL=${OPENAI_ANALYSIS_MODEL:-gpt-4o-mini}
       - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-mindsethappybot_dev}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres_dev:5432/${POSTGRES_DB:-mindsethappybot_dev}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     restart: unless-stopped
     networks:
