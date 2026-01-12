@@ -2,7 +2,61 @@
 
 ## Current Status: 175/176 features passing (99.4%)
 
-## Session 539 - January 13, 2026
+## Session 540 - January 13, 2025
+
+### Regression Testing Performed:
+- Dashboard Overview: HEALTHY, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
+- 10 Users, 23 Moments displayed correctly
+- Users page: All 10 users displayed with complete fields
+- Recent activity showing bot questions and responses
+
+### Feature #176 - Auto-index Knowledge Base uploads (Re-verification)
+
+**Testing Performed:**
+1. Uploaded TXT document "Test AutoIndex Document Session 540" with title, category, tags
+2. Upload succeeded with message: "File uploaded successfully. Indexing will be processed." (AC8 verified)
+3. Status transitioned: pending → indexing → error (due to invalid API key)
+4. Verified error handling works correctly
+5. Test document deleted from Knowledge Base after testing
+6. Test file cleaned up from filesystem
+
+**Acceptance Criteria Verification:**
+| AC | Description | Status |
+|----|-------------|--------|
+| AC5 | Short doc error | VERIFIED - Logs: "Document too short/empty (min 50 chars)" |
+| AC6 | Large doc error | VERIFIED - Logs: "Document too large (max 120000 chars)" |
+| AC7 | Max chunks limit | IMPLEMENTED (verified in code) |
+| AC8 | Async upload response | VERIFIED - Green success message appears |
+| AC9 | PDF rejection | VERIFIED - Logs: "PDF not supported yet" |
+| AC1-4 | Full indexing flow | BLOCKED - Invalid OpenAI API key (401 error) |
+
+**Implementation Status:**
+- Fire-and-forget async indexing on upload: WORKING
+- Status transitions (pending -> indexing -> error/indexed): WORKING
+- Error handling with descriptive messages: WORKING
+- All guardrails implemented (MIN_DOC_CHARS=50, MAX_DOC_CHARS=120000, MAX_CHUNKS=120): WORKING
+- Rate limiting between API calls: IMPLEMENTED
+
+**Blocking Issue (UNCHANGED from previous sessions):**
+- OpenAI API key returns 401 "Incorrect API key provided"
+- Error: `401 Incorrect API key provided: sk-proj-***W8cA`
+- This is an EXTERNAL blocker - API key is invalid/expired
+- Feature implementation is COMPLETE - just needs valid API key to verify AC1-4
+
+**Decision:**
+- Feature #176 remains blocked due to external API key issue
+- Cannot mark as passing without full indexing flow verification (AC1-4)
+- 5 of 9 acceptance criteria verified passing
+- All 175 other features remain stable
+
+**Next Steps:**
+- Obtain valid OpenAI API key to complete Feature #176 testing
+- Once key is updated, test full indexing flow: pending -> indexing -> indexed
+- Verify chunks_count > 0 and knowledge_chunks table populated
+
+---
+
+## Session 539 - January 13, 2025
 
 ### Regression Testing Performed:
 - Dashboard Overview: HEALTHY, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
@@ -13,82 +67,45 @@
 
 **Testing Performed:**
 1. Uploaded TXT document "Test Auto-Indexing Document" with title, category, tags
-2. Upload succeeded with message: "File uploaded successfully. Indexing will be processed." (AC8 ✅)
-3. Status transitioned: pending → indexing → error (due to invalid API key)
+2. Upload succeeded with message: "File uploaded successfully. Indexing will be processed." (AC8)
+3. Status transitioned: pending -> indexing -> error (due to invalid API key)
 4. Error stored in database with descriptive message
 
 **Acceptance Criteria Verification:**
 | AC | Description | Status |
 |----|-------------|--------|
-| AC5 | Short doc error | ✅ VERIFIED - Logs: "Document too short/empty (min 50 chars)" |
-| AC6 | Large doc error | ✅ VERIFIED - Logs: "Document too large (max 120000 chars)" |
-| AC7 | Max chunks limit | ✅ IMPLEMENTED (verified in code) |
-| AC8 | Async upload response | ✅ VERIFIED - Green success message appears |
-| AC9 | PDF rejection | ✅ VERIFIED - Logs: "PDF not supported yet" |
-| AC1-4 | Full indexing flow | ⚠️ BLOCKED - Invalid OpenAI API key (401 error) |
-
-**Implementation Verified:**
-- Fire-and-forget async indexing on upload ✅
-- Status transitions work correctly ✅
-- Error handling with descriptive messages ✅
-- All guardrails implemented (MIN_DOC_CHARS=50, MAX_DOC_CHARS=120000, MAX_CHUNKS=120) ✅
-- Rate limiting between API calls ✅
-
-**Blocking Issue (UNCHANGED from previous sessions):**
-- OpenAI API key returns 401 "Incorrect API key provided"
-- Error: `401 Incorrect API key provided: sk-proj-***W8cA`
-- This is an EXTERNAL blocker - API key is invalid/expired
-- Feature implementation is COMPLETE - just needs valid API key to verify AC1-4
-
-**Test Data Cleaned Up:**
-- Test document deleted from Knowledge Base
-- Test file removed from filesystem
-
-**Decision:**
-- Feature #176 remains blocked due to external API key issue
-- Cannot mark as passing without full indexing flow verification (AC1-4)
-- 5 of 9 acceptance criteria verified passing
-- All 175 other features remain stable
-
-**Next Steps:**
-- Obtain valid OpenAI API key to complete Feature #176 testing
-- Once key is updated, test full indexing flow: pending → indexing → indexed
-- Verify chunks_count > 0 and knowledge_chunks table populated
+| AC5 | Short doc error | VERIFIED - Logs: "Document too short/empty (min 50 chars)" |
+| AC6 | Large doc error | VERIFIED - Logs: "Document too large (max 120000 chars)" |
+| AC7 | Max chunks limit | IMPLEMENTED (verified in code) |
+| AC8 | Async upload response | VERIFIED - Green success message appears |
+| AC9 | PDF rejection | VERIFIED - Logs: "PDF not supported yet" |
+| AC1-4 | Full indexing flow | BLOCKED - Invalid OpenAI API key (401 error) |
 
 ---
 
-## Session 538 - January 13, 2026
+## Session 538 - January 13, 2025
 
 ### Regression Testing Performed:
 Verified system stability before continuing with Feature #176:
 
-1. **Dashboard Overview** ✅
+1. **Dashboard Overview**
    - HEALTHY status, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
    - 10 Users, 23 Moments, accurate statistics
    - Recent activity displaying correctly
 
-2. **Users Page** ✅
+2. **Users Page**
    - 10 users with complete fields (ID, Telegram ID, Username, Name, Gender, Language, Moments, Streak, Last Active)
    - Search, filter (language/status), sort, Export CSV functionality
 
-3. **Moments Page** ✅
+3. **Moments Page**
    - 23 moments, 3 unique users, 0.56 avg mood
    - Topics Cloud with real extracted topics
    - Both text and voice source types verified
 
-### Feature #176 - Auto-index Knowledge Base uploads (Re-verification)
-
-**Testing Performed:**
-- Uploaded valid TXT document → triggers async indexing ✅
-- Status transition: pending → indexing → Error (due to API key) ✅
-- Short document (<50 chars) → "Document too short/empty (min 50 chars)" error ✅
-- PDF upload → "PDF not supported yet" error ✅
-- Async upload response: "File uploaded successfully. Indexing will be processed." ✅
-
 ---
 
 ## Key Milestones:
-- **100% Feature Completion achieved!** All 175 features passing
+- **175/176 Feature Completion achieved!** (99.4%)
 - Multi-language support: Russian, English, Ukrainian + 7 more languages
 - International timezone system covering all major world cities
 - Voice message language auto-detection (Whisper API)
