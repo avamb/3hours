@@ -8,6 +8,7 @@
     "start": "node server.mjs"
   },
   "dependencies": {
+    "openai": "^4.20.0",
     "pg": "^8.11.0"
   }
 }
