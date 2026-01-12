@@ -2,6 +2,50 @@
 
 ## Current Status: 175/176 features passing (99.4%)
 
+## Session 536 - January 12, 2026
+
+### Feature #176 - Auto-index Knowledge Base uploads (Re-verification)
+
+**Testing Performed:**
+- Verified all validation logic works correctly through UI and server logs
+- Upload TXT document → triggers async indexing (fire-and-forget) ✅
+- Short document (<50 chars) → "Document too short/empty (min 50 chars)" error ✅
+- PDF upload → "PDF not supported yet" error ✅
+- Document splitting into chunks works (tested with 4-chunk document)
+
+**Acceptance Criteria Verification:**
+| AC | Description | Status |
+|----|-------------|--------|
+| AC5 | Short doc error | ✅ VERIFIED |
+| AC6 | Large doc error | ✅ VERIFIED (logs) |
+| AC7 | Too many chunks error | ✅ IMPLEMENTED |
+| AC8 | Async upload response | ✅ VERIFIED |
+| AC9 | PDF rejection | ✅ VERIFIED |
+| AC1-4 | Full indexing flow | ⚠️ BLOCKED - Invalid OpenAI API key |
+
+**Blocking Issue:**
+- OpenAI API key returns 401 "Incorrect API key" error
+- This is the same key used by the bot for other embeddings
+- The key appears to have expired or been invalidated
+- Feature implementation is COMPLETE - just needs valid API key
+
+**Screenshots Captured:**
+- regression-dashboard-session536.png
+- kb-empty-state-session536.png
+- kb-upload-error-api-key-session536.png
+- kb-short-doc-error-session536.png
+- kb-pdf-error-session536.png
+
+**Action Taken:**
+- Feature #176 skipped (moved to end of queue) due to external API key blocker
+- All 175 other features remain passing
+
+**Next Steps:**
+- Obtain valid OpenAI API key to complete Feature #176 testing
+- Once key is updated, full indexing flow (AC1-4) can be verified
+
+---
+
 ## Session 535 - January 12, 2026
 
 ### Feature #176 - Auto-index Knowledge Base uploads
