@@ -2,6 +2,64 @@
 
 ## Current Status: 175/176 features passing (99.4%)
 
+## Session 537 - January 13, 2026
+
+### Feature #176 - Auto-index Knowledge Base uploads (Continued Testing)
+
+**Testing Performed:**
+- Re-verified all validation logic through UI and database queries
+- Upload TXT document → triggers async indexing (fire-and-forget) ✅
+- Short document (<50 chars) → "Document too short/empty (min 50 chars)" error ✅
+- PDF upload → "PDF not supported yet" error ✅
+- Async upload response works correctly (AC8) ✅
+
+**Acceptance Criteria Verification:**
+| AC | Description | Status |
+|----|-------------|--------|
+| AC5 | Short doc error | ✅ VERIFIED - Error message: "Document too short/empty (min 50 chars)" |
+| AC8 | Async upload response | ✅ VERIFIED - "File uploaded successfully. Indexing will be processed." |
+| AC9 | PDF rejection | ✅ VERIFIED - Error message: "PDF not supported yet" |
+| AC1-4 | Full indexing flow | ⚠️ STILL BLOCKED - Invalid OpenAI API key (401 error) |
+| AC6-7 | Large doc/chunks limits | ✅ IMPLEMENTED (verified in logs from previous session) |
+
+**Code Implementation Review:**
+- Reviewed `admin/server.mjs` - all indexing functions properly implemented:
+  - `splitTextIntoChunks()` - splits with sentence boundary detection
+  - `createEmbeddingWithRetry()` - retry logic with exponential backoff
+  - `indexKnowledgeItem()` - full indexing pipeline with guardrails
+- Fire-and-forget async indexing on upload and reindex endpoints
+- Rate limiting between OpenAI API calls (100ms delay)
+- All error handling properly sets status to 'error' with descriptive messages
+
+**Blocking Issue (UNCHANGED):**
+- OpenAI API key returns 401 "Incorrect API key" error
+- Error: `401 Incorrect API key provided: sk-proj-***W8cA`
+- This is an EXTERNAL blocker - API key is invalid/expired
+- Feature implementation is COMPLETE - just needs valid API key
+
+**Screenshots Captured:**
+- kb-initial-state-session537.png
+- kb-upload-success-session537.png
+- kb-error-api-key-session537.png
+- kb-all-errors-verified-session537.png
+- kb-clean-state-session537.png
+
+**Test Data Cleaned Up:**
+- All test documents deleted from Knowledge Base
+- Test files removed from filesystem
+
+**Decision:**
+- Feature #176 remains blocked due to external API key issue
+- Cannot mark as passing without full indexing flow verification (AC1-4)
+- Feature will remain in queue until valid API key is provided
+
+**Next Steps:**
+- Obtain valid OpenAI API key to complete Feature #176 testing
+- Once key is updated, test full indexing flow: pending → indexing → indexed
+- Verify chunks_count > 0 and knowledge_chunks table populated
+
+---
+
 ## Session 536 - January 12, 2026
 
 ### Feature #176 - Auto-index Knowledge Base uploads (Re-verification)
