@@ -4,6 +4,7 @@ from src.bot.keyboards.inline import (
     get_settings_keyboard,
     get_onboarding_keyboard,
     get_moments_keyboard,
+    get_gender_keyboard,
 )
 
 __all__ = [
@@ -11,4 +12,5 @@ __all__ = [
     "get_settings_keyboard",
     "get_onboarding_keyboard",
     "get_moments_keyboard",
+    "get_gender_keyboard",
 ]

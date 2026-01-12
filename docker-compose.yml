@@ -17,9 +17,7 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      dokploy-network:
-        aliases:
-          - postgres
+      - app
 
   admin:
     build:
@@ -34,6 +32,7 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     ports:
        - "18088:8080"
 
@@ -66,6 +65,7 @@ services:
       - traefik.http.routers.mindsethappybot-3hours-efm68q-31-websecure.tls.certresolver=letsencrypt
       - traefik.enable=true
     networks:
+      - app
       - dokploy-network
 
   bot:
@@ -78,12 +78,15 @@ services:
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_CHAT_MODEL=${OPENAI_CHAT_MODEL:-gpt-4o}
+      - OPENAI_ANALYSIS_MODEL=${OPENAI_ANALYSIS_MODEL:-gpt-4o-mini}
+      - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-mindsethappybot}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       
     restart: unless-stopped
     networks:
-      - dokploy-network
+      - app
 
 volumes:
   postgres_data: null
@@ -91,5 +94,6 @@ volumes:
 networks:
   dokploy-network:
     external: true
+  app: {}
       
 

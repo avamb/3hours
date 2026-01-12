@@ -3,6 +3,7 @@ MINDSETHAPPYBOT - Summary service
 Generates weekly and monthly summaries of user's positive moments
 """
 import logging
+import time
 from typing import Optional, List
 from datetime import datetime, timedelta
 from collections import Counter
@@ -13,7 +14,13 @@ from sqlalchemy import select, func, and_
 from src.config import get_settings
 from src.db.database import get_session
 from src.db.models import User, Moment, UserStats
-from src.utils.text_filters import ABROAD_PHRASE_RULE_RU, replace_abroad_phrases
+from src.utils.text_filters import (
+    ABROAD_PHRASE_RULE_RU,
+    FORBIDDEN_SYMBOLS_RULE_RU,
+    apply_all_filters,
+)
+from src.services.personalization_service import LANGUAGE_INSTRUCTION, PROMPT_PROTECTION, get_gender_instruction
+from src.services.api_usage_service import APIUsageService
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +61,12 @@ class SummaryService:
         """
         Generate a weekly summary of user's positive moments
         """
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
         try:
             async with get_session() as session:
                 # Get user
@@ -84,6 +97,8 @@ class SummaryService:
 
                 address = "вы" if user.formal_address else "ты"
                 name = user.first_name or "друг"
+                gender = user.gender if user.gender else "unknown"
+                gender_instruction = get_gender_instruction(gender)
 
                 # Collect topics from moments
                 all_topics = []
@@ -106,7 +121,27 @@ class SummaryService:
                     messages=[
                         {
                             "role": "system",
-                            "content": f"""Ты — тёплый и поддерживающий бот для развития позитивного мышления.
+                            "content": f"""{LANGUAGE_INSTRUCTION}
+
+{PROMPT_PROTECTION}
+
+{gender_instruction}
+
+You are a warm and supportive bot for developing positive thinking.
+Create a brief and inspiring weekly summary of the user's good moments.
+
+Summary structure:
+1. Warm greeting with name ({name})
+2. How many good moments there were this week ({len(moments)})
+3. Main themes of joy (if any)
+4. 2-3 brightest moments
+5. Inspiring conclusion
+
+Use appropriate emojis for positivity.
+Be brief but warm (maximum 5-7 sentences).
+
+(Russian version / Русская версия):
+Ты — тёплый и поддерживающий бот для развития позитивного мышления.
 Создай краткое и вдохновляющее еженедельное саммари хороших моментов пользователя.
 
 Структура саммари:
@@ -120,18 +155,25 @@ class SummaryService:
 Используй эмодзи для позитива.
 Будь кратким, но тёплым (максимум 5-7 предложений).
 
-{ABROAD_PHRASE_RULE_RU}""",
+{ABROAD_PHRASE_RULE_RU}
+
+{FORBIDDEN_SYMBOLS_RULE_RU}""",
                         },
                         {
                             "role": "user",
-                            "content": f"Вот хорошие моменты за неделю:\n{moments_text}",
+                            "content": f"Here are the good moments for the week / Вот хорошие моменты за неделю:\n{moments_text}",
                         },
                     ],
                     max_tokens=400,
                     temperature=0.7,
                 )
 
-                summary = replace_abroad_phrases(response.choices[0].message.content.strip())
+                # Extract token usage
+                if response.usage:
+                    input_tokens = response.usage.prompt_tokens
+                    output_tokens = response.usage.completion_tokens
+
+                summary = apply_all_filters(response.choices[0].message.content.strip())
 
                 # Add header
                 header = "📅 Еженедельное саммари\n\n"
@@ -139,7 +181,24 @@ class SummaryService:
 
         except Exception as e:
             logger.error(f"Failed to generate weekly summary: {e}")
+            success = False
+            error_msg = str(e)
             return None
+
+        finally:
+            # Log API usage
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.model,
+                operation_type="weekly_summary",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                telegram_id=telegram_id,
+                success=success,
+                error_message=error_msg,
+            )
 
     async def generate_monthly_summary(
         self,
@@ -148,6 +207,12 @@ class SummaryService:
         """
         Generate a monthly summary of user's positive moments
         """
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
         try:
             async with get_session() as session:
                 # Get user
@@ -178,6 +243,8 @@ class SummaryService:
 
                 address = "вы" if user.formal_address else "ты"
                 name = user.first_name or "друг"
+                gender = user.gender if user.gender else "unknown"
+                gender_instruction = get_gender_instruction(gender)
 
                 # Collect topics from moments
                 all_topics = []
@@ -206,7 +273,27 @@ class SummaryService:
                     messages=[
                         {
                             "role": "system",
-                            "content": f"""Ты — тёплый и поддерживающий бот для развития позитивного мышления.
+                            "content": f"""{LANGUAGE_INSTRUCTION}
+
+{PROMPT_PROTECTION}
+
+{gender_instruction}
+
+You are a warm and supportive bot for developing positive thinking.
+Create an inspiring monthly summary of the user's good moments.
+
+Summary structure:
+1. Celebratory greeting with name ({name}) - this is the month's summary!
+2. Statistics: {len(moments)} good moments this month
+3. Main themes of joy for the month (what brought joy most often)
+4. 3-4 most memorable moments
+5. Motivating conclusion with wishes for the next month
+
+Use celebratory emojis.
+Make this summary special and inspiring.
+
+(Russian version / Русская версия):
+Ты — тёплый и поддерживающий бот для развития позитивного мышления.
 Создай вдохновляющее месячное саммари хороших моментов пользователя.
 
 Структура саммари:
@@ -220,18 +307,25 @@ class SummaryService:
 Используй эмодзи для праздничного настроения.
 Сделай это саммари особенным и вдохновляющим.
 
-{ABROAD_PHRASE_RULE_RU}""",
+{ABROAD_PHRASE_RULE_RU}
+
+{FORBIDDEN_SYMBOLS_RULE_RU}""",
                         },
                         {
                             "role": "user",
-                            "content": f"Вот хорошие моменты за месяц:\n{moments_text}\n\nОсновные темы радости: {', '.join(top_topics) if top_topics else 'разнообразные'}",
+                            "content": f"Here are the good moments for the month / Вот хорошие моменты за месяц:\n{moments_text}\n\nMain themes of joy / Основные темы радости: {', '.join(top_topics) if top_topics else 'various/разнообразные'}",
                         },
                     ],
                     max_tokens=500,
                     temperature=0.7,
                 )
 
-                summary = replace_abroad_phrases(response.choices[0].message.content.strip())
+                # Extract token usage
+                if response.usage:
+                    input_tokens = response.usage.prompt_tokens
+                    output_tokens = response.usage.completion_tokens
+
+                summary = apply_all_filters(response.choices[0].message.content.strip())
 
                 # Add header with stats
                 streak_text = f"🔥 Текущий стрик: {stats.current_streak} дней" if stats and stats.current_streak > 0 else ""
@@ -240,4 +334,21 @@ class SummaryService:
 
         except Exception as e:
             logger.error(f"Failed to generate monthly summary: {e}")
+            success = False
+            error_msg = str(e)
             return None
+
+        finally:
+            # Log API usage
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.model,
+                operation_type="monthly_summary",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                telegram_id=telegram_id,
+                success=success,
+                error_message=error_msg,
+            )

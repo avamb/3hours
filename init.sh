@@ -23,6 +23,10 @@ TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 
 # OpenAI Configuration
 OPENAI_API_KEY=your_openai_api_key_here
+# Optional model overrides (recommended defaults shown)
+OPENAI_CHAT_MODEL=gpt-4o
+OPENAI_ANALYSIS_MODEL=gpt-4o-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
 # Database Configuration
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/mindsethappybot

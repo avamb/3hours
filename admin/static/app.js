@@ -61,6 +61,18 @@ function formatRelativeTime(dateStr) {
     return date.toLocaleDateString();
 }
 
+function formatNumber(num) {
+    if (num === null || num === undefined) return '0';
+    return num.toLocaleString();
+}
+
+function formatGender(gender) {
+    if (!gender || gender === 'unknown') return '-';
+    if (gender === 'male') return '👨 M';
+    if (gender === 'female') return '👩 F';
+    return gender;
+}
+
 // Authentication
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -150,10 +162,14 @@ function navigateTo(page) {
             loadLogsPage();
             break;
         case 'notifications':
-            loadNotifications();
+            loadNotificationsUsers();
+            loadNotifications(0);
             break;
         case 'feedback':
             loadFeedback();
+            break;
+        case 'expenses':
+            loadExpenses();
             break;
         case 'analytics':
             loadAnalyticsPage();
@@ -254,19 +270,33 @@ async function loadOverview() {
 }
 
 // Users Page
-async function loadUsers(offset = 0, search = '') {
+function getUsersFilters() {
+    return {
+        search: document.getElementById('user-search')?.value || '',
+        language: document.getElementById('user-language-filter')?.value || '',
+        status: document.getElementById('user-status-filter')?.value || '',
+        sort: document.getElementById('user-sort-filter')?.value || '',
+    };
+}
+
+async function loadUsers(offset = 0) {
     usersOffset = offset;
     const tbody = document.querySelector('#users-table tbody');
-    tbody.innerHTML = '<tr><td colspan="9" class="loading">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="loading">Loading...</td></tr>';
 
     try {
+        const filters = getUsersFilters();
         const params = new URLSearchParams({ limit: pageSize, offset });
-        if (search) params.append('search', search);
+
+        if (filters.search) params.append('search', filters.search);
+        if (filters.language) params.append('language', filters.language);
+        if (filters.status) params.append('status', filters.status);
+        if (filters.sort) params.append('sort', filters.sort);
 
         const { users, total } = await api(`/users?${params}`);
 
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="loading">No users found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="loading">No users found</td></tr>';
         } else {
             tbody.innerHTML = users.map(user => `
                 <tr>
@@ -274,6 +304,7 @@ async function loadUsers(offset = 0, search = '') {
                     <td>${user.telegram_id}</td>
                     <td>${user.username || '-'}</td>
                     <td>${user.first_name || '-'}</td>
+                    <td>${formatGender(user.gender)}</td>
                     <td>${user.language_code}</td>
                     <td>${user.total_moments}</td>
                     <td>${user.current_streak}</td>
@@ -285,26 +316,33 @@ async function loadUsers(offset = 0, search = '') {
             `).join('');
         }
 
-        renderPagination('users-pagination', total, offset, pageSize, (newOffset) => loadUsers(newOffset, search));
+        renderPagination('users-pagination', total, offset, pageSize, loadUsers);
     } catch (error) {
         console.error('Error loading users:', error);
-        tbody.innerHTML = `<tr><td colspan="9" class="loading">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="loading">Error: ${error.message}</td></tr>`;
     }
 }
 
-// User search
-document.getElementById('user-search').addEventListener('input', debounce((e) => {
-    loadUsers(0, e.target.value);
+// User search and filters
+document.getElementById('user-search')?.addEventListener('input', debounce(() => {
+    loadUsers(0);
 }, 300));
 
-document.getElementById('refresh-users').addEventListener('click', () => {
-    loadUsers(usersOffset, document.getElementById('user-search').value);
+document.getElementById('user-language-filter')?.addEventListener('change', () => loadUsers(0));
+document.getElementById('user-status-filter')?.addEventListener('change', () => loadUsers(0));
+document.getElementById('user-sort-filter')?.addEventListener('change', () => loadUsers(0));
+
+document.getElementById('refresh-users')?.addEventListener('click', () => {
+    loadUsers(usersOffset);
 });
 
-document.getElementById('export-users').addEventListener('click', () => {
-    const search = document.getElementById('user-search').value;
+document.getElementById('export-users')?.addEventListener('click', () => {
+    const filters = getUsersFilters();
     const params = new URLSearchParams();
-    if (search) params.append('search', search);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.language) params.append('language', filters.language);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.sort) params.append('sort', filters.sort);
     window.open(`/api/users/export?${params}`, '_blank');
 });
 
@@ -333,6 +371,10 @@ async function showUserDetail(userId) {
                 <div class="detail-item">
                     <div class="detail-label">Name</div>
                     <div class="detail-value">${user.first_name || '-'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Gender</div>
+                    <div class="detail-value">${formatGender(user.gender)}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Language</div>
@@ -410,6 +452,73 @@ async function showUserDetail(userId) {
                     </div>
                 </div>
             </div>
+            ${user.social_profile ? `
+                <div class="detail-section">
+                    <h4>Social Profile</h4>
+                    <div class="user-detail-grid">
+                        ${user.social_profile.instagram_url ? `
+                            <div class="detail-item">
+                                <div class="detail-label">Instagram</div>
+                                <div class="detail-value"><a href="${user.social_profile.instagram_url}" target="_blank">Link</a></div>
+                            </div>
+                        ` : ''}
+                        ${user.social_profile.facebook_url ? `
+                            <div class="detail-item">
+                                <div class="detail-label">Facebook</div>
+                                <div class="detail-value"><a href="${user.social_profile.facebook_url}" target="_blank">Link</a></div>
+                            </div>
+                        ` : ''}
+                        ${user.social_profile.twitter_url ? `
+                            <div class="detail-item">
+                                <div class="detail-label">Twitter/X</div>
+                                <div class="detail-value"><a href="${user.social_profile.twitter_url}" target="_blank">Link</a></div>
+                            </div>
+                        ` : ''}
+                        ${user.social_profile.linkedin_url ? `
+                            <div class="detail-item">
+                                <div class="detail-label">LinkedIn</div>
+                                <div class="detail-value"><a href="${user.social_profile.linkedin_url}" target="_blank">Link</a></div>
+                            </div>
+                        ` : ''}
+                        ${user.social_profile.vk_url ? `
+                            <div class="detail-item">
+                                <div class="detail-label">VK</div>
+                                <div class="detail-value"><a href="${user.social_profile.vk_url}" target="_blank">Link</a></div>
+                            </div>
+                        ` : ''}
+                        ${user.social_profile.telegram_channel_url ? `
+                            <div class="detail-item">
+                                <div class="detail-label">Telegram Channel</div>
+                                <div class="detail-value"><a href="${user.social_profile.telegram_channel_url}" target="_blank">Link</a></div>
+                            </div>
+                        ` : ''}
+                        ${user.social_profile.youtube_url ? `
+                            <div class="detail-item">
+                                <div class="detail-label">YouTube</div>
+                                <div class="detail-value"><a href="${user.social_profile.youtube_url}" target="_blank">Link</a></div>
+                            </div>
+                        ` : ''}
+                        ${user.social_profile.tiktok_url ? `
+                            <div class="detail-item">
+                                <div class="detail-label">TikTok</div>
+                                <div class="detail-value"><a href="${user.social_profile.tiktok_url}" target="_blank">Link</a></div>
+                            </div>
+                        ` : ''}
+                        ${user.social_profile.interests && user.social_profile.interests.length > 0 ? `
+                            <div class="detail-item" style="grid-column: span 2;">
+                                <div class="detail-label">Interests</div>
+                                <div class="detail-value">${user.social_profile.interests.join(', ')}</div>
+                            </div>
+                        ` : ''}
+                        ${user.social_profile.bio_text ? `
+                            <div class="detail-item" style="grid-column: span 2;">
+                                <div class="detail-label">Bio</div>
+                                <div class="detail-value">${escapeHtml(user.social_profile.bio_text).substring(0, 300)}${user.social_profile.bio_text.length > 300 ? '...' : ''}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : ''}
             ${moments.length > 0 ? `
                 <div class="detail-section">
                     <h4>Recent Moments</h4>
@@ -527,8 +636,8 @@ window.blockUser = blockUser;
 window.unblockUser = unblockUser;
 window.sendDirectMessage = sendDirectMessage;
 
-// Modal close
-document.querySelector('.modal-close').addEventListener('click', () => {
+// Modal close - user modal
+document.querySelector('#user-modal .modal-close').addEventListener('click', () => {
     document.getElementById('user-modal').classList.remove('active');
 });
 
@@ -710,15 +819,46 @@ document.getElementById('refresh-logs')?.addEventListener('click', () => {
 });
 
 // Notifications Page
-async function loadNotifications() {
+let notificationsOffset = 0;
+const notificationsPageSize = 50;
+
+function getNotificationsFilters() {
+    return {
+        userId: document.getElementById('notifications-user-filter')?.value || '',
+        status: document.getElementById('notifications-status-filter')?.value || '',
+        dateFrom: document.getElementById('notifications-date-from')?.value || '',
+        dateTo: document.getElementById('notifications-date-to')?.value || '',
+    };
+}
+
+async function loadNotificationsUsers() {
+    const select = document.getElementById('notifications-user-filter');
+    if (!select) return;
+
+    try {
+        const { users } = await api('/users?limit=100');
+        select.innerHTML = '<option value="">All Users</option>' +
+            users.map(u => `<option value="${u.id}">${escapeHtml(u.username || u.first_name || 'User #' + u.telegram_id)}</option>`).join('');
+    } catch (error) {
+        console.error('Error loading users for filter:', error);
+    }
+}
+
+async function loadNotifications(offset = 0) {
+    notificationsOffset = offset;
     const tbody = document.querySelector('#notifications-table tbody');
     tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
 
     try {
-        const pendingOnly = document.getElementById('pending-only-filter').checked;
-        const params = new URLSearchParams({ limit: 50, pending_only: pendingOnly });
+        const filters = getNotificationsFilters();
+        const params = new URLSearchParams({ limit: notificationsPageSize, offset });
 
-        const { notifications } = await api(`/system/notifications?${params}`);
+        if (filters.userId) params.append('user_id', filters.userId);
+        if (filters.status) params.append('status', filters.status);
+        if (filters.dateFrom) params.append('date_from', filters.dateFrom);
+        if (filters.dateTo) params.append('date_to', filters.dateTo);
+
+        const { notifications, total } = await api(`/system/notifications?${params}`);
 
         if (notifications.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="loading">No notifications found</td></tr>';
@@ -726,7 +866,7 @@ async function loadNotifications() {
             tbody.innerHTML = notifications.map(n => `
                 <tr>
                     <td>${n.id}</td>
-                    <td>${n.username || n.first_name || `User #${n.user_id}`}</td>
+                    <td>${escapeHtml(n.username || n.first_name || `User #${n.user_id}`)}</td>
                     <td>${formatDate(n.scheduled_time)}</td>
                     <td>
                         <span class="status-badge ${n.sent ? 'sent' : 'pending'}">
@@ -737,14 +877,19 @@ async function loadNotifications() {
                 </tr>
             `).join('');
         }
+
+        renderPagination('notifications-pagination', total || notifications.length, offset, notificationsPageSize, loadNotifications);
     } catch (error) {
         console.error('Error loading notifications:', error);
         tbody.innerHTML = `<tr><td colspan="5" class="loading">Error: ${error.message}</td></tr>`;
     }
 }
 
-document.getElementById('pending-only-filter').addEventListener('change', loadNotifications);
-document.getElementById('refresh-notifications').addEventListener('click', loadNotifications);
+document.getElementById('notifications-user-filter')?.addEventListener('change', () => loadNotifications(0));
+document.getElementById('notifications-status-filter')?.addEventListener('change', () => loadNotifications(0));
+document.getElementById('notifications-date-from')?.addEventListener('change', () => loadNotifications(0));
+document.getElementById('notifications-date-to')?.addEventListener('change', () => loadNotifications(0));
+document.getElementById('refresh-notifications')?.addEventListener('click', () => loadNotifications(notificationsOffset));
 
 // Feedback Page
 let feedbackOffset = 0;
@@ -958,9 +1103,17 @@ async function sendFeedbackResponse(feedbackId) {
         });
 
         if (result.success) {
-            alert(sendToUser
-                ? 'Response saved and message queued for delivery!'
-                : 'Response saved successfully!');
+            let alertMessage = 'Response saved successfully!';
+            if (sendToUser) {
+                if (result.message_sent) {
+                    alertMessage = 'Response saved and message sent to user!';
+                } else if (result.telegram_error) {
+                    alertMessage = `Response saved but message failed to send: ${result.telegram_error}`;
+                } else {
+                    alertMessage = 'Response saved (message sending not available)';
+                }
+            }
+            alert(alertMessage);
 
             // Close modal and refresh
             document.getElementById('feedback-modal').classList.remove('active');
@@ -974,6 +1127,136 @@ async function sendFeedbackResponse(feedbackId) {
 
 // Make showFeedbackDetail and sendFeedbackResponse globally accessible
 window.showFeedbackDetail = showFeedbackDetail;
+
+// =============================================================================
+// EXPENSES PAGE
+// =============================================================================
+
+async function loadExpenses() {
+    const days = document.getElementById('expenses-period')?.value || 30;
+
+    try {
+        const data = await api(`/expenses?days=${days}`);
+
+        // Update totals
+        document.getElementById('expense-total-requests').textContent =
+            formatNumber(data.totals.requests);
+        document.getElementById('expense-total-tokens').textContent =
+            formatNumber(data.totals.tokens);
+        document.getElementById('expense-total-cost').textContent =
+            `$${data.totals.cost.toFixed(4)}`;
+
+        // Render by model table
+        const byModelContainer = document.getElementById('expenses-by-model');
+        if (data.by_model.length === 0) {
+            byModelContainer.innerHTML = '<p class="no-data">No API usage data</p>';
+        } else {
+            byModelContainer.innerHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Requests</th>
+                            <th>Tokens</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.by_model.map(m => `
+                            <tr>
+                                <td><code>${escapeHtml(m.model)}</code></td>
+                                <td>${formatNumber(m.requests)}</td>
+                                <td>${formatNumber(m.tokens)}</td>
+                                <td>$${m.cost.toFixed(4)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Render by operation table
+        const byOperationContainer = document.getElementById('expenses-by-operation');
+        if (data.by_operation.length === 0) {
+            byOperationContainer.innerHTML = '<p class="no-data">No API usage data</p>';
+        } else {
+            byOperationContainer.innerHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Operation</th>
+                            <th>Requests</th>
+                            <th>Tokens</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.by_operation.map(o => `
+                            <tr>
+                                <td>${escapeHtml(o.operation)}</td>
+                                <td>${formatNumber(o.requests)}</td>
+                                <td>${formatNumber(o.tokens)}</td>
+                                <td>$${o.cost.toFixed(4)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Render recent calls table
+        const recentContainer = document.getElementById('expenses-recent');
+        if (data.recent.length === 0) {
+            recentContainer.innerHTML = '<p class="no-data">No recent API calls</p>';
+        } else {
+            recentContainer.innerHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Model</th>
+                            <th>Operation</th>
+                            <th>Tokens</th>
+                            <th>Cost</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.recent.map(r => `
+                            <tr>
+                                <td>${formatRelativeTime(r.created_at)}</td>
+                                <td><code>${escapeHtml(r.model)}</code></td>
+                                <td>${escapeHtml(r.operation_type)}</td>
+                                <td>${formatNumber(r.total_tokens)}</td>
+                                <td>$${r.cost_usd.toFixed(6)}</td>
+                                <td>${r.duration_ms ? r.duration_ms + 'ms' : '-'}</td>
+                                <td>
+                                    <span class="status-badge ${r.success ? 'enabled' : 'disabled'}">
+                                        ${r.success ? 'OK' : 'Error'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+    } catch (error) {
+        console.error('Error loading expenses:', error);
+        document.getElementById('expenses-by-model').innerHTML =
+            '<p class="error">Error loading data</p>';
+        document.getElementById('expenses-by-operation').innerHTML =
+            '<p class="error">Error loading data</p>';
+        document.getElementById('expenses-recent').innerHTML =
+            '<p class="error">Error loading data</p>';
+    }
+}
+
+// Expenses event listeners
+document.getElementById('expenses-period')?.addEventListener('change', () => loadExpenses());
+document.getElementById('refresh-expenses')?.addEventListener('click', () => loadExpenses());
 window.sendFeedbackResponse = sendFeedbackResponse;
 window.updateFeedbackStatus = updateFeedbackStatus;
 
@@ -1773,6 +2056,7 @@ async function loadAnalyticsPage() {
         loadAnalyticsOverview(),
         loadFunnelChart(),
         loadRetentionTable(),
+        loadUsersPerDayChart(),
         loadHeatmap(),
         loadLanguagesChart(),
     ]);
@@ -2007,6 +2291,71 @@ async function loadLanguagesChart() {
         container.innerHTML = `<p class="loading">Error: ${error.message}</p>`;
     }
 }
+
+// Users per day chart
+async function loadUsersPerDayChart(days = null) {
+    const container = document.getElementById('users-chart');
+    container.innerHTML = '<p class="loading">Loading chart...</p>';
+
+    try {
+        // Get period from dropdown if not specified
+        if (!days) {
+            const select = document.getElementById('users-chart-period');
+            days = parseInt(select?.value) || 30;
+        }
+
+        const data = await api(`/analytics/users-per-day?days=${days}`);
+        const chartData = data.data || [];
+
+        if (chartData.length === 0) {
+            container.innerHTML = '<p class="loading">No registration data available</p>';
+            return;
+        }
+
+        // Find max value for scaling
+        const maxCount = Math.max(...chartData.map(d => d.count), 1);
+        const total = chartData.reduce((sum, d) => sum + d.count, 0);
+
+        // Create bar chart
+        let html = '<div class="users-chart-bars">';
+
+        chartData.forEach((item, index) => {
+            const barHeight = Math.max(5, (item.count / maxCount) * 100);
+            const dateObj = new Date(item.date);
+            const dayLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+            const fullDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            html += `
+                <div class="users-chart-bar-container" title="${fullDate}: ${item.count} user${item.count !== 1 ? 's' : ''}">
+                    <div class="users-chart-bar" style="height: ${barHeight}%;">
+                        ${item.count > 0 ? `<span class="users-chart-bar-value">${item.count}</span>` : ''}
+                    </div>
+                    <div class="users-chart-bar-label">${dayLabel}</div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+
+        // Add summary
+        html += `
+            <div class="users-chart-summary">
+                <span class="users-chart-total">Total: <strong>${total}</strong> new users in last ${days} days</span>
+                <span class="users-chart-avg">Average: <strong>${(total / chartData.length).toFixed(1)}</strong> per day</span>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading users per day chart:', error);
+        container.innerHTML = `<p class="loading">Error: ${error.message}</p>`;
+    }
+}
+
+// Users chart period selector
+document.getElementById('users-chart-period')?.addEventListener('change', (e) => {
+    loadUsersPerDayChart(parseInt(e.target.value));
+});
 
 // Analytics refresh button
 document.getElementById('refresh-analytics')?.addEventListener('click', loadAnalyticsPage);
