@@ -1823,7 +1823,11 @@ window.deleteTemplate = deleteTemplate;
 
 // Dialogs Page
 let currentDialogUserId = null;
-let allDialogUsers = [];
+// NOTE: Inline event handlers and some older browser scoping rules don't reliably see
+// top-level `let/const` as `window.*`. Keep this state on `window` to avoid
+// "Cannot access ... before initialization" / scope issues.
+var allDialogUsers = window.allDialogUsers || [];
+window.allDialogUsers = allDialogUsers;
 
 async function loadDialogsPage() {
     await loadDialogUsers();
@@ -1836,6 +1840,7 @@ async function loadDialogUsers(search = '') {
     try {
         const { users } = await api('/dialogs/users');
         allDialogUsers = users;
+        window.allDialogUsers = allDialogUsers;
 
         renderDialogUsersList(search);
     } catch (error) {
@@ -1983,7 +1988,9 @@ document.getElementById('export-dialogs-json')?.addEventListener('click', () => 
 window.selectDialogUser = selectDialogUser;
 
 // Pagination helper - stores callbacks globally to avoid inline function code
-const paginationCallbacks = {};
+// Must be on window because inline `onclick="paginationCallbacks[...]()"` resolves via `window`.
+var paginationCallbacks = window.paginationCallbacks || {};
+window.paginationCallbacks = paginationCallbacks;
 
 function renderPagination(containerId, total, offset, limit, loadFn) {
     const container = document.getElementById(containerId);
@@ -1997,12 +2004,13 @@ function renderPagination(containerId, total, offset, limit, loadFn) {
 
     // Store the callback globally
     paginationCallbacks[containerId] = loadFn;
+    window.paginationCallbacks = paginationCallbacks;
 
     let html = '';
 
     // Previous button
     const prevOffset = (currentPage - 2) * limit;
-    html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="paginationCallbacks['${containerId}'](${prevOffset})">Prev</button>`;
+    html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="window.paginationCallbacks['${containerId}'](${prevOffset})">Prev</button>`;
 
     // Page numbers
     const startPage = Math.max(1, currentPage - 2);
@@ -2010,12 +2018,12 @@ function renderPagination(containerId, total, offset, limit, loadFn) {
 
     for (let i = startPage; i <= endPage; i++) {
         const pageOffset = (i - 1) * limit;
-        html += `<button class="${i === currentPage ? 'active' : ''}" onclick="paginationCallbacks['${containerId}'](${pageOffset})">${i}</button>`;
+        html += `<button class="${i === currentPage ? 'active' : ''}" onclick="window.paginationCallbacks['${containerId}'](${pageOffset})">${i}</button>`;
     }
 
     // Next button
     const nextOffset = currentPage * limit;
-    html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="paginationCallbacks['${containerId}'](${nextOffset})">Next</button>`;
+    html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="window.paginationCallbacks['${containerId}'](${nextOffset})">Next</button>`;
 
     container.innerHTML = html;
 }
