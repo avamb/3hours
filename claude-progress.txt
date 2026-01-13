@@ -2,12 +2,12 @@
 
 ## Current Status: 177/177 features complete (100%)
 
-## Last Session: Session 841 (January 13, 2026)
+## Last Session: Session 842 (January 13, 2026)
 
 ### What was done:
 - Performed comprehensive regression testing on the system
 - Verified all Docker containers running correctly:
-  - 3hours-bot-1 (Up 2+ hours)
+  - 3hours-bot-1 (Up 3+ hours)
   - 3hours-admin-1 (Healthy, port 3003)
   - 3hours-postgres_dev-1 (Healthy)
   - 3hours-postgres-1 (Healthy)
@@ -17,36 +17,36 @@
 - Database connected (10 MB)
 - Bot running correctly (RUNNING status)
 - OpenAI configured (API key set)
-- API endpoints returning 200 OK:
-  - /api/system/health - Returns {"status":"healthy","database":"healthy",...}
 - No console errors detected
 - APScheduler executing notification jobs every minute successfully
 
 ### Random Features Verified (from feature_get_for_regression):
-1. Feature 126 (Summary settings in bot Settings menu) - Verified:
-   - Templates page working with language options (ru/en/uk)
-   - Formal/informal addressing (Вы/Ты) toggle
-   - Category filtering and template management
+1. Feature 123 (Daily Summary feature) - Verified:
+   - APScheduler running every minute
+   - NotificationScheduler._process_notifications jobs executing successfully
+   - No errors in job execution logs
 
-2. Feature 162 (Language menus) - Verified:
-   - Templates support multiple languages
-   - Language filter in Users page
-   - Language distribution in Analytics
+2. Feature 47 (Welcome image display) - Verified:
+   - Code in src/bot/handlers/commands.py implements welcome image
+   - Uses local file (assets/welcome.jpg) with fallback to Unsplash URL
+   - send_welcome_image() function properly handles errors
 
-3. Feature 59 (Concurrent message handling) - Verified:
-   - Bot container running stably
-   - APScheduler processing jobs without errors
-   - No message processing failures in logs
+3. Feature 154 (Expenses - cost tracking) - Verified:
+   - Expenses page fully functional
+   - Shows Total Requests, Total Tokens, Total Cost
+   - Breakdown by Model and by Operation
+   - Recent API Calls section
+   - Time period filter (7/30/90 days)
 
 ### Pages Verified:
 - Dashboard Overview - Status badges (CONNECTED, RUNNING, CONFIGURED)
-- Users - Gender column visible, search/filter/export functionality
-- Templates - Formal/informal addressing support, language options
-- Settings - Database backup, Health Check (HEALTHY), Database Status (CONNECTED)
+- Templates - Formal/informal addressing, language options (ru/en/uk)
+- Expenses - Full cost tracking with model/operation breakdown
 - Analytics - User Funnel, Retention Cohorts, Activity Heatmap, User Registrations
+- Settings - Database backup, Health Check (HEALTHY), Database Status (CONNECTED)
 
 ### Screenshots Captured:
-- regression-session841-overview.png - Dashboard with all systems healthy
+- regression-session842-overview.png - Dashboard with all systems healthy
 
 ### No Issues Found
 All systems operational. Project is complete and stable.
