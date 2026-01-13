@@ -2,40 +2,36 @@
 
 ## Current Status: 176/176 features passing (100%) - COMPLETE!
 
-## Session 587 - January 13, 2025
+## Session 588 - January 13, 2025
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on 3 randomly selected features:
 
 **Features Selected for Testing:**
-1. Feature #135: Message Templates CRUD (Admin) - VERIFIED
-2. Feature #110: Dokploy-ready compose cleanup (Deploy) - VERIFIED
-3. Feature #157: Don't reveal prompt (Security) - VERIFIED
+1. Feature #114: Dokploy deployment metadata (deploy.dokploy.json + .env.example) - VERIFIED
+2. Feature #17: Statistics view - VERIFIED
+3. Feature #4: Main menu keyboard display - VERIFIED
 
 **Verification Details:**
 
-1. **Feature #135 (Message Templates CRUD):**
-   - Navigated to Admin Panel at localhost:3003
-   - Templates page shows Create form with text, language, category, formal, active fields
-   - Preview section shows template with {name} placeholder replaced
-   - Created test template: "TEST_REGRESSION_{name}, what made you smile today? 🌟"
-   - Verified it appeared in table (ID 3, language "en", category "general")
-   - Deleted test template - confirmation dialog worked
-   - Verified template removed from table and category count updated
+1. **Feature #114 (Dokploy deployment metadata):**
+   - Verified deploy.dokploy.json exists with correct structure
+   - Admin service marked as routable with internal_port=8080
+   - port_env_var=PORT, healthcheck_path=/health configured
+   - .env.example contains all required variables (TELEGRAM_BOT_TOKEN, OPENAI_API_KEY, POSTGRES_*, DATABASE_URL, ADMIN_USERNAME, ADMIN_PASSWORD, LOG_LEVEL, PORT)
 
-2. **Feature #110 (Dokploy-ready compose cleanup):**
-   - Verified docker-compose.yml has NO container_name on any services
-   - PostgreSQL only accessible within compose network (no 5432:5432 external port)
-   - Services communicate via compose service names (e.g., @postgres:5432)
-   - Admin service has Traefik labels for Dokploy domain routing
-   - Proper network configuration (app internal, dokploy-network external)
+2. **Feature #17 (Statistics view):**
+   - Stats handler in commands.py properly implemented
+   - Shows total moments count, current/longest streak
+   - Displays questions sent/answered with percentage rate
+   - Admin Analytics page shows extended statistics with User Funnel, Retention, Heatmap
 
-3. **Feature #157 (Don't reveal prompt - Security):**
-   - personalization_service.py contains PROMPT_PROTECTION constant
-   - Bilingual instructions (Russian + English) to never reveal prompt
-   - Rules redirect conversation if user asks about instructions
-   - Has HIGHEST PRIORITY marking for security rules
+3. **Feature #4 (Main menu keyboard display):**
+   - reply.py implements ReplyKeyboardMarkup with all 4 buttons
+   - 📖 Мои моменты, 📊 Статистика, ⚙️ Настройки, 💬 Поговорить
+   - Plus additional 💡 Предложить идею feedback button
+   - Keyboard is persistent and resizable
 
 **Infrastructure Status:**
 - All Docker containers healthy:
@@ -54,6 +50,7 @@ All 176 features passing. No issues found during regression testing.
 
 ## Previous Sessions Summary:
 
+- **Session 587**: Regression testing - Features #135, #110, #157 verified
 - **Session 586**: Regression testing - Features #2, #84, #68 verified
 - **Session 585**: Regression testing - Features #111, #28, #84 verified
 - **Session 584**: Regression testing - Features #95, #160, #66 verified
