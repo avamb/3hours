@@ -2,24 +2,25 @@
 
 ## Current Status: 177/177 features complete (100%)
 
-## Last Session: Session 823 (January 13, 2026)
+## Last Session: Session 824 (January 13, 2026)
 
 ### What was done:
 - Performed regression testing on 3 randomly selected features:
-  1. Feature 134: Knowledge Base Indexing Service - VERIFIED
-     - Uploaded test file "TEST_REGRESSION_KB_ITEM" via admin panel
-     - File was chunked into 4 pieces with embeddings
-     - Status changed from "Pending" to "Indexed" automatically
-     - Successfully deleted test item to clean up
-  2. Feature 15: Delete individual moment - VERIFIED
-     - Code inspection confirmed delete functionality exists
-     - `callback_moment_delete_confirm` shows confirmation dialog
-     - `callback_moment_delete` performs actual deletion
-     - Uses MomentService.delete_moment() with proper error handling
-  3. Feature 46: Questions answered percentage - VERIFIED
-     - StatsService tracks total_questions_sent and total_questions_answered
-     - Percentage calculated as (answered/sent)*100
-     - Stats updated on each user response
+  1. Feature 112: Reliable DB migrations on Dokploy redeploy - VERIFIED
+     - Entrypoint script waits for PostgreSQL to be ready
+     - Runs `alembic upgrade head` automatically before starting the bot
+     - No manual steps required - migrations run on every deployment
+  2. Feature 116: Timezone-aware weekly/monthly summaries - VERIFIED
+     - `_check_summary_delivery()` runs hourly in scheduler
+     - Calculates each user local time using their timezone
+     - Weekly summaries sent on Sunday at 10:00 local time
+     - Monthly summaries sent on 1st of month at 10:00 local time
+     - Checks if user is within active hours before sending
+  3. Feature 141: Send direct message to user from admin - VERIFIED
+     - Admin panel has "Send Direct Message" section in user detail view
+     - API endpoint at POST /api/users/:id/message
+     - Sends message via Telegram API
+     - Logs sent message in database
 
 ### System Health Verified:
 - Bot running correctly (RUNNING status)
@@ -27,7 +28,7 @@
 - Database connected (10 MB)
 - OpenAI configured (API key set)
 - No console errors detected
-- APScheduler running notification jobs every minute
+- All Docker containers running properly
 
 ### Docker Containers Running:
 - 3hours-bot-1 (Up ~1 hour)
@@ -38,7 +39,6 @@
 ### Admin Panel Pages Verified:
 - Dashboard Overview: Shows database, bot, OpenAI status
 - Knowledge Base: Upload form, indexing stats, table with actions
-- Moments: Filtering, export CSV, topics cloud
 - Analytics: User funnel, retention cohorts, activity heatmap, registration chart
 - Users: Search, filters, sorting, export
 
