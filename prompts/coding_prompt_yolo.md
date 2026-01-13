@@ -20,6 +20,10 @@ This is a FRESH context window - you have no memory of previous sessions.
 
 These rules define how version control and deployments must work across projects:
 
+### Regression tests location (IMPORTANT)
+- All Node.js regression test scripts live under `tests/regression/` (`*.mjs`).
+- **Do NOT** create `test-*.mjs` files in the repo root anymore — put them in `tests/regression/`.
+
 ### Branch policy
 - `master` is the main integration branch.
 - `prod` contains ONLY stable, production-ready versions.

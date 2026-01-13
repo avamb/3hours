@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test Database Migrations - Feature #87
  * Verifies database migrations work correctly
@@ -6,7 +7,7 @@
 import { readFileSync, existsSync } from 'fs';
 
 // Read bot code to verify implementation
-const botCode = readFileSync('C:/Projects/3hours/test-bot.mjs', 'utf8');
+const botCode = readFileSync(new URL('./test-bot.mjs', import.meta.url), 'utf8');
 
 console.log("=== Feature #87: Database Migrations - Test ===\n");
 
@@ -146,7 +147,7 @@ console.log(`\nMigration simulation: ${migrationWorked ? '✅ PASSED' : '❌ FAI
 console.log("Step 8: Check actual data file structure");
 console.log("-".repeat(50));
 
-const dataFile = 'C:/Projects/3hours/bot-data.json';
+const dataFile = fileURLToPath(new URL('../../bot-data.json', import.meta.url));
 let actualSchemaVersion = 0;
 let hasAllTables = false;
 

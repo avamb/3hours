@@ -1,6 +1,7 @@
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-const cssPath = 'C:/Projects/3hours/admin/static/styles.css';
+const cssPath = fileURLToPath(new URL('../admin/static/styles.css', import.meta.url));
 let css = fs.readFileSync(cssPath, 'utf8');
 
 // Fix screen management
