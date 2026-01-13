@@ -296,30 +296,37 @@ async function loadUsers(offset = 0) {
         const { users, total } = await api(`/users?${params}`);
 
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="loading">No users found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="loading">No users found</td></tr>';
         } else {
-            tbody.innerHTML = users.map(user => `
-                <tr>
+            tbody.innerHTML = users.map(user => {
+                const timezoneSet = user.timezone && user.timezone !== 'UTC';
+                const timezoneDisplay = user.timezone || 'UTC';
+                const timezoneFlag = timezoneSet
+                    ? `<span class="timezone-set" title="Timezone set by user">✓ ${timezoneDisplay}</span>`
+                    : `<span class="timezone-default" title="Default timezone (not set)">${timezoneDisplay}</span>`;
+                return `
+                <tr class="clickable-row" onclick="viewUserDialogs(${user.id}, '${escapeHtml(user.username || user.first_name || 'User ' + user.id)}')" title="Click to view dialogs">
                     <td>${user.id}</td>
                     <td>${user.telegram_id}</td>
                     <td>${user.username || '-'}</td>
                     <td>${user.first_name || '-'}</td>
                     <td>${formatGender(user.gender)}</td>
                     <td>${user.language_code}</td>
+                    <td>${timezoneFlag}</td>
                     <td>${user.total_moments}</td>
                     <td>${user.current_streak}</td>
                     <td>${formatRelativeTime(user.last_active_at)}</td>
                     <td class="actions">
-                        <button class="btn btn-primary btn-small" onclick="showUserDetail(${user.id})">View</button>
+                        <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showUserDetail(${user.id})">View</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         renderPagination('users-pagination', total, offset, pageSize, loadUsers);
     } catch (error) {
         console.error('Error loading users:', error);
-        tbody.innerHTML = `<tr><td colspan="10" class="loading">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="loading">Error: ${error.message}</td></tr>`;
     }
 }
 
@@ -631,10 +638,47 @@ async function sendDirectMessage(userId) {
     }
 }
 
-// Make block/unblock/sendMessage functions globally accessible
+// Navigate to dialogs page with specific user selected
+async function viewUserDialogs(userId, userName) {
+    // Navigate to dialogs page
+    navigateTo('dialogs');
+
+    // Wait for dialogs page to load and then select the user
+    // Use a small retry loop to wait for the dialogs user list to be rendered
+    const targetId = Number(userId);
+    const maxAttempts = 20;
+    let attempts = 0;
+
+    const trySelect = async () => {
+        // Prefer exact match by data attribute (robust against usernames containing digits)
+        const item = document.querySelector(`.dialog-user-item[data-user-id="${targetId}"]`);
+        if (item) {
+            item.click();
+            return;
+        }
+
+        attempts += 1;
+        if (attempts < maxAttempts) {
+            setTimeout(trySelect, 150);
+            return;
+        }
+
+        // If user not found in the list (e.g., no dialogs yet), load directly
+        currentDialogUserId = targetId;
+        document.getElementById('dialogs-header').innerHTML = `
+            <span class="dialogs-user-name">${escapeHtml(userName)}</span>
+        `;
+        await loadUserDialog(targetId);
+    };
+
+    setTimeout(trySelect, 150);
+}
+
+// Make block/unblock/sendMessage/viewUserDialogs functions globally accessible
 window.blockUser = blockUser;
 window.unblockUser = unblockUser;
 window.sendDirectMessage = sendDirectMessage;
+window.viewUserDialogs = viewUserDialogs;
 
 // Modal close - user modal
 document.querySelector('#user-modal .modal-close').addEventListener('click', () => {
@@ -1876,6 +1920,7 @@ function renderDialogUsersList(search = '') {
 
         return `
             <div class="dialog-user-item ${currentDialogUserId === userId ? 'active' : ''}"
+                 data-user-id="${userId}"
                  onclick="selectDialogUser(${userId}, '${displayName}', this)">
                 <div class="dialog-user-name">${displayName}</div>
                 <div class="dialog-user-preview">${preview || '-'}</div>

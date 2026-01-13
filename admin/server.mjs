@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import pg from 'pg';
+import OpenAI from 'openai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,6 +80,301 @@ function parseQuery(url) {
     }
     return result;
 }
+
+// =============================================================================
+// KNOWLEDGE BASE INDEXING
+// =============================================================================
+
+// Indexing limits (guardrails)
+const MAX_DOC_CHARS = 120000;
+const MIN_DOC_CHARS = 50;
+const CHUNK_SIZE = 1200;
+const CHUNK_OVERLAP = 200;
+const MAX_CHUNKS = 120;
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 500;
+const RATE_LIMIT_DELAY_MS = 100;
+
+// Initialize OpenAI client (lazy - only when needed)
+let openaiClient = null;
+function getOpenAIClient() {
+    if (!openaiClient && OPENAI_API_KEY) {
+        openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY });
+    }
+    return openaiClient;
+}
+
+// Helper to sleep for a given number of milliseconds
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Split text into chunks with overlap, trying to split at sentence boundaries
+ * @param {string} text - The text to split
+ * @param {number} chunkSize - Target chunk size in characters
+ * @param {number} overlap - Number of characters to overlap between chunks
+ * @returns {string[]} - Array of text chunks
+ */
+function splitTextIntoChunks(text, chunkSize = CHUNK_SIZE, overlap = CHUNK_OVERLAP) {
+    if (!text || text.length === 0) {
+        return [];
+    }
+
+    // If the text is smaller than the chunk size, return it as a single chunk
+    if (text.length <= chunkSize) {
+        return [text.trim()].filter(c => c.length > 0);
+    }
+
+    const chunks = [];
+    let start = 0;
+    const sentenceEnders = /[.!?\n]/g;
+
+    while (start < text.length) {
+        let end = Math.min(start + chunkSize, text.length);
+
+        // If we're not at the end, try to find a sentence boundary
+        if (end < text.length) {
+            // Look for a sentence boundary in the last portion of the chunk
+            const searchStart = Math.max(start, end - 200);
+            const searchText = text.substring(searchStart, end);
+
+            let lastBoundary = -1;
+            let match;
+            sentenceEnders.lastIndex = 0;
+
+            while ((match = sentenceEnders.exec(searchText)) !== null) {
+                lastBoundary = searchStart + match.index + 1;
+            }
+
+            // Use the sentence boundary if found, otherwise use chunkSize
+            if (lastBoundary > start && lastBoundary > start + chunkSize / 2) {
+                end = lastBoundary;
+            }
+        }
+
+        const chunk = text.substring(start, end).trim();
+        if (chunk.length > 0) {
+            chunks.push(chunk);
+        }
+
+        // If we've reached the end, stop
+        if (end >= text.length) {
+            break;
+        }
+
+        // Move start forward by (chunk length - overlap)
+        // Ensure we make meaningful progress (at least half of chunk size or to the end)
+        const chunkLength = end - start;
+        const advancement = Math.max(chunkLength - overlap, Math.min(chunkSize / 2, text.length - start));
+        start += advancement;
+    }
+
+    return chunks;
+}
+
+/**
+ * Convert embedding array to pgvector literal string
+ * @param {number[]} embedding - The embedding array
+ * @returns {string} - pgvector literal like "[0.1,0.2,...]"
+ */
+function vectorLiteral(embedding) {
+    return '[' + embedding.join(',') + ']';
+}
+
+/**
+ * Create embedding with retry logic for rate limiting
+ * @param {OpenAI} client - OpenAI client
+ * @param {string} text - Text to embed
+ * @returns {Promise<number[]>} - Embedding array
+ */
+async function createEmbeddingWithRetry(client, text) {
+    let lastError;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const response = await client.embeddings.create({
+                model: 'text-embedding-3-small',
+                input: text,
+            });
+            return response.data[0].embedding;
+        } catch (error) {
+            lastError = error;
+
+            // Check if it's a rate limit error (429) or timeout
+            const isRateLimited = error.status === 429 ||
+                                  error.code === 'ETIMEDOUT' ||
+                                  error.code === 'ECONNRESET';
+
+            if (isRateLimited && attempt < MAX_RETRIES) {
+                const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+                console.log(`OpenAI rate limited, retrying in ${delay}ms (attempt ${attempt}/${MAX_RETRIES})`);
+                await sleep(delay);
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    throw lastError;
+}
+
+/**
+ * Index a knowledge base item - creates chunks and embeddings
+ * @param {number} itemId - The knowledge_base item ID to index
+ */
+async function indexKnowledgeItem(itemId) {
+    const client = await pool.connect();
+
+    try {
+        // 1. Get the knowledge base item
+        const itemResult = await client.query(
+            'SELECT id, content, file_type, indexing_status FROM knowledge_base WHERE id = $1',
+            [itemId]
+        );
+
+        if (itemResult.rows.length === 0) {
+            console.error(`[Indexing] Item ${itemId} not found`);
+            return;
+        }
+
+        const item = itemResult.rows[0];
+
+        // Check if already indexing (prevent double processing)
+        if (item.indexing_status === 'indexing') {
+            console.log(`[Indexing] Item ${itemId} is already being indexed, skipping`);
+            return;
+        }
+
+        // 2. Set status to indexing
+        await client.query(
+            `UPDATE knowledge_base
+             SET indexing_status = 'indexing', indexing_error = NULL, updated_at = NOW()
+             WHERE id = $1`,
+            [itemId]
+        );
+
+        const content = item.content || '';
+
+        // 3. Validate content - check for PDF first
+        if (item.file_type === 'pdf') {
+            await setIndexingError(client, itemId, 'PDF not supported yet');
+            return;
+        }
+
+        // 4. Validate content length
+        if (content.length < MIN_DOC_CHARS) {
+            await setIndexingError(client, itemId, `Document too short/empty (min ${MIN_DOC_CHARS} chars)`);
+            return;
+        }
+
+        if (content.length > MAX_DOC_CHARS) {
+            await setIndexingError(client, itemId, `Document too large (max ${MAX_DOC_CHARS} chars)`);
+            return;
+        }
+
+        // 5. Check OpenAI API key
+        const openai = getOpenAIClient();
+        if (!openai) {
+            await setIndexingError(client, itemId, 'OpenAI API key not configured');
+            return;
+        }
+
+        // 6. Split into chunks
+        const chunks = splitTextIntoChunks(content, CHUNK_SIZE, CHUNK_OVERLAP);
+
+        if (chunks.length === 0) {
+            await setIndexingError(client, itemId, 'Document produced no valid chunks');
+            return;
+        }
+
+        // 7. Check chunk count limit
+        if (chunks.length > MAX_CHUNKS) {
+            await setIndexingError(client, itemId, `Too many chunks (${chunks.length} > ${MAX_CHUNKS}). Document too large or complex.`);
+            return;
+        }
+
+        console.log(`[Indexing] Item ${itemId}: Processing ${chunks.length} chunks`);
+
+        // 8. Delete existing chunks
+        await client.query('DELETE FROM knowledge_chunks WHERE knowledge_base_id = $1', [itemId]);
+
+        // 9. Create embeddings and insert chunks
+        for (let i = 0; i < chunks.length; i++) {
+            const chunk = chunks[i];
+
+            try {
+                // Rate limiting - add a small delay between requests
+                if (i > 0) {
+                    await sleep(RATE_LIMIT_DELAY_MS);
+                }
+
+                // Create embedding
+                const embedding = await createEmbeddingWithRetry(openai, chunk);
+
+                // Insert chunk with embedding
+                await client.query(
+                    `INSERT INTO knowledge_chunks (knowledge_base_id, chunk_index, content, embedding)
+                     VALUES ($1, $2, $3, $4::vector)`,
+                    [itemId, i, chunk, vectorLiteral(embedding)]
+                );
+
+                console.log(`[Indexing] Item ${itemId}: Chunk ${i + 1}/${chunks.length} completed`);
+            } catch (error) {
+                console.error(`[Indexing] Item ${itemId}: Error processing chunk ${i}:`, error.message);
+                await setIndexingError(client, itemId, `Error embedding chunk ${i + 1}: ${error.message}`);
+                return;
+            }
+        }
+
+        // 10. Update status to indexed
+        await client.query(
+            `UPDATE knowledge_base
+             SET indexing_status = 'indexed',
+                 chunks_count = $2,
+                 indexing_error = NULL,
+                 updated_at = NOW()
+             WHERE id = $1`,
+            [itemId, chunks.length]
+        );
+
+        console.log(`[Indexing] Item ${itemId}: Successfully indexed with ${chunks.length} chunks`);
+
+    } catch (error) {
+        console.error(`[Indexing] Item ${itemId}: Fatal error:`, error.message);
+        try {
+            await setIndexingError(client, itemId, error.message);
+        } catch (e) {
+            console.error(`[Indexing] Item ${itemId}: Could not set error status:`, e.message);
+        }
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Helper to set indexing error status
+ * @param {pg.PoolClient} client - Database client
+ * @param {number} itemId - Item ID
+ * @param {string} errorMessage - Error message (will be truncated to 1000 chars)
+ */
+async function setIndexingError(client, itemId, errorMessage) {
+    const truncatedError = errorMessage.substring(0, 1000);
+    await client.query(
+        `UPDATE knowledge_base
+         SET indexing_status = 'error',
+             indexing_error = $2,
+             chunks_count = 0,
+             updated_at = NOW()
+         WHERE id = $1`,
+        [itemId, truncatedError]
+    );
+    console.log(`[Indexing] Item ${itemId}: Error - ${truncatedError}`);
+}
+
+// =============================================================================
+// END KNOWLEDGE BASE INDEXING
+// =============================================================================
 
 // Serve static files
 async function serveStatic(req, res) {
@@ -381,7 +677,7 @@ const routes = {
             const result = await client.query(`
                 SELECT
                     u.id, u.telegram_id, u.username, u.first_name, u.gender,
-                    u.language_code, u.notifications_enabled, u.created_at,
+                    u.language_code, u.timezone, u.notifications_enabled, u.created_at,
                     u.last_active_at, u.onboarding_completed, u.is_blocked,
                     COALESCE(s.total_moments, 0) as total_moments,
                     COALESCE(s.current_streak, 0) as current_streak
@@ -407,6 +703,7 @@ const routes = {
                     first_name: row.first_name,
                     gender: row.gender || 'unknown',
                     language_code: row.language_code,
+                    timezone: row.timezone || 'UTC',
                     notifications_enabled: row.notifications_enabled,
                     created_at: row.created_at?.toISOString(),
                     last_active_at: row.last_active_at?.toISOString(),
@@ -2212,6 +2509,12 @@ const routes = {
                     },
                     message: 'File uploaded successfully. Indexing will be processed.',
                 });
+
+                // Fire-and-forget: Start indexing asynchronously (don't await)
+                console.log(`[Upload] Starting async indexing for item ${item.id}`);
+                indexKnowledgeItem(item.id).catch(err => {
+                    console.error(`[Upload] Async indexing failed for item ${item.id}:`, err.message);
+                });
             } finally {
                 client.release();
             }
@@ -2276,6 +2579,12 @@ const routes = {
                 success: true,
                 message: `Reindexing scheduled for "${result.rows[0].title}"`,
                 item: result.rows[0],
+            });
+
+            // Fire-and-forget: Start indexing asynchronously (don't await)
+            console.log(`[Reindex] Starting async indexing for item ${itemId}`);
+            indexKnowledgeItem(itemId).catch(err => {
+                console.error(`[Reindex] Async indexing failed for item ${itemId}:`, err.message);
             });
         } finally {
             client.release();

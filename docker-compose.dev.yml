@@ -30,6 +30,8 @@ services:
     depends_on:
       postgres_dev:
         condition: service_healthy
+    ports:
+      - "3003:8080"
     environment:
       - PORT=8080
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres_dev:5432/${POSTGRES_DB:-mindsethappybot_dev}

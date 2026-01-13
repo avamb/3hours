@@ -214,6 +214,11 @@ class NotificationScheduler:
             if not user or not user.notifications_enabled:
                 return
 
+            # Check if user is blocked
+            if user.is_blocked:
+                logger.debug(f"User {user.telegram_id} is blocked, skipping notification")
+                return
+
             # Check if within active hours (timezone-aware)
             if not is_within_active_hours(user):
                 # Outside active hours, skipping this notification
@@ -333,6 +338,7 @@ class NotificationScheduler:
                     and_(
                         User.notifications_enabled == True,
                         User.onboarding_completed == True,
+                        User.is_blocked == False,
                     )
                 )
             )
@@ -430,12 +436,13 @@ class NotificationScheduler:
         summary_service = SummaryService()
 
         async with get_session() as session:
-            # Get all users with notifications enabled and onboarding completed
+            # Get all users with notifications enabled and onboarding completed (exclude blocked)
             result = await session.execute(
                 select(User).where(
                     and_(
                         User.notifications_enabled == True,
                         User.onboarding_completed == True,
+                        User.is_blocked == False,
                     )
                 )
             )
