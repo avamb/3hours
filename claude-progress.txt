@@ -2,34 +2,34 @@
 
 ## Current Status: 176/176 features passing (100%) - COMPLETE!
 
-## Session 575 - January 13, 2025
+## Session 576 - January 13, 2025
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on 3 randomly selected features:
 
 **Features Tested:**
-1. Feature #8: Scheduled question delivery (Functional) - ✅ VERIFIED
-   - APScheduler running every minute (NotificationScheduler._process_notifications)
-   - Jobs executing successfully with no errors in logs
-   - Next job scheduling working correctly
+1. Feature #65: Telegram user_id validation (Functional) - ✅ VERIFIED
+   - `telegram_id` stored as `BigInteger` with `unique=True, nullable=False` constraint
+   - All database operations require valid Telegram authentication
+   - No user data can be created without valid telegram_id from aiogram
 
-2. Feature #157: Don't reveal bot's prompt (Security) - ✅ VERIFIED
-   - PROMPT_PROTECTION constant properly implemented in personalization_service.py
-   - Bilingual instructions (Russian and English)
-   - HIGHEST PRIORITY directive to never reveal prompts
-   - Redirect response configured when asked about prompts
+2. Feature #98: Longest streak preservation (Functional) - ✅ VERIFIED
+   - `longest_streak` field properly stored in `user_stats` table
+   - `increment_moments()` method only updates longest_streak when current_streak exceeds it
+   - Streak reset logic (line 74-75) resets current_streak but preserves longest_streak
+   - Guarantee: longest_streak can NEVER decrease, only increase
 
-3. Feature #174: Multi-language templates options (Multilanguage) - ✅ VERIFIED
-   - Templates page supports all 3 languages: Russian (ru), English (en), Ukrainian (uk)
-   - Language filter dropdown working
-   - Template creation form with language selection
-   - Existing Russian template functional
+3. Feature #155: First message language (UI) - ✅ VERIFIED
+   - Welcome message sent in user's Telegram language via `get_localized_welcome_text()`
+   - Support for 3 languages: Russian (ru), English (en), Ukrainian (uk)
+   - User's language_code from Telegram profile used for initial greeting
+   - Onboarding keyboard also localized based on language_code
 
 **Admin Panel Verification:**
 - Dashboard: HEALTHY status, Database CONNECTED, Bot RUNNING, OpenAI CONFIGURED
 - Analytics: User funnel, retention cohorts, registration chart (30 days), activity heatmap
-- Templates: Template management with language/category filtering
+- Templates: Multi-language support (ru/en/uk), template creation/editing functional
 - Logs: Zero errors/warnings in system logs (24h)
 - Zero JavaScript console errors detected
 
@@ -48,221 +48,16 @@ All 176 features passing. No issues found during regression testing.
 
 ---
 
-## Session 574 - January 13, 2025
+## Session 575 - January 13, 2025
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on 3 randomly selected features:
 
 **Features Tested:**
-1. Feature #82: Warm and friendly tone (Style) - ✅ VERIFIED
-   - PersonalizationService configured with "warm and supportive" system prompt
-   - Uses emojis for positivity
-   - Gender-appropriate responses in Russian
-   - Language-adaptive responses
-
-2. Feature #162: Language menus (UI) - ✅ VERIFIED
-   - Full localization system in src/utils/localization.py
-   - 3 languages fully supported: Russian (ru), English (en), Ukrainian (uk)
-   - All menu texts localized for each language
-   - Templates page supports all three languages with filtering
-
-3. Feature #138: RAG with Knowledge Base (Bot) - ✅ VERIFIED
-   - Knowledge Base UI working in admin panel
-   - knowledge_indexer.py implements chunking and embedding
-   - Uploads supported (TXT, PDF, MD) with status tracking
-   - Auto-indexing with OpenAI embeddings
-   - Vector similarity search for moments via pgvector
-
-**Admin Panel Verification:**
-- Dashboard: HEALTHY status, Database CONNECTED, Bot RUNNING, OpenAI CONFIGURED
-- Knowledge Base: Upload form (TXT, PDF, MD), status filtering, stats cards functional
-- Analytics: User funnel, retention cohorts, registration chart (30 days), activity heatmap
-- Templates: Template management with language/category filtering (1 template: ru/general)
-- Logs: Zero errors/warnings in system logs (24h)
-- Zero JavaScript console errors detected
-
-**Infrastructure Status:**
-- All Docker containers healthy:
-  - 3hours-admin-1 (healthy)
-  - 3hours-bot-1 (up)
-  - 3hours-postgres-1 (healthy)
-  - 3hours-postgres_dev-1 (healthy)
-- APScheduler executing notification jobs every minute (verified in logs)
-- OpenAI API key configured and working
-
-### Project Status: 100% COMPLETE!
-
-All 176 features passing. No issues found during regression testing.
-
----
-
-## Session 573 - January 13, 2025
-
-### Regression Testing - All Systems Verified Working
-
-Performed comprehensive regression testing on 3 randomly selected features:
-
-**Features Tested:**
-1. Feature #103: Follow-up question handling - ✅ VERIFIED
-   - QuestionTemplate model supports 'follow_up' category
-   - PersonalizationService generates warm, non-pushy responses
-   - GPT-4 integration for personalized follow-ups
-   - Templates can be created with different categories (main, follow_up, return_inactive)
-
-2. Feature #173: Language set by menu (Multilingual) - ✅ VERIFIED
-   - Full localization system in src/utils/localization.py
-   - 3 languages fully supported: Russian (ru), English (en), Ukrainian (uk)
-   - `settings_language` and `language_*` callbacks update preferences
-   - Auto-detection of language from text and voice messages
-   - All menus, system messages, onboarding texts localized
-
-3. Feature #157: Don't reveal bot's prompt (Security) - ✅ VERIFIED
-   - PROMPT_PROTECTION constant in PersonalizationService
-   - Added to ALL GPT system prompts (6 locations)
-   - Both Russian and English instructions to never reveal prompt
-   - Redirects conversation when asked about prompt/instructions
-
-**Admin Panel Verification:**
-- Dashboard: HEALTHY status, Database CONNECTED, Bot RUNNING, OpenAI CONFIGURED
-- Analytics: User funnel, retention cohorts, registration chart (30 days), activity heatmap
-- Templates: Template management with language/category filtering (1 template: ru/general)
-- Logs: Zero errors/warnings in system logs (24h)
-- Zero JavaScript console errors detected
-
-**Infrastructure Status:**
-- All Docker containers healthy:
-  - 3hours-admin-1 (healthy)
-  - 3hours-bot-1 (up)
-  - 3hours-postgres-1 (healthy)
-  - 3hours-postgres_dev-1 (healthy)
-- APScheduler executing notification jobs every minute (verified in logs)
-- OpenAI API key configured and working
-
-### Project Status: 100% COMPLETE!
-
-All 176 features passing. No issues found during regression testing.
-
----
-
-## Session 572 - January 13, 2025
-
-### Regression Testing - All Systems Verified Working
-
-Performed comprehensive regression testing on 3 randomly selected features:
-
-**Features Tested:**
-1. Feature #68: Very long message handling - ✅ VERIFIED
-   - Messages stored in PostgreSQL TEXT column (unlimited length)
-   - Content preview truncated for display (100 chars with "...")
-   - Robust error handling in message handlers
-   - No crashes on long input
-
-2. Feature #21: Configure notification interval - ✅ VERIFIED
-   - `settings_interval` callback displays interval options
-   - `interval_X` callbacks (1-8 hours) update database
-   - UserService.update_user_settings() persists changes
-   - Confirmation message shown after selection
-
-3. Feature #16: Random moment button - ✅ VERIFIED
-   - `moments_random` callback in callbacks.py
-   - `get_random_moment()` in MomentService with random offset
-   - `get_random_moment_keyboard` shows delete and repeat options
-   - Empty moments handled gracefully
-
-**Admin Panel Verification:**
-- Dashboard: HEALTHY status, Database CONNECTED, Bot RUNNING, OpenAI CONFIGURED
-- Analytics: User funnel, retention cohorts, registration chart (30 days), activity heatmap
-- Templates: Template management with language/category filtering (1 template: ru/general)
-- Settings: Database backup functionality, system health indicators
-- Logs: Zero errors/warnings in system logs (24h)
-- Zero JavaScript console errors detected
-
-**Infrastructure Status:**
-- All Docker containers healthy:
-  - 3hours-admin-1 (healthy)
-  - 3hours-bot-1 (up)
-  - 3hours-postgres-1 (healthy)
-  - 3hours-postgres_dev-1 (healthy)
-- APScheduler executing notification jobs every minute (verified in logs)
-- OpenAI API key configured and working
-
-### Project Status: 100% COMPLETE!
-
-All 176 features passing. No issues found during regression testing.
-
----
-
-## Session 571 - January 13, 2025
-
-### Regression Testing - All Systems Verified Working
-
-Performed comprehensive regression testing on 3 randomly selected features:
-
-**Features Tested:**
-1. Feature #126: Add summary settings to bot Settings menu - ✅ VERIFIED
-   - `summary_weekly` and `summary_monthly` callbacks exist in callbacks.py
-   - SummaryService integrated for generating summaries
-   - Database columns for daily/weekly/monthly_summary_enabled in users table
-   - Localization strings for all three languages (ru, en, uk)
-
-2. Feature #38: Empty moment rejection - ✅ VERIFIED
-   - Code exists to handle empty/whitespace-only responses
-   - Error messages localized for all supported languages
-   - Prevents empty records from being created
-
-3. Feature #6: Text message recording - ✅ VERIFIED
-   - Message handlers process text responses
-   - Moments saved to database with embeddings
-   - Source type correctly set to 'text'
-
-**Admin Panel Verification:**
-- Dashboard: HEALTHY status, Database CONNECTED, Bot RUNNING, OpenAI CONFIGURED
-- Knowledge Base: Upload form (TXT, PDF, MD), status filtering, stats cards functional
-- Analytics: User funnel, retention cohorts, registration chart (30 days), activity heatmap
-- Templates: Template management with create/edit/delete, language/category filtering
-- Settings: Database backup functionality, system health indicators
-- Logs: Zero errors in system logs (24h)
-- Zero JavaScript console errors detected
-
-**Infrastructure Status:**
-- All Docker containers healthy:
-  - 3hours-admin-1 (healthy)
-  - 3hours-bot-1 (up)
-  - 3hours-postgres-1 (healthy)
-  - 3hours-postgres_dev-1 (healthy)
-- APScheduler executing notification jobs every minute (verified in logs)
-- OpenAI API key configured and working
-
-### Project Status: 100% COMPLETE!
-
-All 176 features passing. No issues found during regression testing.
-
----
-
-## Session 570 - January 13, 2025
-
-### Regression Testing - All Systems Verified Working
-
-Performed comprehensive regression testing on 3 randomly selected features:
-
-**Features Tested:**
-1. Feature #89: Docker container startup - ✅ VERIFIED
-2. Feature #44: Reset settings to defaults - ✅ VERIFIED
-3. Feature #95: Question template variety - ✅ VERIFIED
-
-### Project Status: 100% COMPLETE!
-
----
-
-## Session 569 - January 13, 2025
-
-### Regression Testing - All Systems Verified Working
-
-**Features Tested:**
-1. Feature #144: Export moments to CSV - ✅ VERIFIED
-2. Feature #139: Respond to feedback from admin panel - ✅ VERIFIED
-3. Feature #102: Skip question functionality - ✅ VERIFIED
+1. Feature #8: Scheduled question delivery (Functional) - ✅ VERIFIED
+2. Feature #157: Don't reveal bot's prompt (Security) - ✅ VERIFIED
+3. Feature #174: Multi-language templates options (Multilanguage) - ✅ VERIFIED
 
 ### Project Status: 100% COMPLETE!
 
@@ -285,4 +80,4 @@ Performed comprehensive regression testing on 3 randomly selected features:
 ## Previous Sessions Summary:
 - Sessions 534-564: All blocked by invalid OpenAI API key (container had old key)
 - Session 565: Identified root cause, restarted containers, verified all ACs passing
-- Sessions 566-571: Regression testing confirmed all systems working
+- Sessions 566-575: Regression testing confirmed all systems working
