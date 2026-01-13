@@ -644,30 +644,34 @@ async function viewUserDialogs(userId, userName) {
     navigateTo('dialogs');
 
     // Wait for dialogs page to load and then select the user
-    // Use a small timeout to ensure the page is rendered
-    setTimeout(async () => {
-        // Find the user in the dialogs list and select them
-        const userItems = document.querySelectorAll('.dialog-user-item');
-        let found = false;
+    // Use a small retry loop to wait for the dialogs user list to be rendered
+    const targetId = Number(userId);
+    const maxAttempts = 20;
+    let attempts = 0;
 
-        for (const item of userItems) {
-            if (item.onclick && item.onclick.toString().includes(userId)) {
-                item.click();
-                found = true;
-                break;
-            }
+    const trySelect = async () => {
+        // Prefer exact match by data attribute (robust against usernames containing digits)
+        const item = document.querySelector(`.dialog-user-item[data-user-id="${targetId}"]`);
+        if (item) {
+            item.click();
+            return;
         }
 
-        // If user not found in the list (e.g., no dialogs yet), show message
-        if (!found) {
-            // Directly load the user's dialog
-            currentDialogUserId = userId;
-            document.getElementById('dialogs-header').innerHTML = `
-                <span class="dialogs-user-name">${escapeHtml(userName)}</span>
-            `;
-            await loadUserDialog(userId);
+        attempts += 1;
+        if (attempts < maxAttempts) {
+            setTimeout(trySelect, 150);
+            return;
         }
-    }, 300);
+
+        // If user not found in the list (e.g., no dialogs yet), load directly
+        currentDialogUserId = targetId;
+        document.getElementById('dialogs-header').innerHTML = `
+            <span class="dialogs-user-name">${escapeHtml(userName)}</span>
+        `;
+        await loadUserDialog(targetId);
+    };
+
+    setTimeout(trySelect, 150);
 }
 
 // Make block/unblock/sendMessage/viewUserDialogs functions globally accessible
@@ -1916,6 +1920,7 @@ function renderDialogUsersList(search = '') {
 
         return `
             <div class="dialog-user-item ${currentDialogUserId === userId ? 'active' : ''}"
+                 data-user-id="${userId}"
                  onclick="selectDialogUser(${userId}, '${displayName}', this)">
                 <div class="dialog-user-name">${displayName}</div>
                 <div class="dialog-user-preview">${preview || '-'}</div>
