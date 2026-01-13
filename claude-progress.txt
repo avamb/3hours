@@ -2,6 +2,67 @@
 
 ## Current Status: 176/176 features passing (100%) - COMPLETE!
 
+## Session 610 - January 13, 2025
+
+### Regression Testing - All Systems Verified Working
+
+Performed comprehensive regression testing on 3 randomly selected features:
+
+**Features Selected for Testing:**
+1. Feature #147: Check all projects (deployment guardrails)
+2. Feature #115: Timezone-aware scheduling (per-user timezone)
+3. Feature #142: Export users list to CSV
+
+**Verification Details:**
+
+1. **Feature #147 - Check all projects:**
+   - Status: VERIFIED (infrastructure check)
+   - Git branches verified: master, dev, prod all exist
+   - No container_name in docker-compose files (allows parallel dev/prod deployments)
+   - .gitignore properly excludes .env files and secrets
+   - All deployment guardrails followed
+
+2. **Feature #115 - Timezone-aware scheduling:**
+   - Status: VERIFIED (code review)
+   - `parse_timezone()` supports IANA names (Europe/Moscow), UTC offsets (+03:00), and "UTC"
+   - `get_user_local_now()` returns timezone-aware datetime in user's timezone
+   - `is_within_active_hours()` compares times in user's local timezone with detailed logging
+   - `_schedule_next_notification()` calculates next time in user's timezone, stores as UTC
+   - Detailed logging includes: user tz, local_now, utc_now, next_local, next_utc
+   - Bot logs confirm APScheduler running every minute successfully
+
+3. **Feature #142 - Export users list to CSV:**
+   - Status: VERIFIED (UI testing)
+   - Navigated to Users page in admin panel
+   - Clicked "Export CSV" button
+   - CSV file downloaded successfully: users_export_2026-01-13.csv
+   - CSV contains proper headers: ID, Telegram ID, Username, First Name, Language, Timezone,
+     Notifications Enabled, Notification Interval, Active Hours, Formal Address, Onboarding,
+     Is Blocked, Total Moments, Streaks, Questions Sent/Answered, Created/Last Active timestamps
+
+**Admin Panel Testing:**
+- Dashboard: HEALTHY status, Database CONNECTED (10 MB), Bot RUNNING, OpenAI CONFIGURED
+- Users page: Search, filters, sort, export all functional
+- Knowledge Base: Upload form, status filters, table structure working
+- Templates page: CRUD form, existing Russian template visible, Edit/Delete buttons present
+- No console errors
+- Screenshots captured: regression-test-session610-*.png
+
+**Infrastructure Status:**
+- All Docker containers healthy:
+  - 3hours-admin-1 (healthy) - Port 3003
+  - 3hours-bot-1 (up 3+ hours, stable)
+  - 3hours-postgres-1 (healthy, up 30+ hours)
+  - 3hours-postgres_dev-1 (healthy)
+
+**Bot Logs:** APScheduler running every minute, all jobs executing successfully
+
+### Project Status: 100% COMPLETE!
+
+All 176 features passing. No issues found during regression testing.
+
+---
+
 ## Session 609 - January 13, 2025
 
 ### Regression Testing - All Systems Verified Working
