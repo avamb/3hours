@@ -2,38 +2,36 @@
 
 ## Current Status: 176/176 features passing (100%) - COMPLETE!
 
-## Session 584 - January 13, 2025
+## Session 585 - January 13, 2025
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on 3 randomly selected features:
 
 **Features Selected for Testing:**
-1. Feature #95: Question template variety (Functional) - VERIFIED
-2. Feature #160: Порядок записей (Record ordering) - VERIFIED  
-3. Feature #66: Input sanitization - SQL injection prevention (Functional) - VERIFIED
+1. Feature #111: Admin service port contract (Deploy) - VERIFIED
+2. Feature #28: GDPR - Delete all data (Functional) - VERIFIED  
+3. Feature #84: Reply keyboard layout (Style) - VERIFIED
 
 **Verification Details:**
 
-1. **Feature #95 (Question template variety):**
-   - Database query confirmed 20+ templates exist
-   - Categories: main, follow_up, return_inactive all present
-   - Formal (Вы) and informal (Ты) variants for each
-   - Admin panel Templates page shows language/category filters
-   - Active template: "Привет, {name}! Что хорошего произошло сегодня?"
+1. **Feature #111 (Admin service port contract):**
+   - Server uses `PORT` env variable (default 8080)
+   - Binds to `0.0.0.0:$PORT` for Docker/Dokploy compatibility
+   - Admin panel accessible on port 3003
+   - Verified in admin/server.mjs: `server.listen(PORT, '0.0.0.0', ...)`
 
-2. **Feature #160 (Record ordering - newest first):**
-   - All tables use `ORDER BY ... DESC` pattern (verified via grep)
-   - Users page has "Sort By" dropdown with "Newest First" option
-   - Moments, conversations, notifications all sort by created_at DESC
-   - Code verified in both admin/app.py and admin/server.mjs
+2. **Feature #28 (GDPR - Delete all data):**
+   - `/delete_data` command handler in commands.py
+   - GDPRService.delete_all_user_data() deletes in proper order:
+     - Scheduled notifications, User stats, Conversations, Moments, User
+   - Confirmation dialog with delete_confirm/delete_cancel callbacks
+   - Cascade delete relationships defined in User model
 
-3. **Feature #66 (SQL injection prevention):**
-   - SQLAlchemy ORM used throughout - automatic parameterization
-   - Admin panel uses `text()` function with `:param` dictionary syntax
-   - Node.js services use `$1, $2` parameterized queries
-   - No raw SQL string concatenation with user input found
-   - All `session.execute()` calls use `select()` statements
+3. **Feature #84 (Reply keyboard layout):**
+   - Main menu: 2x2 layout (Moments, Stats / Settings, Talk)
+   - InlineKeyboardMarkup with proper row structure
+   - Consistent layout across all keyboards
 
 **Infrastructure Status:**
 - All Docker containers healthy:
@@ -54,12 +52,12 @@ All 176 features passing. No issues found during regression testing.
 
 ## Previous Sessions Summary:
 
+- **Session 584**: Regression testing - Features #95, #160, #66 verified
 - **Session 583**: Regression testing - Features #42, #19, #112 verified
 - **Session 582**: Regression testing - Features #107, #175, #112 verified
 - **Session 581**: Regression testing - Features #78, #7, #29 verified
 - **Sessions 566-580**: Continuous regression testing, all systems working
 - **Session 565**: Identified root cause of API key issue, restarted containers, verified all features passing
-- **Sessions 534-564**: All blocked by invalid OpenAI API key
 
 ## Key Milestones:
 - 176/176 Feature Completion (100%)
