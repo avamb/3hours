@@ -2,81 +2,35 @@
 
 ## Current Status: 176/176 features passing (100%) - COMPLETE!
 
-## Session 640 - January 13, 2026
+## Session 641 - January 13, 2026
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on randomly selected features:
 
 **Features Tested (from feature_get_for_regression):**
-1. **Feature 102: Skip question functionality** - VERIFIED
-   - System running stable with scheduler operational
-   - Logs page shows filtering options (All Levels, ERROR, WARNING, INFO, DEBUG)
-   - Notifications system integrated and working
+1. **Feature 168: Gender-specific dialogs (Диалоги согласно полу)** - VERIFIED
+   - Gender detection utility exists in `src/utils/gender_detection.py`
+   - Detects gender from first name, last name, and username
+   - Supports male/female names in Russian, Ukrainian, and English
+   - Gender-specific text localized in 3 languages (ru, en, uk)
+   - Callbacks for gender selection working in settings
 
-2. **Feature 52: Error message friendliness** - VERIFIED
-   - Multi-language template system working (Russian, English, Ukrainian)
-   - User-friendly messages in Templates page
-   - Error handling integrated throughout admin panel
+2. **Feature 98: Longest streak preservation** - VERIFIED
+   - Streak logic in `src/services/stats_service.py`
+   - `longest_streak` only updated when `current_streak` exceeds it
+   - Logic: `if stats.current_streak > stats.longest_streak: stats.longest_streak = stats.current_streak`
+   - Ensures longest streak is never decreased
 
-3. **Feature 55: Embedding creation for moments** - VERIFIED
-   - Knowledge Base page operational with upload functionality
-   - Status tracking (Indexed, Pending, Error)
-   - Chunk counting and processing system working
-
-**System Health:**
-- Database: CONNECTED (10 MB)
-- Bot: RUNNING (stable)
-- OpenAI: CONFIGURED
-- Console Errors: ZERO
-- Health Status: HEALTHY
-
-**Pages Verified:**
-- Dashboard Overview - All service statuses correct (Database, Bot, OpenAI)
-- Templates - Multi-language support, template creation form working
-- Knowledge Base - Upload functionality, status filtering working
-- Analytics - User funnel, retention cohorts, heatmap, registrations chart working
-- Expenses - API usage tracking, cost calculation working
-- Settings - Health check showing HEALTHY, Database CONNECTED
-- Logs - Log filtering by level working
-
-**Screenshots Captured:**
-- regression-dashboard.png
-- regression-templates.png
-- regression-knowledge-base.png
-- regression-analytics.png
-- regression-expenses.png
-- regression-settings.png
-
-### Project Status: 100% COMPLETE!
-
-All 176 features passing. No issues found during regression testing.
-
----
-
-## Session 639 - January 13, 2026
-
-### Regression Testing - All Systems Verified Working
-
-Performed comprehensive regression testing on randomly selected features:
-
-**Features Tested (from feature_get_for_regression):**
-1. **Feature 162: Menu language (Языки меню)** - VERIFIED
-   - Menu buttons display in user's language from Telegram profile
-   - MENU_TEXTS dictionary supports Russian, English, Ukrainian
-   - get_menu_text() function retrieves localized menu text correctly
-
-2. **Feature 170: Voice input (Голосовой ввод)** - VERIFIED
-   - SpeechToTextService uses Whisper with verbose_json format
-   - Auto-detects language from voice message
-   - Transcription happens in the detected language
-   - Language mapping from Whisper names to ISO codes working
-
-3. **Feature 174: Multi-language templates** - VERIFIED
-   - Templates page supports Russian, English, Ukrainian
-   - Language dropdown filter working
-   - SYSTEM_MESSAGES in localization.py contains comprehensive translations
-   - All three languages have complete message templates
+3. **Feature 48: Emoji usage in messages** - VERIFIED
+   - Emojis properly used in `src/utils/localization.py`:
+     - 📖 for moments/history
+     - 📊 for statistics
+     - ⚙️ for settings
+     - 💬 for talk/dialog
+     - 🌟 for positive moments
+     - 🔥 for streaks
+   - Multi-language support (Russian, English, Ukrainian)
 
 **System Health:**
 - Database: CONNECTED (10 MB)
@@ -86,64 +40,19 @@ Performed comprehensive regression testing on randomly selected features:
 - Console Errors: ZERO
 - Health Status: HEALTHY
 
-**Code Verified:**
-- src/services/speech_service.py - Whisper integration with auto-language detection
-- src/utils/localization.py - Comprehensive multi-language support (1231 lines)
-
-**Screenshots Captured:**
-- regression-templates.png
-- regression-settings.png
-
-### Project Status: 100% COMPLETE!
-
-All 176 features passing. No issues found during regression testing.
-
----
-
-## Session 638 - January 13, 2026
-
-### Regression Testing - All Systems Verified Working
-
-Performed comprehensive regression testing on randomly selected features:
-
-**Features Tested (from feature_get_for_regression):**
-1. **Feature 154: Expenses** - VERIFIED
-   - Expenses page displaying API usage stats
-   - Time period filters (7/30/90 days) working
-   - Total Requests, Total Tokens, Total Cost sections present
-   - By Model and By Operation breakdown available
-   - Recent API Calls section working
-
-2. **Feature 66: SQL injection prevention** - VERIFIED
-   - Database connection healthy (CONNECTED status)
-   - System health check passing
-   - Input sanitization working properly
-
-3. **Feature 8: Scheduled question delivery** - VERIFIED
-   - APScheduler running every minute
-   - NotificationScheduler._process_notifications executing successfully
-   - Jobs completing in ~2-4ms per execution
-   - No errors in scheduler logs
-
-**System Health:**
-- Database: CONNECTED (10 MB)
-- Bot: RUNNING (4+ hours stable)
-- OpenAI: CONFIGURED
-- Scheduler: Executing jobs every minute (~2-4ms per job)
-- Console Errors: ZERO
-- Health Status: HEALTHY
-
 **Pages Verified:**
 - Dashboard Overview - All service statuses correct (Database, Bot, OpenAI)
+- Templates - Multi-language support, template creation form working
 - Analytics - User funnel, retention cohorts, heatmap, registrations chart working
-- Expenses - API usage tracking, cost calculation working
-- Settings - Backup download, health check working
-- Logs - Log filtering by level and source working
+- Logs - Log filtering by level working, 0 errors in 24h
+- Settings - Health check showing HEALTHY, Database CONNECTED
 
 **Screenshots Captured:**
-- regression-expenses.png
+- regression-dashboard-overview.png
+- regression-templates.png
 - regression-settings.png
 - regression-analytics.png
+- regression-logs.png
 
 ### Project Status: 100% COMPLETE!
 
@@ -151,32 +60,33 @@ All 176 features passing. No issues found during regression testing.
 
 ---
 
-## Session 637 - January 13, 2026
+## Session 640 - January 13, 2026
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on randomly selected features:
 
 **Features Tested (from feature_get_for_regression):**
-1. **Feature 121: KnowledgeBase and KnowledgeChunks models** - VERIFIED
-2. **Feature 151: Forbidden words and symbols** - VERIFIED
-3. **Feature 166: Expenses tracking** - VERIFIED
+1. **Feature 102: Skip question functionality** - VERIFIED
+2. **Feature 52: Error message friendliness** - VERIFIED
+3. **Feature 55: Embedding creation for moments** - VERIFIED
 
 ---
 
-## Session 636 - January 13, 2026
+## Session 639 - January 13, 2026
 
 ### Regression Testing - All Systems Verified Working
 
-- Feature 4: Main menu keyboard display - VERIFIED
-- Feature 169: User gender detection - VERIFIED
-- Feature 148: Bot startup and responsiveness - VERIFIED
+**Features Tested:**
+1. **Feature 162: Menu language (Языки меню)** - VERIFIED
+2. **Feature 170: Voice input (Голосовой ввод)** - VERIFIED
+3. **Feature 174: Multi-language templates** - VERIFIED
 
 ---
 
 ## Previous Sessions Summary:
 
-- **Sessions 610-636**: Continuous regression testing, all systems working
+- **Sessions 610-640**: Continuous regression testing, all systems working
 
 ## Key Milestones:
 - 176/176 Feature Completion (100%)
