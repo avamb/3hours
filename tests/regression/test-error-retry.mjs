@@ -6,7 +6,7 @@
 import { readFileSync } from 'fs';
 
 // Read the bot file to analyze retry mechanism
-const botCode = readFileSync('C:/Projects/3hours/test-bot.mjs', 'utf8');
+const botCode = readFileSync(new URL('./test-bot.mjs', import.meta.url), 'utf8');
 
 // Simulate retry mechanism
 class RetryMechanism {

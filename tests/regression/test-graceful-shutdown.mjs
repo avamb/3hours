@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test script for graceful shutdown
  * Tests Feature #91: Graceful shutdown
@@ -8,7 +9,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 // Mock data storage
 let users = new Map();
 let moments = new Map();
-const DATA_FILE = 'C:/Projects/3hours/test-shutdown-data.json';
+const DATA_FILE = fileURLToPath(new URL('./test-shutdown-data.json', import.meta.url));
 
 // Save data function (same as in test-bot.mjs)
 function saveDataToFile() {

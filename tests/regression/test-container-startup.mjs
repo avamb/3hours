@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test Docker Container Startup - Feature #89
  * Verifies Docker containers configuration and bot startup
@@ -15,7 +16,7 @@ console.log("Note: Testing Docker configuration and bot responsiveness.\n");
 console.log("Step 1: Verify docker-compose configuration");
 console.log("-".repeat(50));
 
-const dockerComposeExists = existsSync('C:/Projects/3hours/docker-compose.yml');
+const dockerComposeExists = existsSync(fileURLToPath(new URL('../../docker-compose.yml', import.meta.url)));
 console.log(`docker-compose.yml exists: ${dockerComposeExists ? '✅ YES' : '❌ NO'}`);
 
 let dockerComposeValid = false;
@@ -25,7 +26,7 @@ let hasDependsOn = false;
 let hasHealthcheck = false;
 
 if (dockerComposeExists) {
-    const dockerCompose = readFileSync('C:/Projects/3hours/docker-compose.yml', 'utf8');
+    const dockerCompose = readFileSync(new URL('../../docker-compose.yml', import.meta.url), 'utf8');
 
     // Check for required services
     hasPostgresService = dockerCompose.includes('postgres:') && dockerCompose.includes('pgvector/pgvector');
@@ -49,7 +50,7 @@ console.log("Step 2: Verify PostgreSQL container starts");
 console.log("-".repeat(50));
 
 if (dockerComposeExists) {
-    const dockerCompose = readFileSync('C:/Projects/3hours/docker-compose.yml', 'utf8');
+    const dockerCompose = readFileSync(new URL('../../docker-compose.yml', import.meta.url), 'utf8');
 
     const hasPgVector = dockerCompose.includes('pgvector/pgvector:pg16');
     console.log(`pgvector image configured: ${hasPgVector ? '✅ YES' : '❌ NO'}`);
@@ -69,12 +70,12 @@ console.log();
 console.log("Step 3: Verify bot container starts");
 console.log("-".repeat(50));
 
-const dockerfileExists = existsSync('C:/Projects/3hours/Dockerfile');
+const dockerfileExists = existsSync(fileURLToPath(new URL('../../Dockerfile', import.meta.url)));
 console.log(`Dockerfile exists: ${dockerfileExists ? '✅ YES' : '❌ NO'}`);
 
 let dockerfileValid = false;
 if (dockerfileExists) {
-    const dockerfile = readFileSync('C:/Projects/3hours/Dockerfile', 'utf8');
+    const dockerfile = readFileSync(new URL('../../Dockerfile', import.meta.url), 'utf8');
 
     const hasPythonBase = dockerfile.includes('FROM python:3.11');
     console.log(`Python base image: ${hasPythonBase ? '✅ YES' : '❌ NO'}`);
@@ -97,7 +98,7 @@ console.log("Step 4: Verify containers can communicate");
 console.log("-".repeat(50));
 
 if (dockerComposeExists) {
-    const dockerCompose = readFileSync('C:/Projects/3hours/docker-compose.yml', 'utf8');
+    const dockerCompose = readFileSync(new URL('../../docker-compose.yml', import.meta.url), 'utf8');
 
     const hasDatabaseUrl = dockerCompose.includes('DATABASE_URL=postgresql');
     console.log(`Database URL configured: ${hasDatabaseUrl ? '✅ YES' : '❌ NO'}`);
@@ -115,7 +116,7 @@ console.log("Step 5: Verify bot is responsive");
 console.log("-".repeat(50));
 
 // Read bot code to verify it can start and respond
-const botCode = readFileSync('C:/Projects/3hours/test-bot.mjs', 'utf8');
+const botCode = readFileSync(new URL('./test-bot.mjs', import.meta.url), 'utf8');
 
 const hasMainFunction = botCode.includes('async function main()');
 console.log(`Main function exists: ${hasMainFunction ? '✅ YES' : '❌ NO'}`);
