@@ -2,7 +2,7 @@
 
 ## Current Status: 177/177 features complete (100%)
 
-## Last Session: Session 837 (January 13, 2026)
+## Last Session: Session 838 (January 13, 2026)
 
 ### What was done:
 - Performed comprehensive regression testing on the system
@@ -22,31 +22,29 @@
 - No console errors detected
 - APScheduler executing notification jobs every minute successfully
 
+### Random Features Verified (from feature_get_for_regression):
+1. Feature 6 (Text message recording) - Database schema verified with all required columns:
+   - id, user_id, content, source_type, original_voice_file_id
+   - embedding (VECTOR type for pgvector)
+   - mood_score, topics, created_at
+2. Feature 33 (Inactive user re-engagement - week) - APScheduler jobs confirmed running:
+   - _process_notifications (every minute)
+   - _schedule_user_notifications (every hour)
+   - _check_summary_delivery (every hour)
+3. Feature 143 (Export dialogs to CSV/JSON) - Both export buttons tested:
+   - CSV export: dialogs_export_2026-01-13.csv with proper headers
+   - JSON export: dialogs_export_2026-01-13.json with valid JSON array
+
 ### Pages Verified:
-- Dashboard Overview - Status badges, user stats, moments stats
-- Users - Table with search, filters (language, status), sorting, CSV export
-- Analytics - User funnel, retention cohorts, registration chart, activity heatmap
-- Settings - Database backup, health check (HEALTHY), database status (CONNECTED)
-- Templates - Create/edit templates with preview, existing template visible
-- Knowledge Base - Upload form for TXT/PDF/MD, stats cards
+- Dashboard Overview - Status badges (CONNECTED, RUNNING, CONFIGURED), user stats, moments stats
+- Dialogs - Export CSV/JSON buttons working, user search, type filter dropdown
+- Settings - Database backup button, Health Check (HEALTHY), Database Status (CONNECTED)
+- Analytics - User Funnel with purple bubbles, Retention by Cohorts table, Activity Heatmap
 
 ### Screenshots Captured:
-- regression-dashboard-session837.png - Dashboard with all status indicators green
-- regression-settings-session837.png - Settings page with HEALTHY status
-- regression-users-session837.png - Users page with filters and table
-- regression-knowledge-base-session837.png - Knowledge Base upload form
-- regression-analytics-session837.png - Analytics page with User Funnel
-- regression-templates-session837.png - Templates page with Russian greeting
-
-### Random Features Verified (from feature_get_for_regression):
-1. Feature 128 (Social profile parsing) - Knowledge Base infrastructure ready
-2. Feature 64 (User isolation - cannot see others' data) - Users page shows proper isolation
-3. Feature 90 (Environment variables configuration) - All env vars loaded (HEALTHY status)
-
-### APScheduler Jobs Confirmed Running:
-- _process_notifications - runs every minute (interval[0:01:00])
-- _schedule_user_notifications - runs every hour (interval[1:00:00])
-- _check_summary_delivery - runs every hour (interval[1:00:00])
+- regression-dialogs-export-session838.png - Dialogs page with export buttons
+- regression-settings-session838.png - Settings page with HEALTHY status
+- regression-analytics-session838.png - Analytics page with User Funnel visualization
 
 ### No Issues Found
 All systems operational. Project is complete and stable.
