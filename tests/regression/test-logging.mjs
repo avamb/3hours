@@ -6,7 +6,7 @@
 import { readFileSync } from 'fs';
 
 // Read the bot file to analyze logging
-const botCode = readFileSync('C:/Projects/3hours/test-bot.mjs', 'utf8');
+const botCode = readFileSync(new URL('./test-bot.mjs', import.meta.url), 'utf8');
 
 // Count different log types
 function countLogTypes(code) {
@@ -117,8 +117,8 @@ console.log("-".repeat(50));
 console.log("Logging destination: stdout/stderr (console)");
 console.log("");
 console.log("In production, logs can be redirected to files:");
-console.log("  node test-bot.mjs > bot.log 2>&1");
-console.log("  node test-bot.mjs 2>&1 | tee bot.log");
+console.log("  node tests/regression/test-bot.mjs > bot.log 2>&1");
+console.log("  node tests/regression/test-bot.mjs 2>&1 | tee bot.log");
 console.log("");
 console.log("✅ Console logging is suitable for container environments (Docker)");
 

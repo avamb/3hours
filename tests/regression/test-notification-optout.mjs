@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test script for notification opt-out functionality
  * Tests Feature #79: Notification opt-out
@@ -20,7 +21,7 @@ const testUser = {
 };
 
 // Simulate bot data file
-const DATA_FILE = 'C:/Projects/3hours/bot-data.json';
+const DATA_FILE = fileURLToPath(new URL('../../bot-data.json', import.meta.url));
 
 // Helper function to check if user should receive reminders
 function shouldSendReminder(user) {

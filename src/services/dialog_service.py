@@ -52,7 +52,9 @@ class DialogService:
         message: str,
     ) -> str:
         """
-        Process a message in free dialog mode
+        Process a message in free dialog mode with Hybrid RAG.
+
+        Uses Knowledge Base + User Memory + Anti-repetition for better responses.
 
         Args:
             telegram_id: User's Telegram ID
@@ -71,19 +73,24 @@ class DialogService:
         # Get recent context
         context = await self._get_dialog_context(telegram_id)
 
-        # Generate response
-        response = await self.personalization_service.generate_dialog_response(
+        # Generate response with Hybrid RAG
+        response, rag_metadata = await self.personalization_service.generate_dialog_response_with_rag(
             telegram_id=telegram_id,
             message=message,
             context=context,
         )
 
-        # Save bot response
+        # Save bot response with RAG metadata
         await self._save_conversation(
             telegram_id=telegram_id,
             message_type="bot_reply",
             content=response,
+            metadata=rag_metadata,
         )
+
+        logger.info(f"Dialog response with RAG: mode={rag_metadata.get('rag_mode')}, "
+                    f"kb_chunks={rag_metadata.get('kb_chunks_count', 0)}, "
+                    f"moments={rag_metadata.get('moments_count', 0)}")
 
         return response
 

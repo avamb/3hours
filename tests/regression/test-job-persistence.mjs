@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test APScheduler Job Persistence - Feature #58
  * Verifies scheduled jobs survive bot restart
@@ -6,7 +7,7 @@
 import { readFileSync, existsSync } from 'fs';
 
 // Read bot code to verify implementation
-const botCode = readFileSync('C:/Projects/3hours/test-bot.mjs', 'utf8');
+const botCode = readFileSync(new URL('./test-bot.mjs', import.meta.url), 'utf8');
 
 console.log("=== Feature #58: APScheduler Job Persistence - Test ===\n");
 
@@ -122,7 +123,7 @@ console.log(`Job type preserved: ${parsed.jobType === 'question' ? '✅ YES' : '
 console.log("Step 7: Check actual data file structure");
 console.log("-".repeat(50));
 
-const dataFile = 'C:/Projects/3hours/bot-data.json';
+const dataFile = fileURLToPath(new URL('../../bot-data.json', import.meta.url));
 if (existsSync(dataFile)) {
     try {
         const data = JSON.parse(readFileSync(dataFile, 'utf8'));
