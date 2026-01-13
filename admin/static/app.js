@@ -299,7 +299,7 @@ async function loadUsers(offset = 0) {
             tbody.innerHTML = '<tr><td colspan="10" class="loading">No users found</td></tr>';
         } else {
             tbody.innerHTML = users.map(user => `
-                <tr>
+                <tr class="clickable-row" onclick="viewUserDialogs(${user.id}, '${escapeHtml(user.username || user.first_name || 'User ' + user.id)}')" title="Click to view dialogs">
                     <td>${user.id}</td>
                     <td>${user.telegram_id}</td>
                     <td>${user.username || '-'}</td>
@@ -310,7 +310,7 @@ async function loadUsers(offset = 0) {
                     <td>${user.current_streak}</td>
                     <td>${formatRelativeTime(user.last_active_at)}</td>
                     <td class="actions">
-                        <button class="btn btn-primary btn-small" onclick="showUserDetail(${user.id})">View</button>
+                        <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showUserDetail(${user.id})">View</button>
                     </td>
                 </tr>
             `).join('');
@@ -631,10 +631,43 @@ async function sendDirectMessage(userId) {
     }
 }
 
-// Make block/unblock/sendMessage functions globally accessible
+// Navigate to dialogs page with specific user selected
+async function viewUserDialogs(userId, userName) {
+    // Navigate to dialogs page
+    navigateTo('dialogs');
+
+    // Wait for dialogs page to load and then select the user
+    // Use a small timeout to ensure the page is rendered
+    setTimeout(async () => {
+        // Find the user in the dialogs list and select them
+        const userItems = document.querySelectorAll('.dialog-user-item');
+        let found = false;
+
+        for (const item of userItems) {
+            if (item.onclick && item.onclick.toString().includes(userId)) {
+                item.click();
+                found = true;
+                break;
+            }
+        }
+
+        // If user not found in the list (e.g., no dialogs yet), show message
+        if (!found) {
+            // Directly load the user's dialog
+            currentDialogUserId = userId;
+            document.getElementById('dialogs-header').innerHTML = `
+                <span class="dialogs-user-name">${escapeHtml(userName)}</span>
+            `;
+            await loadUserDialog(userId);
+        }
+    }, 300);
+}
+
+// Make block/unblock/sendMessage/viewUserDialogs functions globally accessible
 window.blockUser = blockUser;
 window.unblockUser = unblockUser;
 window.sendDirectMessage = sendDirectMessage;
+window.viewUserDialogs = viewUserDialogs;
 
 // Modal close - user modal
 document.querySelector('#user-modal .modal-close').addEventListener('click', () => {
