@@ -677,7 +677,7 @@ const routes = {
             const result = await client.query(`
                 SELECT
                     u.id, u.telegram_id, u.username, u.first_name, u.gender,
-                    u.language_code, u.notifications_enabled, u.created_at,
+                    u.language_code, u.timezone, u.notifications_enabled, u.created_at,
                     u.last_active_at, u.onboarding_completed, u.is_blocked,
                     COALESCE(s.total_moments, 0) as total_moments,
                     COALESCE(s.current_streak, 0) as current_streak
@@ -703,6 +703,7 @@ const routes = {
                     first_name: row.first_name,
                     gender: row.gender || 'unknown',
                     language_code: row.language_code,
+                    timezone: row.timezone || 'UTC',
                     notifications_enabled: row.notifications_enabled,
                     created_at: row.created_at?.toISOString(),
                     last_active_at: row.last_active_at?.toISOString(),

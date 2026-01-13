@@ -296,9 +296,15 @@ async function loadUsers(offset = 0) {
         const { users, total } = await api(`/users?${params}`);
 
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="loading">No users found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="loading">No users found</td></tr>';
         } else {
-            tbody.innerHTML = users.map(user => `
+            tbody.innerHTML = users.map(user => {
+                const timezoneSet = user.timezone && user.timezone !== 'UTC';
+                const timezoneDisplay = user.timezone || 'UTC';
+                const timezoneFlag = timezoneSet
+                    ? `<span class="timezone-set" title="Timezone set by user">✓ ${timezoneDisplay}</span>`
+                    : `<span class="timezone-default" title="Default timezone (not set)">${timezoneDisplay}</span>`;
+                return `
                 <tr class="clickable-row" onclick="viewUserDialogs(${user.id}, '${escapeHtml(user.username || user.first_name || 'User ' + user.id)}')" title="Click to view dialogs">
                     <td>${user.id}</td>
                     <td>${user.telegram_id}</td>
@@ -306,6 +312,7 @@ async function loadUsers(offset = 0) {
                     <td>${user.first_name || '-'}</td>
                     <td>${formatGender(user.gender)}</td>
                     <td>${user.language_code}</td>
+                    <td>${timezoneFlag}</td>
                     <td>${user.total_moments}</td>
                     <td>${user.current_streak}</td>
                     <td>${formatRelativeTime(user.last_active_at)}</td>
@@ -313,13 +320,13 @@ async function loadUsers(offset = 0) {
                         <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showUserDetail(${user.id})">View</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         renderPagination('users-pagination', total, offset, pageSize, loadUsers);
     } catch (error) {
         console.error('Error loading users:', error);
-        tbody.innerHTML = `<tr><td colspan="10" class="loading">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="loading">Error: ${error.message}</td></tr>`;
     }
 }
 

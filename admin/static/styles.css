@@ -1058,6 +1058,19 @@ body {
     color: var(--secondary-color);
 }
 
+/* Timezone indicators */
+.timezone-set {
+    color: var(--success-color);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.timezone-default {
+    color: var(--text-muted);
+    font-style: italic;
+    white-space: nowrap;
+}
+
 /* Feedback Styles */
 .feedback-category {
     padding: 4px 8px;

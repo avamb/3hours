@@ -1,40 +1,33 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Current Status: 179/179 features complete (100%)
+## Current Status: 180/180 features complete (100%)
 
-## Last Session: Session 866 (January 13, 2026)
+## Last Session: Session 867 (January 13, 2026)
 
 ### What was done:
-- Performed comprehensive regression testing on 3 random features
-- All core systems verified operational
-- No issues found - all tests passing
+- Implemented Feature #180: Add user timezone column to admin Users tab
+- Added "Timezone" column to the Users table in admin panel
+- Shows timezone value with visual indicator (green checkmark + bold for set timezones, gray italic for default UTC)
+- Updated backend API to return timezone field for users
+- Updated frontend table and styles
+- All 180 features now passing!
 
-### Regression Testing Verified:
-1. **Feature #149 - Bot with credentials in env file** - Verified bot is RUNNING with APScheduler notifications executing every minute, no errors in logs
-2. **Feature #155 - Language of first message** - Code verified: bot sends welcome message in user's Telegram language (localized in RU, EN, UK)
-3. **Feature #30 - Privacy policy display** - Verified /privacy command exists with complete policy text including data usage explanation and deletion option (GDPR compliant)
+### Changes Made:
+1. `admin/static/index.html` - Added Timezone column header, updated colspan to 11
+2. `admin/static/app.js` - Added timezone display in users table with set/default styling
+3. `admin/static/styles.css` - Added .timezone-set and .timezone-default CSS classes
+4. `admin/server.mjs` - Added timezone field to /api/users endpoint query and response
 
-### System Status Verified:
-- Admin Panel: HEALTHY status on http://localhost:3003
-- Database: CONNECTED (10 MB) - mindsethappybot database
-- Bot: RUNNING with APScheduler (notification jobs executing every minute)
-- Docker containers: bot, admin, postgres, postgres_dev all running
-- No console errors in browser
-- No errors in bot logs
-
-### Screenshots Captured:
-- regression-dashboard-session866.png - Dashboard overview
-- regression-dialogs-session866.png - User dialogs view with conversation history
-- regression-analytics-session866.png - Analytics page with user funnel
-
-### Additional Verifications:
-- Dialogs: Conversation history with free dialog and bot reply messages
-- Analytics: User funnel, retention cohorts, activity heatmap, language distribution all working
-- User registrations chart showing accurate data (1 user on Jan 13, 2026)
+### Verification:
+- Timezone column visible in Users table
+- Default "UTC" values shown in italic gray (indicating not explicitly set)
+- User details modal shows timezone correctly
+- No console errors
+- All systems operational
 
 ---
 
-## Previous Session: Session 865 (January 13, 2026)
+## Previous Session: Session 866 (January 13, 2026)
 
 ### What was done:
 - Performed comprehensive regression testing on 3 random features
@@ -46,16 +39,16 @@
 ## Architecture:
 - Telegram bot (Python/aiogram) for positive mindset development
 - PostgreSQL with pgvector for vector embeddings
-- Admin panel (Node.js/Express) on port 3003
+- Admin panel (Node.js/Express) on port 18088
 - APScheduler for notification scheduling
 - OpenAI GPT-4o for responses, Whisper for voice, Embeddings for vector search
 
 ## Project Status:
-- **100% COMPLETE** - All 179 features passing
+- **100% COMPLETE** - All 180 features passing
 - Ready for production deployment
 - Continue monitoring for any issues
 
 ## Next Steps:
-- Project complete - no pending features
+- Project complete - all features implemented
 - Monitor for any regression issues
 - Prepare for production deployment when ready
