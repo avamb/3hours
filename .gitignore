@@ -77,6 +77,16 @@ temp/
 # Docker
 docker-compose.override.yml
 
+# Local backups / dumps (never commit)
+backup.sql
+*backup*.sql
+*.dump
+*.sql.gz
+
+# Local knowledge base test packs (never commit)
+kb_test_pack/
+tolstoy_blagodarnost.txt
+
 # Agent files (keep features.db for development)
 .agent.lock
 assistant.db
