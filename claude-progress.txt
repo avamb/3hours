@@ -2,33 +2,36 @@
 
 ## Current Status: 176/176 features passing (100%) - COMPLETE!
 
-## Session 657 - January 13, 2026
+## Session 658 - January 13, 2026
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on randomly selected features:
 
 **Features Tested (from feature_get_for_regression):**
-1. **Feature 56: Vector similarity search accuracy** - VERIFIED
-   - pgvector extension installed (v0.8.1)
-   - Vector column exists in moments table (USER-DEFINED type)
-   - Vector index exists (ivfflat with vector_cosine_ops)
+1. **Feature 8: Scheduled question delivery** - VERIFIED
+   - APScheduler running every minute (confirmed via Docker logs)
+   - NotificationScheduler._process_notifications executing successfully
+   - Bot status: RUNNING with 0 pending notifications
 
-2. **Feature 63: Settings persistence** - VERIFIED
-   - Admin Settings page working correctly
-   - Database backup functionality available
-   - System health status showing HEALTHY/CONNECTED
+2. **Feature 9: Question variety - no repetition** - VERIFIED
+   - 60 question templates in database
+   - Both formal (Вы) and informal (ты) versions available
+   - Templates page working in admin panel with CRUD operations
 
-3. **Feature 88: PostgreSQL pgvector setup** - VERIFIED
-   - Extension: vector v0.8.1
-   - Index: idx_moments_embedding (ivfflat, lists=100)
-   - Similarity search ready
+3. **Feature 152: Timezone settings (Часовой пояс)** - VERIFIED
+   - `timezone` column exists in users table (VARCHAR(50), default 'UTC')
+   - Users can configure individual timezone settings
+   - Used for scheduling notifications in user's local time
 
 **Admin Panel Pages Verified:**
 - Overview: Dashboard with system status (Database CONNECTED 10MB, Bot RUNNING, OpenAI CONFIGURED)
-- Knowledge Base: Upload form, status filters, table display
+- Users: Search, filters, sorting, export CSV
+- Templates: Create/Edit/Delete templates, language and formality filters
+- Notifications: Scheduled notifications table with filters
 - Analytics: User Funnel, Retention Cohorts, User Registrations chart, Activity Heatmap
-- Settings: Database backup, Health check, Database status
+- Logs: System logs with level filtering (0 errors)
+- Settings: Database backup, Health check status
 
 **System Health:**
 - Database: CONNECTED (10 MB)
@@ -45,6 +48,19 @@ Performed comprehensive regression testing on randomly selected features:
 ### Project Status: 100% COMPLETE!
 
 All 176 features passing. No issues found during regression testing.
+
+---
+
+## Session 657 - January 13, 2026
+
+### Regression Testing - All Systems Verified Working
+
+**Features Tested (from feature_get_for_regression):**
+1. **Feature 56: Vector similarity search accuracy** - VERIFIED
+2. **Feature 63: Settings persistence** - VERIFIED
+3. **Feature 88: PostgreSQL pgvector setup** - VERIFIED
+
+**System Health:** HEALTHY
 
 ---
 
