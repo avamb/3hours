@@ -9,6 +9,11 @@ This is a FRESH context window - you have no memory of previous sessions.
 
 This repo is deployed via Dokploy from Git branches. You MUST respect these rules:
 
+### Regression tests location (IMPORTANT)
+- All Node.js regression test scripts live under `tests/regression/` (`*.mjs`).
+- **Do NOT** create `test-*.mjs` files in the repo root anymore — put them in `tests/regression/`.
+- When referencing files in the repo from a regression test, prefer portable paths (e.g. `new URL('./test-bot.mjs', import.meta.url)` for local files).
+
 ### Branch policy
 - `master` is the main integration branch.
 - `prod` contains ONLY stable, production-ready versions.

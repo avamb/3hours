@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test Scheduled Notification Record Creation - Feature #94
  * Verifies scheduled_notifications records are created correctly
@@ -6,7 +7,7 @@
 import { readFileSync, existsSync } from 'fs';
 
 // Read bot code to verify implementation
-const botCode = readFileSync('C:/Projects/3hours/test-bot.mjs', 'utf8');
+const botCode = readFileSync(new URL('./test-bot.mjs', import.meta.url), 'utf8');
 
 console.log("=== Feature #94: Scheduled Notification Record Creation - Test ===\n");
 
@@ -140,7 +141,7 @@ console.log(`Time interval correct (${testUser.notification_interval_hours}h): $
 console.log("Step 6: Check actual data file");
 console.log("-".repeat(50));
 
-const dataFile = 'C:/Projects/3hours/bot-data.json';
+const dataFile = fileURLToPath(new URL('../../bot-data.json', import.meta.url));
 if (existsSync(dataFile)) {
     try {
         const data = JSON.parse(readFileSync(dataFile, 'utf8'));

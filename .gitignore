@@ -58,6 +58,12 @@ htmlcov/
 .pytest_cache/
 .tox/
 
+# Node.js regression tests (keep out of repo root)
+/test-*.mjs
+
+# Regression test runtime artifacts (generated at execution time)
+tests/regression/test-*-data.json
+
 # Type checking
 .mypy_cache/
 

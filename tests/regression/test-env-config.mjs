@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test script for environment variables configuration
  * Tests Feature #90: Environment variables configuration
@@ -15,7 +16,7 @@ const config = {
     DATABASE_URL: null, // Will be PostgreSQL connection string when DB is enabled
 
     // Additional config
-    DATA_FILE_PATH: 'C:/Projects/3hours/bot-data.json',
+    DATA_FILE_PATH: fileURLToPath(new URL('../../bot-data.json', import.meta.url)),
     OPENAI_API_URL: 'https://api.openai.com/v1/chat/completions'
 };
 
