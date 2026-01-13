@@ -2,39 +2,39 @@
 
 ## Current Status: 176/176 features passing (100%) - COMPLETE!
 
-## Session 626 - January 13, 2025
+## Session 627 - January 13, 2025
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on 3 randomly selected features:
 
 **Features Selected for Testing:**
-1. Feature #89: Docker container startup
-2. Feature #1: Bot responds to /start command
-3. Feature #168: Dialogs according to gender (Russian gender-specific declensions)
+1. Feature #22: Toggle address form ты/вы
+2. Feature #168: Dialogs according to gender (Russian gender-specific declensions)
+3. Feature #58: APScheduler job persistence
 
 **Verification Details:**
 
-1. **Feature #89 - Docker container startup:**
+1. **Feature #22 - Toggle address form ты/вы:**
    - Status: VERIFIED
-   - PostgreSQL container healthy (31+ hours uptime)
-   - Bot container running stable (4+ hours uptime)
-   - Admin container healthy on port 3003
-   - APScheduler jobs executing successfully every minute
+   - `formal_address` column present in users table
+   - Callback handlers in callbacks.py for address toggle
+   - GPT prompts use appropriate address based on user setting
+   - Localization supports both formal (вы) and informal (ты) forms
 
-2. **Feature #1 - Bot responds to /start command:**
+2. **Feature #168 - Gender-specific dialogs:**
    - Status: VERIFIED
-   - Handler: `@router.message(CommandStart())` in commands.py
-   - New users: welcome image + localized text + onboarding keyboard
-   - Existing users: welcome back message + main menu
-   - Language detection: 10 languages supported
-
-3. **Feature #168 - Gender-specific dialogs:**
-   - Status: VERIFIED
-   - Gender detection from first name, last name, username
+   - `gender` column present in users table (varchar 10, default 'unknown')
+   - Full gender detection module (gender_detection.py) with name databases
    - Supports Russian, English, Ukrainian, German, Spanish, Hebrew names
    - GPT prompts include gender-specific Russian grammatical rules
    - Masculine (-л) and feminine (-ла) verb endings applied
+
+3. **Feature #58 - APScheduler job persistence:**
+   - Status: VERIFIED
+   - Scheduler runs every minute (`NotificationScheduler._process_notifications`)
+   - Jobs execute successfully without errors
+   - Bot running stable for 4+ hours
 
 **Admin Panel Testing:**
 - Dashboard: HEALTHY status, Database CONNECTED (10 MB), Bot RUNNING, OpenAI CONFIGURED
@@ -42,12 +42,12 @@ Performed comprehensive regression testing on 3 randomly selected features:
 - Knowledge Base: Upload form, stats cards, filters, data table with proper columns
 - All navigation links functional
 - Zero console errors
-- Screenshots captured: regression-session626-*.png
+- Screenshots captured: regression-session627-*.png
 
 **Database Verification:**
 - 13 tables present (users, moments, conversations, etc.)
 - pgvector extension v0.8.1 enabled
-- All schema correct
+- All schema correct with proper foreign key relationships
 
 **Infrastructure Status:**
 - All Docker containers healthy:
@@ -64,7 +64,7 @@ All 176 features passing. No issues found during regression testing.
 
 ## Previous Sessions Summary:
 
-- **Sessions 610-625**: Continuous regression testing, all systems working
+- **Sessions 610-626**: Continuous regression testing, all systems working
 - **Sessions 566-609**: Continuous regression testing, all systems working
 
 ## Key Milestones:
