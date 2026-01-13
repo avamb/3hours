@@ -2,52 +2,52 @@
 
 ## Current Status: 176/176 features passing (100%) - COMPLETE!
 
-## Session 619 - January 13, 2025
+## Session 620 - January 13, 2025
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on 3 randomly selected features:
 
 **Features Selected for Testing:**
-1. Feature #43: Formal/informal templates (ты/вы address toggle)
-2. Feature #104: Bot state recovery after crash
-3. Feature #171: Timezone settings (международная система часовых поясов)
+1. Feature #111: Admin service port contract (PORT env + bind 0.0.0.0)
+2. Feature #16: Random moment button
+3. Feature #18: Streak calculation
 
 **Verification Details:**
 
-1. **Feature #43 - Formal/informal templates:**
-   - Status: VERIFIED (UI testing)
-   - Templates page shows "Formal (Вы)" checkbox for address toggle
-   - Existing template visible with "Ты" (informal) setting
-   - Template text field supports {name} placeholder
-   - Language, Category, and Active status controls working
-   - Screenshot: regression-test-session619-templates.png
+1. **Feature #111 - Admin service port contract:**
+   - Status: VERIFIED
+   - docker-compose.yml shows `PORT=8080` env variable
+   - admin/server.mjs binds to `0.0.0.0:${PORT}` (line 3308)
+   - Admin panel accessible at http://localhost:3003
+   - Health status: HEALTHY
 
-2. **Feature #104 - Bot state recovery after crash:**
-   - Status: VERIFIED (logs review)
-   - Bot running stably for 3+ hours
-   - APScheduler jobs executing successfully every minute
-   - `_process_notifications` running every minute
-   - `_schedule_user_notifications` running every hour
-   - `_check_summary_delivery` running every hour
-   - All jobs report "executed successfully"
-
-3. **Feature #171 - Timezone settings:**
+2. **Feature #16 - Random moment button:**
    - Status: VERIFIED (code review)
-   - Region-based timezone selection (Europe, America, Asia, Pacific, Africa)
-   - `get_timezone_regions_keyboard()` and `get_timezone_keyboard()` in inline.py
-   - Callbacks: `settings_timezone`, `tz_region_*`, `timezone_*`
-   - International timezone system (not Russian cities only)
-   - User timezone stored and displayed in settings menu
+   - `get_random_moment()` function in moment_service.py
+   - Localization strings in localization.py for 3 languages (ru, en, uk)
+   - Callback handler in callbacks.py (line 663)
+   - Inline keyboard button in inline.py (line 421)
+
+3. **Feature #18 - Streak calculation:**
+   - Status: VERIFIED (code review)
+   - `increment_moments()` in stats_service.py handles streak logic:
+     - First response: streak = 1
+     - Same day: no change
+     - Consecutive day: streak + 1
+     - Streak broken: reset to 1
+     - Updates longest_streak when current exceeds it
+   - Users table in admin panel shows STREAK column
+   - Sort by "Highest Streak" option available
 
 **Admin Panel Testing:**
 - Dashboard: HEALTHY status, Database CONNECTED (10 MB), Bot RUNNING, OpenAI CONFIGURED
-- Templates page: Create form with Formal checkbox, language dropdown, existing templates table
-- Users page: Search, filters (Language, Status), Sort, Export CSV, Gender column visible
+- Users page: Search, filters (Language, Status), Sort by Streak, Export CSV
+- Moments page: Filters, Topics Cloud, Export CSV
 - Settings page: Database backup, Health check HEALTHY, Database CONNECTED
 - All navigation links functional
 - Zero console errors
-- Screenshots captured: regression-test-session619-*.png
+- Screenshots captured: regression-test-session620-*.png
 
 **Infrastructure Status:**
 - All Docker containers healthy:
@@ -61,6 +61,15 @@ Performed comprehensive regression testing on 3 randomly selected features:
 ### Project Status: 100% COMPLETE!
 
 All 176 features passing. No issues found during regression testing.
+
+---
+
+## Session 619 - January 13, 2025
+
+### Regression Testing - All Systems Verified Working
+
+Features tested: #43 (Formal/informal templates), #104 (Bot state recovery), #171 (Timezone settings)
+All verified working.
 
 ---
 
@@ -82,18 +91,9 @@ All verified working.
 
 ---
 
-## Session 616 - January 13, 2025
-
-### Regression Testing - All Systems Verified Working
-
-Features tested: #35 (OpenAI API error handling), #15 (Delete individual moment), #112 (Reliable DB migrations)
-All verified working.
-
----
-
 ## Previous Sessions Summary:
 
-- **Sessions 610-618**: Continuous regression testing, all systems working
+- **Sessions 610-619**: Continuous regression testing, all systems working
 - **Sessions 566-609**: Continuous regression testing, all systems working
 
 ## Key Milestones:
