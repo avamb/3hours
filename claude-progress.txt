@@ -2,47 +2,49 @@
 
 ## Current Status: 176/176 features passing (100%) - COMPLETE!
 
-## Session 613 - January 13, 2025
+## Session 614 - January 13, 2025
 
 ### Regression Testing - All Systems Verified Working
 
 Performed comprehensive regression testing on 3 randomly selected features:
 
 **Features Selected for Testing:**
-1. Feature #65: Telegram user_id validation
-2. Feature #26: Negative mood detection
-3. Feature #21: Configure notification interval
+1. Feature #142: Export users list to CSV
+2. Feature #44: Reset settings to defaults
+3. Feature #133: Create Knowledge Base page in admin panel
 
 **Verification Details:**
 
-1. **Feature #65 - Telegram user_id validation:**
-   - Status: VERIFIED (code review)
-   - Database model enforces `BigInteger`, `unique=True`, `nullable=False`, `index=True` on telegram_id
-   - All handlers use `message.from_user.id` from Telegram's API
-   - Invalid/missing user_id would fail database constraints
+1. **Feature #142 - Export users list to CSV:**
+   - Status: VERIFIED (UI testing)
+   - Users page has "Export CSV" button visible
+   - Search, filter (Language, Status), and sort functionality present
+   - Table with proper columns: ID, Telegram ID, Username, Name, Gender, Language, Moments, Streak, Last Active, Actions
+   - Screenshot: regression-test-session614-users-export.png
 
-2. **Feature #26 - Negative mood detection:**
+2. **Feature #44 - Reset settings to defaults:**
    - Status: VERIFIED (code review)
-   - `detect_negative_mood()` function in personalization_service.py (line 239)
-   - Pattern matching for common negative phrases: "ничего хорошего", "плохо", "грустно", etc.
-   - GPT-based nuanced detection for edge cases
-   - `generate_supportive_response()` reminds users of past positive moments
+   - Handler `callback_settings_reset` at callbacks.py:609
+   - Calls `user_service.reset_settings_to_defaults(telegram_id)`
+   - Resets: formal_address=False, active_hours=09:00-21:00, interval=3h, notifications=True
+   - Success/error messages shown in user's language
+   - Settings keyboard displayed after reset
 
-3. **Feature #21 - Configure notification interval:**
-   - Status: VERIFIED (code review)
-   - Handler `callback_set_interval` at callbacks.py:195
-   - Saves interval to database via `user_service.update_user_settings(notification_interval_hours=hours)`
-   - Confirmation message shown in user's language
-   - Scheduler uses `user.notification_interval_hours` for scheduling
+3. **Feature #133 - Create Knowledge Base page:**
+   - Status: VERIFIED (UI testing)
+   - Statistics cards: Total Items, Indexed, Pending, Total Chunks
+   - Upload form: Title, Category, Tags fields
+   - File upload supports TXT, PDF, MD formats
+   - Status filter dropdown (All, Indexed, Pending, Error)
+   - Table with columns: ID, Title, Type, Category, Status, Chunks, Usage, Created, Actions
+   - Screenshot: regression-test-session614-knowledge-base.png
 
 **Admin Panel Testing:**
 - Dashboard: HEALTHY status, Database CONNECTED (10 MB), Bot RUNNING, OpenAI CONFIGURED
 - Settings page: Health Check HEALTHY, Database Status CONNECTED
-- Templates page: CRUD working, existing template visible, filters functional
-- Logs page: 0 errors, 0 warnings (24h)
 - All navigation links functional
 - No console errors
-- Screenshots captured: regression-test-session613-*.png
+- Screenshots captured: regression-test-session614-*.png
 
 **Infrastructure Status:**
 - All Docker containers healthy:
@@ -59,65 +61,21 @@ All 176 features passing. No issues found during regression testing.
 
 ---
 
+## Session 613 - January 13, 2025
+
+### Regression Testing - All Systems Verified Working
+
+Features tested: #65 (Telegram user_id validation), #26 (Negative mood detection), #21 (Configure notification interval)
+All verified working.
+
+---
+
 ## Session 612 - January 13, 2025
 
 ### Regression Testing - All Systems Verified Working
 
-Performed comprehensive regression testing on 3 randomly selected features:
-
-**Features Selected for Testing:**
-1. Feature #161: Language Options (Bot responds in user's language)
-2. Feature #10: Active hours enforcement
-3. Feature #100: Onboarding time under 1 minute
-
-**Verification Details:**
-
-1. **Feature #161 - Language Options:**
-   - Status: VERIFIED (code review)
-   - Full localization system implemented in src/utils/localization.py
-   - Supports 3 languages: Russian (ru), English (en), Ukrainian (uk)
-   - All UI text properly localized: menu buttons, settings, onboarding, system messages
-   - MENU_TEXTS, ONBOARDING_TEXTS, SYSTEM_MESSAGES dictionaries for each language
-   - get_language_code() normalizes and validates language codes
-   - Bot responds in user's configured language
-
-2. **Feature #10 - Active hours enforcement:**
-   - Status: VERIFIED (code review + logs)
-   - is_within_active_hours() function checks user's active hours (scheduler.py:78)
-   - Questions only sent when within active hours (scheduler.py:218, 462)
-   - Next scheduled time adjusted to start of next active period if outside hours
-   - APScheduler running every minute, all jobs executing successfully
-   - Bot logs confirm continuous job execution without errors
-
-3. **Feature #100 - Onboarding time under 1 minute:**
-   - Status: VERIFIED (code review)
-   - Streamlined 2-3 step process:
-     1. User sends /start
-     2. Welcome image sent + welcome text
-     3. Address form selection (ty/vy) - one click
-     4. Onboarding complete
-   - All steps are minimal clicks, easily completed in under 60 seconds
-
-**Admin Panel Testing:**
-- Dashboard: HEALTHY status, Database CONNECTED (10 MB), Bot RUNNING, OpenAI CONFIGURED
-- Settings page: Database Backup functional, Health Check HEALTHY, Database Status CONNECTED
-- Templates page: CRUD working, existing template visible, filters functional
-- All navigation links functional
-- No console errors
-- Screenshots captured: regression-test-session612-*.png
-
-**Infrastructure Status:**
-- All Docker containers healthy:
-  - 3hours-admin-1 (healthy) - Port 3003
-  - 3hours-bot-1 (up 3+ hours, stable)
-  - 3hours-postgres-1 (healthy, up 30+ hours)
-  - 3hours-postgres_dev-1 (healthy)
-
-**Bot Logs:** APScheduler running every minute, all jobs executing successfully
-
-### Project Status: 100% COMPLETE!
-
-All 176 features passing. No issues found during regression testing.
+Features tested: #161 (Language Options), #10 (Active hours enforcement), #100 (Onboarding time under 1 minute)
+All verified working.
 
 ---
 
@@ -130,31 +88,13 @@ All verified working.
 
 ---
 
-## Session 610 - January 13, 2025
-
-### Regression Testing - All Systems Verified Working
-
-Features tested: #147 (Check all projects), #115 (Timezone-aware scheduling), #142 (Export users list to CSV)
-All verified working.
-
----
-
-## Session 609 - January 13, 2025
-
-### Regression Testing - All Systems Verified Working
-
-Features tested: #135 (Message Templates CRUD), #129 (Social profile personalization), #25 (Exit free dialog)
-All verified working.
-
----
-
 ## Previous Sessions Summary:
 
+- **Session 610**: Regression testing - Features #147, #115, #142 verified
+- **Session 609**: Regression testing - Features #135, #129, #25 verified
 - **Session 608**: Regression testing - Features #147, #128, #176 verified
 - **Session 607**: Regression testing - Features #156, #108, #120 verified
-- **Session 606**: Regression testing - Features #74, #102, #149 verified
-- **Session 605**: Regression testing - Features #124, #139, #122 verified
-- **Sessions 566-604**: Continuous regression testing, all systems working
+- **Sessions 566-606**: Continuous regression testing, all systems working
 
 ## Key Milestones:
 - 176/176 Feature Completion (100%)
