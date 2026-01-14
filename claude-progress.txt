@@ -2,7 +2,7 @@
 
 ## Current Status: 183/183 features complete (100%)
 
-## Last Session: Session 960 (January 14, 2026)
+## Last Session: Session 961 (January 14, 2026)
 
 ### What was done:
 - Comprehensive regression testing of 3 randomly selected features
@@ -12,30 +12,25 @@
 
 ### Regression Testing Results:
 
-1. **Feature 39 - Moment topics extraction**: PASS
-   - Topics Cloud displayed with extracted topics (произошедшее, университет, работа, парк)
-   - Each moment in table has automatically extracted topics
-   - Topics used for filtering and statistics
-   - Average mood score calculated (0.56)
+1. **Feature 54 - Cascade delete on user deletion**: PASS
+   - All FK constraints verified with ON DELETE CASCADE
+   - Tables: moments, conversations, user_stats, scheduled_notifications, feedback, social_profiles, admin_campaign_targets
+   - api_usage uses ON DELETE SET NULL (appropriate for audit)
 
-2. **Feature 91 - Graceful shutdown**: PASS
-   - Bot has `finally` block with proper cleanup
-   - Scheduler stop, database close, session close all handled
-   - Admin server has SIGINT handler
-   - 0 errors, 0 warnings in last 24 hours
-   - Bot logs show all scheduled jobs executing successfully
+2. **Feature 96 - User stats initialization**: PASS
+   - UserService.get_or_create_user() creates UserStats on user creation
+   - Default values (0 streak, 0 moments) verified
+   - All real users have user_stats records
 
-3. **Feature 174 - Multi-language templates**: PASS
-   - Templates in 3 languages: Russian (ru), English (en), Ukrainian (uk)
-   - Both formal (Вы) and informal (Ты) variants
-   - Categories: main, follow_up, return_inactive
-   - Language selector and filter working correctly
+3. **Feature 129 - Use social profile for personalization**: PASS
+   - Social profile data stored with interests array
+   - LinkedIn URL, interests (7 items), bio displayed in admin
+   - Interests parsed using GPT from bio and social links
 
 ### Pages Verified:
 - Dashboard: HEALTHY status, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
-- Moments: 23 total moments, Topics Cloud working, mood analysis functional
-- Templates: Multi-language templates with create/edit/delete functionality
-- Logs: 0 errors, 0 warnings, 62 total logs, comprehensive logging
+- Users: 11 users with stats, social profiles displayed correctly
+- Logs: 0 errors, 0 warnings, 62 total logs
 
 ### Console Errors: NONE
 All pages loaded without JavaScript errors.
@@ -59,7 +54,7 @@ All pages loaded without JavaScript errors.
 - All regression tests passed this session
 
 ## Screenshots Captured:
-- regression_960_dashboard.png - Dashboard overview
-- regression_960_moments_topics.png - Moments page with Topics Cloud
-- regression_960_templates.png - Message templates page
-- regression_960_logs.png - System logs page (0 errors)
+- regression_961_dashboard.png - Dashboard overview
+- regression_961_user_details.png - User details modal
+- regression_961_social_profile.png - Social profile with interests
+- regression_961_logs.png - System logs (0 errors)
