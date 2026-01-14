@@ -2,61 +2,50 @@
 
 ## Current Status: 183/183 features complete (100%)
 
-## Last Session: Session 939 (January 14, 2026)
+## Last Session: Session 940 (January 14, 2026)
 
 ### What was done:
 - Comprehensive regression testing of admin panel and bot functionality
-- Verified all core features are working correctly
+- Verified 3 randomly selected features
 - No issues found - all systems operational
 
 ### Regression Testing Results:
 
-1. **Dashboard Overview**: PASS
-   - Health status showing HEALTHY
-   - Database connected (11 MB)
-   - Bot running with 2 pending notifications
-   - OpenAI configured
-   - User stats: 11 users, 23 moments, 17 moments this week
-
-2. **Users Page**: PASS
-   - User list with all details (ID, Telegram ID, Username, Name, Gender, Language, Timezone, Moments, Streak, Last Active)
-   - Search and filter functionality working
-   - Export CSV available
-   - 11 users with various languages (en, ru, uk)
-
-3. **Moments Page**: PASS
+1. **Feature #132 - Moments Page**: PASS
    - Topics cloud displaying correctly with 50+ unique topics
-   - Filtering by user, date, mood working
-   - Export CSV functionality available
-   - Mood scores displaying (Very Positive, Positive, Neutral, Negative)
-   - Voice and text source types showing correctly
-   - 23 total moments from 3 unique users
+   - 23 total moments shown with proper data
+   - Filters for users, dates, and mood scores working
+   - Export CSV button available
+   - Table shows ID, User, Content, Source (text/voice), Mood, Topics, Created
+   - 3 unique users with moments
 
-4. **Analytics Page**: PASS
-   - User funnel visualization working (100% -> 82% -> 27% -> 18%)
-   - Cohort retention table displaying correctly
-   - User registrations chart with time period filtering
-   - Activity heatmap showing data by day/hour
-   - Language distribution chart working (55% en, 36% ru, 9% uk)
+2. **Feature #140 - User Blocking Functionality**: PASS
+   - User Details modal showing complete user information
+   - Admin Actions section with "Block User" button present
+   - User statistics (Moments, Streaks, Questions, Response Rate) displayed
+   - Send Direct Message feature working
 
-5. **Logs Page**: PASS
-   - 0 Errors, 0 Warnings in last 24h
-   - 61 total logs with proper filtering
-   - Source filtering (admin, api, bot, scheduler, etc.)
+3. **Feature #154 - Expenses Tracking**: PASS
+   - Summary stats: 26 total requests, 5,747 tokens, $0.0137 total cost
+   - By Model breakdown: gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1
+   - By Operation breakdown: moment_response, free_dialog, topic_extraction, mood_analysis, etc.
+   - Recent API Calls table with time, model, operation, tokens, cost, duration, status
+   - Time period filter (7/30/90 days)
 
-6. **Bot Container Logs**: PASS (Feature #115: Timezone-aware scheduling)
+4. **Dashboard Overview**: PASS
+   - Health status: HEALTHY
+   - Database: CONNECTED (11 MB)
+   - Bot: RUNNING with 2 pending notifications
+   - OpenAI: CONFIGURED
+   - User stats: 11 users, 23 moments
+
+5. **Bot Container Logs**: PASS
    - NotificationScheduler running every minute without errors
    - Jobs executing successfully
    - No error logs in container
 
-7. **Console Errors**: NONE
+6. **Console Errors**: NONE
    - No JavaScript errors in browser console
-
-### Features Verified This Session:
-- Feature #29: GDPR - Export data (Export CSV buttons available on all data pages)
-- Feature #38: Empty moment rejection - Verified via existing data integrity
-- Feature #115: Timezone-aware scheduling - PASS (scheduler running correctly every minute)
-- Feature #125: Monthly Summary feature - Implementation verified in codebase
 
 ## Architecture:
 - Telegram bot (Python/aiogram) for positive mindset development
