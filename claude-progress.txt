@@ -2,14 +2,15 @@
 
 ## Current Status: 183/183 features complete (100%)
 
-## Last Session: Session 943 (January 14, 2026)
+## Last Session: Session 944 (January 14, 2026)
 
 ### What was done:
 - Comprehensive regression testing of admin panel
 - Verified all major pages are functioning correctly
 - Screenshots captured for visual verification
 - Bot logs checked - scheduler running properly
-- No issues found - all systems operational
+- Tested feature export functionality (CSV and JSON)
+- No critical issues found - all systems operational
 
 ### Regression Testing Results:
 
@@ -22,20 +23,15 @@
    - All 11 users displayed with proper columns
    - Filters working (search, language, status, sort)
    - Export CSV functionality available
+   - Gender indicators with emojis
 
-3. **Moments Page**: PASS
-   - Stats: 23 total, 17 this week, 0.56 avg mood, 3 unique users
-   - Topics cloud with clickable tags
-   - Source types shown correctly (text/voice)
-   - Mood scores with color coding
+3. **Dialogs Page**: PASS
+   - User list with message counts
+   - Full dialog history view
+   - Multiple message types displayed correctly
+   - Export CSV and JSON functionality working
 
-4. **Notifications Page**: PASS
-   - 8 pending notifications visible for today/tomorrow
-   - Sent notifications with timestamps
-   - Pagination working (3 pages)
-   - Filters operational
-
-5. **Analytics Page**: PASS
+4. **Analytics Page**: PASS
    - Key metrics: 11 users, 9 onboarded, 9% retention rate
    - User funnel visualization with drop-off percentages
    - Retention cohorts table
@@ -43,7 +39,7 @@
    - Activity heatmap
    - Language distribution chart
 
-6. **Bot Scheduler**: PASS
+5. **Bot Scheduler**: PASS
    - APScheduler running every minute for notification processing
    - Hourly scheduling of user notifications working
    - Summary delivery check running hourly
