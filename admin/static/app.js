@@ -31,7 +31,7 @@ async function api(endpoint, options = {}) {
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
-        throw new Error(error.detail || 'Request failed');
+        throw new Error(error.detail || error.error || 'Request failed');
     }
 
     return response.json();
@@ -151,6 +151,9 @@ function navigateTo(page) {
             break;
         case 'templates':
             loadTemplatesPage();
+            break;
+        case 'campaigns':
+            loadCampaignsPage();
             break;
         case 'dialogs':
             loadDialogsPage();
@@ -2442,3 +2445,511 @@ document.getElementById('backup-database-btn')?.addEventListener('click', () => 
 
 // Make showUserDetail globally accessible
 window.showUserDetail = showUserDetail;
+
+// ============ Campaigns Page ============
+let campaignsOffset = 0;
+const campaignsPageSize = 20;
+let currentCampaignId = null;
+
+async function loadCampaignsPage() {
+    await Promise.all([
+        loadCampaignsStats(),
+        loadCampaigns(0)
+    ]);
+}
+
+async function loadCampaignsStats() {
+    try {
+        const stats = await api('/campaigns/stats');
+        document.getElementById('campaigns-total').textContent = stats.total_campaigns || 0;
+        document.getElementById('campaigns-active').textContent =
+            (parseInt(stats.scheduled || 0) + parseInt(stats.sending || 0));
+        document.getElementById('campaigns-done').textContent = stats.done || 0;
+        document.getElementById('campaigns-total-sent').textContent = stats.total_sent || 0;
+    } catch (error) {
+        console.error('Error loading campaign stats:', error);
+    }
+}
+
+async function loadCampaigns(offset = 0) {
+    campaignsOffset = offset;
+    const status = document.getElementById('campaigns-status-filter')?.value || '';
+
+    try {
+        const page = Math.floor(offset / campaignsPageSize) + 1;
+        const data = await api(`/campaigns?page=${page}&limit=${campaignsPageSize}${status ? '&status=' + status : ''}`);
+
+        const tbody = document.querySelector('#campaigns-table tbody');
+
+        if (!data.campaigns || data.campaigns.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty">No campaigns found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.campaigns.map(c => `
+            <tr>
+                <td>${c.id}</td>
+                <td><strong>${escapeHtml(c.title)}</strong></td>
+                <td><span class="status-badge status-${c.status}">${c.status}</span></td>
+                <td>${c.total_targets || 0}</td>
+                <td class="success-text">${c.sent_count || 0}</td>
+                <td class="error-text">${c.failed_count || 0}</td>
+                <td>${formatDate(c.created_at)}</td>
+                <td class="actions">
+                    <button class="btn btn-sm btn-primary" onclick="viewCampaign(${c.id})">View</button>
+                    ${c.status === 'draft' ? `<button class="btn btn-sm btn-secondary" onclick="editCampaign(${c.id})">Edit</button>` : ''}
+                    ${c.status === 'draft' ? `<button class="btn btn-sm btn-warning" onclick="previewCampaign(${c.id})">Preview</button>` : ''}
+                    ${c.status === 'preview' ? `<button class="btn btn-sm btn-success" onclick="scheduleCampaign(${c.id})">Schedule</button>` : ''}
+                    ${c.status === 'scheduled' ? `<button class="btn btn-sm btn-success" onclick="sendCampaign(${c.id})">Send Now</button>` : ''}
+                    ${c.status === 'sending' ? `<button class="btn btn-sm btn-success" onclick="sendCampaign(${c.id})">Continue</button>` : ''}
+                    ${['draft', 'preview', 'scheduled', 'sending'].includes(c.status) ? `<button class="btn btn-sm btn-danger" onclick="cancelCampaign(${c.id})">Cancel</button>` : ''}
+                    ${['draft', 'cancelled'].includes(c.status) ? `<button class="btn btn-sm btn-danger" onclick="deleteCampaign(${c.id})">Delete</button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+
+        const total = data.pagination?.total || 0;
+        renderPagination('campaigns-pagination', total, offset, campaignsPageSize, loadCampaigns);
+    } catch (error) {
+        console.error('Error loading campaigns:', error);
+        document.querySelector('#campaigns-table tbody').innerHTML =
+            '<tr><td colspan="8" class="error">Error loading campaigns</td></tr>';
+    }
+}
+
+async function createCampaign(formData) {
+    try {
+        // Build filters object
+        const filters = {};
+        if (formData.get('timezone_default')) filters.timezone_default = true;
+        if (formData.get('onboarding_incomplete')) filters.onboarding_completed = false;
+        if (formData.get('notifications_disabled')) filters.notifications_enabled = false;
+
+        const languages = formData.get('languages')?.trim();
+        if (languages) {
+            filters.language_codes = languages.split(',').map(l => l.trim()).filter(l => l);
+        }
+
+        const formalAddress = formData.get('formal_address');
+        if (formalAddress === 'true') filters.formal_address = true;
+        else if (formalAddress === 'false') filters.formal_address = false;
+
+        // Gender filter
+        const genderMode = formData.get('gender_mode');
+        if (genderMode && genderMode !== 'any') {
+            filters.gender_mode = genderMode;
+        }
+
+        // Activity filter
+        const activityMode = formData.get('activity_mode');
+        if (activityMode && activityMode !== 'any') {
+            filters.activity_mode = activityMode;
+            const activityDays = formData.get('activity_days');
+            if (activityDays) {
+                filters.activity_days = parseInt(activityDays);
+            }
+        }
+
+        // Build delivery params
+        const deliveryParams = {};
+        const withinHours = formData.get('within_hours');
+        if (withinHours) deliveryParams.within_hours = parseInt(withinHours);
+        if (formData.get('test_mode')) deliveryParams.test_mode = true;
+
+        // Send on activity settings
+        if (formData.get('send_on_activity')) {
+            deliveryParams.send_on_activity = true;
+            const activityWindow = formData.get('activity_window_minutes');
+            if (activityWindow) deliveryParams.activity_window_minutes = parseInt(activityWindow);
+            const cooldown = formData.get('cooldown_minutes');
+            if (cooldown) deliveryParams.cooldown_minutes = parseInt(cooldown);
+            const maxPerActivity = formData.get('max_per_activity');
+            if (maxPerActivity) deliveryParams.max_per_activity = parseInt(maxPerActivity);
+        }
+
+        const data = {
+            title: formData.get('title'),
+            topic: formData.get('topic') || null,
+            draft_text: formData.get('draft_text'),
+            tone: formData.get('tone'),
+            filters: Object.keys(filters).length > 0 ? filters : null,
+            delivery_params: Object.keys(deliveryParams).length > 0 ? deliveryParams : null,
+        };
+
+        await api('/campaigns', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        resetCampaignForm();
+        await loadCampaignsPage();
+    } catch (error) {
+        alert('Error creating campaign: ' + error.message);
+    }
+}
+
+async function updateCampaign(id, formData) {
+    try {
+        // Build filters object
+        const filters = {};
+        if (formData.get('timezone_default')) filters.timezone_default = true;
+        if (formData.get('onboarding_incomplete')) filters.onboarding_completed = false;
+        if (formData.get('notifications_disabled')) filters.notifications_enabled = false;
+
+        const languages = formData.get('languages')?.trim();
+        if (languages) {
+            filters.language_codes = languages.split(',').map(l => l.trim()).filter(l => l);
+        }
+
+        const formalAddress = formData.get('formal_address');
+        if (formalAddress === 'true') filters.formal_address = true;
+        else if (formalAddress === 'false') filters.formal_address = false;
+
+        // Gender filter
+        const genderMode = formData.get('gender_mode');
+        if (genderMode && genderMode !== 'any') {
+            filters.gender_mode = genderMode;
+        }
+
+        // Activity filter
+        const activityMode = formData.get('activity_mode');
+        if (activityMode && activityMode !== 'any') {
+            filters.activity_mode = activityMode;
+            const activityDays = formData.get('activity_days');
+            if (activityDays) {
+                filters.activity_days = parseInt(activityDays);
+            }
+        }
+
+        // Build delivery params
+        const deliveryParams = {};
+        const withinHours = formData.get('within_hours');
+        if (withinHours) deliveryParams.within_hours = parseInt(withinHours);
+        if (formData.get('test_mode')) deliveryParams.test_mode = true;
+
+        // Send on activity settings
+        if (formData.get('send_on_activity')) {
+            deliveryParams.send_on_activity = true;
+            const activityWindow = formData.get('activity_window_minutes');
+            if (activityWindow) deliveryParams.activity_window_minutes = parseInt(activityWindow);
+            const cooldown = formData.get('cooldown_minutes');
+            if (cooldown) deliveryParams.cooldown_minutes = parseInt(cooldown);
+            const maxPerActivity = formData.get('max_per_activity');
+            if (maxPerActivity) deliveryParams.max_per_activity = parseInt(maxPerActivity);
+        }
+
+        const data = {
+            title: formData.get('title'),
+            topic: formData.get('topic') || null,
+            draft_text: formData.get('draft_text'),
+            tone: formData.get('tone'),
+            filters: Object.keys(filters).length > 0 ? filters : null,
+            delivery_params: Object.keys(deliveryParams).length > 0 ? deliveryParams : null,
+        };
+
+        await api(`/campaigns/${id}/update`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        resetCampaignForm();
+        await loadCampaignsPage();
+    } catch (error) {
+        alert('Error updating campaign: ' + error.message);
+    }
+}
+
+async function editCampaign(id) {
+    try {
+        const data = await api(`/campaigns/${id}`);
+        const campaign = data.campaign;
+
+        document.getElementById('campaign-edit-id').value = id;
+        document.getElementById('campaign-title').value = campaign.title || '';
+        document.getElementById('campaign-topic').value = campaign.topic || '';
+        document.getElementById('campaign-draft').value = campaign.draft_text || '';
+        document.getElementById('campaign-tone').value = campaign.tone || 'friendly';
+
+        // Populate filters
+        const filters = campaign.filters || {};
+        document.getElementById('filter-timezone-default').checked = filters.timezone_default || false;
+        document.getElementById('filter-onboarding-incomplete').checked = filters.onboarding_completed === false;
+        document.getElementById('filter-notifications-disabled').checked = filters.notifications_enabled === false;
+        document.getElementById('filter-languages').value = filters.language_codes?.join(',') || '';
+        document.getElementById('filter-formal').value = filters.formal_address === true ? 'true' :
+            filters.formal_address === false ? 'false' : '';
+        document.getElementById('filter-gender').value = filters.gender_mode || 'any';
+        document.getElementById('filter-activity-mode').value = filters.activity_mode || 'any';
+        document.getElementById('filter-activity-days').value = filters.activity_days || '';
+
+        // Populate delivery params
+        const delivery = campaign.delivery_params || {};
+        document.getElementById('delivery-within-hours').value = delivery.within_hours || 24;
+        document.getElementById('delivery-test-mode').checked = delivery.test_mode || false;
+        document.getElementById('delivery-send-on-activity').checked = delivery.send_on_activity || false;
+        document.getElementById('delivery-activity-window').value = delivery.activity_window_minutes || 10;
+        document.getElementById('delivery-cooldown').value = delivery.cooldown_minutes || 60;
+        document.getElementById('delivery-max-per-activity').value = delivery.max_per_activity || 1;
+
+        // Show/hide activity trigger settings
+        document.getElementById('activity-trigger-settings').style.display =
+            delivery.send_on_activity ? 'flex' : 'none';
+
+        // Update form UI
+        document.getElementById('campaign-form-title').textContent = 'Edit Campaign';
+        document.getElementById('campaign-submit-btn').textContent = 'Update';
+        document.getElementById('campaign-cancel-btn').style.display = 'inline-block';
+
+        // Scroll to form
+        document.querySelector('.campaign-form-section').scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+        alert('Error loading campaign: ' + error.message);
+    }
+}
+
+function resetCampaignForm() {
+    document.getElementById('campaign-form').reset();
+    document.getElementById('campaign-edit-id').value = '';
+    document.getElementById('campaign-form-title').textContent = 'Create New Campaign';
+    document.getElementById('campaign-submit-btn').textContent = 'Create Campaign';
+    document.getElementById('campaign-cancel-btn').style.display = 'none';
+    document.getElementById('delivery-within-hours').value = 24;
+    document.getElementById('filter-gender').value = 'any';
+    document.getElementById('filter-activity-mode').value = 'any';
+    document.getElementById('filter-activity-days').value = '';
+    document.getElementById('delivery-send-on-activity').checked = false;
+    document.getElementById('activity-trigger-settings').style.display = 'none';
+    document.getElementById('delivery-activity-window').value = 10;
+    document.getElementById('delivery-cooldown').value = 60;
+    document.getElementById('delivery-max-per-activity').value = 1;
+}
+
+async function viewCampaign(id) {
+    currentCampaignId = id;
+    const modal = document.getElementById('campaign-modal');
+    const modalBody = document.getElementById('campaign-modal-body');
+    const modalFooter = document.getElementById('campaign-modal-footer');
+
+    modal.classList.add('active');
+    modalBody.innerHTML = '<p class="loading">Loading...</p>';
+    modalFooter.innerHTML = '';
+
+    try {
+        const data = await api(`/campaigns/${id}`);
+        const c = data.campaign;
+        const summary = data.targets_summary || {};
+        const samples = data.sample_targets || [];
+
+        modalBody.innerHTML = `
+            <div class="campaign-detail">
+                <div class="detail-section">
+                    <h4>Campaign Info</h4>
+                    <div class="detail-grid">
+                        <div><strong>Title:</strong> ${escapeHtml(c.title)}</div>
+                        <div><strong>Status:</strong> <span class="status-badge status-${c.status}">${c.status}</span></div>
+                        <div><strong>Tone:</strong> ${c.tone}</div>
+                        <div><strong>Created:</strong> ${formatDate(c.created_at)}</div>
+                    </div>
+                    ${c.topic ? `<div><strong>Topic:</strong> ${escapeHtml(c.topic)}</div>` : ''}
+                </div>
+
+                <div class="detail-section">
+                    <h4>Draft Message</h4>
+                    <div class="message-preview">${escapeHtml(c.draft_text)}</div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Audience Stats</h4>
+                    <div class="detail-grid">
+                        <div><strong>Total Targets:</strong> ${c.total_targets || 0}</div>
+                        <div><strong>Sent:</strong> <span class="success-text">${c.sent_count || 0}</span></div>
+                        <div><strong>Failed:</strong> <span class="error-text">${c.failed_count || 0}</span></div>
+                    </div>
+                    <div class="target-status-breakdown">
+                        ${Object.entries(summary).map(([status, count]) =>
+                            `<span class="status-badge status-${status}">${status}: ${count}</span>`
+                        ).join(' ')}
+                    </div>
+                </div>
+
+                ${c.filters ? `
+                <div class="detail-section">
+                    <h4>Filters Applied</h4>
+                    <pre class="json-preview">${JSON.stringify(c.filters, null, 2)}</pre>
+                </div>
+                ` : ''}
+
+                ${samples.length > 0 ? `
+                <div class="detail-section">
+                    <h4>Sample Targets (first ${samples.length})</h4>
+                    <div class="table-container">
+                        <table class="data-table compact">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Lang</th>
+                                    <th>Formal</th>
+                                    <th>Status</th>
+                                    <th>Planned</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${samples.slice(0, 10).map(t => `
+                                    <tr>
+                                        <td>${escapeHtml(t.first_name || t.username || 'User ' + t.user_id)}</td>
+                                        <td>${t.language_code}</td>
+                                        <td>${t.formal_address ? 'Вы' : 'ты'}</td>
+                                        <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                                        <td>${t.planned_send_at_utc ? formatDate(t.planned_send_at_utc) : '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+
+        // Build action buttons based on status
+        let actions = [];
+        if (c.status === 'draft') {
+            actions.push(`<button class="btn btn-warning" onclick="previewCampaign(${id}); closeCampaignModal();">Preview</button>`);
+        }
+        if (c.status === 'preview') {
+            actions.push(`<button class="btn btn-success" onclick="scheduleCampaign(${id}); closeCampaignModal();">Schedule</button>`);
+        }
+        if (c.status === 'scheduled' || c.status === 'sending') {
+            actions.push(`<button class="btn btn-success" onclick="sendCampaign(${id}); closeCampaignModal();">Send Now</button>`);
+        }
+        if (['draft', 'preview', 'scheduled', 'sending'].includes(c.status)) {
+            actions.push(`<button class="btn btn-danger" onclick="cancelCampaign(${id}); closeCampaignModal();">Cancel</button>`);
+        }
+        if (['done', 'cancelled'].includes(c.status)) {
+            actions.push(`<button class="btn btn-secondary" onclick="exportCampaignTargets(${id})">Export CSV</button>`);
+        }
+        actions.push(`<button class="btn btn-secondary" onclick="closeCampaignModal()">Close</button>`);
+
+        modalFooter.innerHTML = actions.join(' ');
+    } catch (error) {
+        modalBody.innerHTML = `<p class="error">Error loading campaign: ${error.message}</p>`;
+        modalFooter.innerHTML = `<button class="btn btn-secondary" onclick="closeCampaignModal()">Close</button>`;
+    }
+}
+
+function closeCampaignModal() {
+    document.getElementById('campaign-modal').classList.remove('active');
+    currentCampaignId = null;
+}
+
+async function previewCampaign(id) {
+    if (!confirm('Generate preview for this campaign? This will calculate target users and sample translations.')) return;
+
+    try {
+        const result = await api(`/campaigns/${id}/preview`, { method: 'POST' });
+        let message = `Preview generated!\n\nTotal targets: ${result.total_targets}`;
+        message += `\n\nLanguages: ${Object.entries(result.language_distribution).map(([l, c]) => `${l}: ${c}`).join(', ')}`;
+        if (result.gender_distribution) {
+            message += `\n\nGender: ${Object.entries(result.gender_distribution).map(([g, c]) => `${g}: ${c}`).join(', ')}`;
+        }
+        alert(message);
+        await loadCampaignsPage();
+    } catch (error) {
+        alert('Error generating preview: ' + error.message);
+    }
+}
+
+async function scheduleCampaign(id) {
+    if (!confirm('Schedule this campaign for delivery? Messages will be rendered and scheduled based on user timezones.')) return;
+
+    try {
+        const result = await api(`/campaigns/${id}/schedule`, { method: 'POST' });
+        alert(result.message || 'Campaign scheduled successfully!');
+        await loadCampaignsPage();
+    } catch (error) {
+        alert('Error scheduling campaign: ' + error.message);
+    }
+}
+
+async function sendCampaign(id) {
+    if (!confirm('Start sending this campaign now? Messages will be delivered immediately to users in their active hours.')) return;
+
+    try {
+        const result = await api(`/campaigns/${id}/send`, { method: 'POST' });
+        alert(`Sending progress:\n\nProcessed: ${result.processed}\nSent: ${result.sent}\nFailed: ${result.failed}\nSkipped: ${result.skipped}\nRemaining: ${result.remaining}\n\nStatus: ${result.status}`);
+        await loadCampaignsPage();
+    } catch (error) {
+        alert('Error sending campaign: ' + error.message);
+    }
+}
+
+async function cancelCampaign(id) {
+    if (!confirm('Cancel this campaign? Pending messages will not be sent.')) return;
+
+    try {
+        await api(`/campaigns/${id}/cancel`, { method: 'POST' });
+        await loadCampaignsPage();
+    } catch (error) {
+        alert('Error cancelling campaign: ' + error.message);
+    }
+}
+
+async function deleteCampaign(id) {
+    if (!confirm('Delete this campaign? This action cannot be undone.')) return;
+
+    try {
+        await api(`/campaigns/${id}/delete`, { method: 'POST' });
+        await loadCampaignsPage();
+    } catch (error) {
+        alert('Error deleting campaign: ' + error.message);
+    }
+}
+
+function exportCampaignTargets(id) {
+    window.open(`/api/campaigns/${id}/export`, '_blank');
+}
+
+// Campaign form submission
+document.getElementById('campaign-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const editId = document.getElementById('campaign-edit-id')?.value;
+
+    if (editId) {
+        await updateCampaign(editId, formData);
+    } else {
+        await createCampaign(formData);
+    }
+});
+
+// Campaign cancel button
+document.getElementById('campaign-cancel-btn')?.addEventListener('click', resetCampaignForm);
+
+// Send on activity toggle - show/hide activity settings
+document.getElementById('delivery-send-on-activity')?.addEventListener('change', (e) => {
+    document.getElementById('activity-trigger-settings').style.display =
+        e.target.checked ? 'flex' : 'none';
+});
+
+// Campaign status filter
+document.getElementById('campaigns-status-filter')?.addEventListener('change', () => loadCampaigns(0));
+
+// Campaigns refresh button
+document.getElementById('refresh-campaigns')?.addEventListener('click', loadCampaignsPage);
+
+// Campaign modal close
+document.querySelector('#campaign-modal .modal-close')?.addEventListener('click', closeCampaignModal);
+
+// Close modal on outside click
+document.getElementById('campaign-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'campaign-modal') closeCampaignModal();
+});
+
+// Make campaign functions globally accessible
+window.viewCampaign = viewCampaign;
+window.editCampaign = editCampaign;
+window.previewCampaign = previewCampaign;
+window.scheduleCampaign = scheduleCampaign;
+window.sendCampaign = sendCampaign;
+window.cancelCampaign = cancelCampaign;
+window.deleteCampaign = deleteCampaign;
+window.exportCampaignTargets = exportCampaignTargets;
+window.closeCampaignModal = closeCampaignModal;

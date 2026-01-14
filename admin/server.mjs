@@ -183,6 +183,41 @@ function vectorLiteral(embedding) {
 }
 
 /**
+ * Substitute personalization placeholders in text
+ * Supported tokens: {{first_name}}, {{username}}, {{telegram_id}}, {{language_code}},
+ *                   {{timezone}}, {{gender}}, {{formal_address}}, {{greeting}}
+ * @param {string} text - Text with placeholders
+ * @param {object} user - User object with properties
+ * @returns {string} - Text with substituted values
+ */
+function substitutePersonalization(text, user) {
+    if (!text) return text;
+
+    // Get first_name with fallback
+    const firstName = user.first_name || user.username || 'User';
+    const username = user.username || 'User';
+    const timezone = user.timezone || 'UTC';
+    const formalAddress = user.formal_address ? 'true' : 'false';
+
+    // Generate greeting based on formal_address
+    const greeting = user.formal_address
+        ? `Здравствуйте, ${firstName}!`
+        : `Привет, ${firstName}!`;
+
+    // Substitute all known placeholders
+    return text
+        .replace(/\{\{first_name\}\}/g, firstName)
+        .replace(/\{\{username\}\}/g, username)
+        .replace(/\{\{telegram_id\}\}/g, String(user.telegram_id || ''))
+        .replace(/\{\{language_code\}\}/g, user.language_code || 'ru')
+        .replace(/\{\{timezone\}\}/g, timezone)
+        .replace(/\{\{gender\}\}/g, user.gender || 'unknown')
+        .replace(/\{\{formal_address\}\}/g, formalAddress)
+        .replace(/\{\{greeting\}\}/g, greeting);
+    // Unknown placeholders are left as-is (variant A from spec)
+}
+
+/**
  * Create embedding with retry logic for rate limiting
  * @param {OpenAI} client - OpenAI client
  * @param {string} text - Text to embed
@@ -2090,6 +2125,8 @@ const routes = {
         const userId = parseInt(params.userId);
         const query = parseQuery(req.url);
         const limit = Math.min(parseInt(query.limit) || 100, 500);
+        const messageType = query.message_type || '';
+        const search = query.search || '';
 
         if (!Number.isFinite(userId)) {
             sendJson(res, { detail: 'Invalid user id' }, 400);
@@ -2111,16 +2148,31 @@ const routes = {
 
             const user = userResult.rows[0];
 
-            // Get conversations for user.
+            // Build dynamic query with filters
+            let sqlQuery = 'SELECT id, message_type, content, metadata, created_at FROM conversations WHERE user_id = $1';
+            const sqlParams = [userId];
+            let paramIdx = 2;
+
+            // Filter by message type
+            if (messageType) {
+                sqlQuery += ' AND message_type = $' + paramIdx;
+                sqlParams.push(messageType);
+                paramIdx++;
+            }
+
+            // Filter by search text in content
+            if (search) {
+                sqlQuery += ' AND content ILIKE $' + paramIdx;
+                sqlParams.push('%' + search + '%');
+                paramIdx++;
+            }
+
             // IMPORTANT: We want the *latest* messages. The UI renders oldest->newest by reversing,
             // so we return newest-first here (DESC) to make the UI display correctly.
-            const dialogResult = await client.query(`
-                SELECT id, message_type, content, metadata, created_at
-                FROM conversations
-                WHERE user_id = $1
-                ORDER BY created_at DESC
-                LIMIT $2
-            `, [userId, limit]);
+            sqlQuery += ' ORDER BY created_at DESC LIMIT $' + paramIdx;
+            sqlParams.push(limit);
+
+            const dialogResult = await client.query(sqlQuery, sqlParams);
 
             sendJson(res, {
                 user: {
@@ -3231,7 +3283,1084 @@ const routes = {
             client.release();
         }
     },
+
+    // =============================================================================
+    // CAMPAIGNS API - Admin Broadcast Feature
+    // =============================================================================
+
+    // Get all campaigns with pagination and filtering
+    'GET /api/campaigns': async (req, res) => {
+        const query = parseQuery(req.url);
+        const page = parseInt(query.page) || 1;
+        const limit = Math.min(parseInt(query.limit) || 20, 100);
+        const offset = (page - 1) * limit;
+        const status = query.status || '';
+
+        const client = await pool.connect();
+        try {
+            let whereClause = '';
+            const params = [];
+
+            if (status) {
+                params.push(status);
+                whereClause = `WHERE status = $${params.length}`;
+            }
+
+            // Get total count
+            const countResult = await client.query(
+                `SELECT COUNT(*) as total FROM admin_campaigns ${whereClause}`,
+                params
+            );
+            const total = parseInt(countResult.rows[0].total);
+
+            // Get campaigns
+            const result = await client.query(`
+                SELECT id, title, topic, draft_text, tone, filters_json, delivery_params_json,
+                       created_by, created_at, updated_at, status,
+                       total_targets, sent_count, failed_count,
+                       scheduled_at, started_at, completed_at
+                FROM admin_campaigns
+                ${whereClause}
+                ORDER BY created_at DESC
+                LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+            `, [...params, limit, offset]);
+
+            sendJson(res, {
+                campaigns: result.rows.map(row => ({
+                    id: row.id,
+                    title: row.title,
+                    topic: row.topic,
+                    draft_text: row.draft_text,
+                    tone: row.tone,
+                    filters: row.filters_json,
+                    delivery_params: row.delivery_params_json,
+                    created_by: row.created_by,
+                    created_at: row.created_at?.toISOString(),
+                    updated_at: row.updated_at?.toISOString(),
+                    status: row.status,
+                    total_targets: row.total_targets,
+                    sent_count: row.sent_count,
+                    failed_count: row.failed_count,
+                    scheduled_at: row.scheduled_at?.toISOString(),
+                    started_at: row.started_at?.toISOString(),
+                    completed_at: row.completed_at?.toISOString(),
+                })),
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    pages: Math.ceil(total / limit),
+                },
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Get campaign stats summary (MUST be before :id route to avoid matching 'stats' as id)
+    'GET /api/campaigns/stats': async (req, res) => {
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT
+                    COUNT(*) as total_campaigns,
+                    COUNT(*) FILTER (WHERE status = 'draft') as draft,
+                    COUNT(*) FILTER (WHERE status = 'preview') as preview,
+                    COUNT(*) FILTER (WHERE status = 'scheduled') as scheduled,
+                    COUNT(*) FILTER (WHERE status = 'sending') as sending,
+                    COUNT(*) FILTER (WHERE status = 'done') as done,
+                    COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled,
+                    COALESCE(SUM(sent_count), 0) as total_sent,
+                    COALESCE(SUM(failed_count), 0) as total_failed
+                FROM admin_campaigns
+            `);
+
+            sendJson(res, result.rows[0]);
+        } finally {
+            client.release();
+        }
+    },
+
+    // Get single campaign with targets
+    'GET /api/campaigns/:id': async (req, res, params) => {
+        const campaignId = parseInt(params.id);
+        if (isNaN(campaignId)) {
+            return sendJson(res, { error: 'Invalid campaign ID' }, 400);
+        }
+
+        const client = await pool.connect();
+        try {
+            // Get campaign
+            const campaignResult = await client.query(`
+                SELECT * FROM admin_campaigns WHERE id = $1
+            `, [campaignId]);
+
+            if (campaignResult.rows.length === 0) {
+                return sendJson(res, { error: 'Campaign not found' }, 404);
+            }
+
+            const campaign = campaignResult.rows[0];
+
+            // Get targets summary by status
+            const targetsResult = await client.query(`
+                SELECT status, COUNT(*) as count
+                FROM admin_campaign_targets
+                WHERE campaign_id = $1
+                GROUP BY status
+            `, [campaignId]);
+
+            // Get sample targets (first 50)
+            const sampleTargets = await client.query(`
+                SELECT t.*, u.username, u.first_name
+                FROM admin_campaign_targets t
+                JOIN users u ON t.user_id = u.id
+                WHERE t.campaign_id = $1
+                ORDER BY t.planned_send_at_utc ASC NULLS LAST, t.id ASC
+                LIMIT 50
+            `, [campaignId]);
+
+            sendJson(res, {
+                campaign: {
+                    id: campaign.id,
+                    title: campaign.title,
+                    topic: campaign.topic,
+                    draft_text: campaign.draft_text,
+                    tone: campaign.tone,
+                    filters: campaign.filters_json,
+                    delivery_params: campaign.delivery_params_json,
+                    created_by: campaign.created_by,
+                    created_at: campaign.created_at?.toISOString(),
+                    updated_at: campaign.updated_at?.toISOString(),
+                    status: campaign.status,
+                    total_targets: campaign.total_targets,
+                    sent_count: campaign.sent_count,
+                    failed_count: campaign.failed_count,
+                    scheduled_at: campaign.scheduled_at?.toISOString(),
+                    started_at: campaign.started_at?.toISOString(),
+                    completed_at: campaign.completed_at?.toISOString(),
+                },
+                targets_summary: targetsResult.rows.reduce((acc, row) => {
+                    acc[row.status] = parseInt(row.count);
+                    return acc;
+                }, {}),
+                sample_targets: sampleTargets.rows.map(t => ({
+                    id: t.id,
+                    user_id: t.user_id,
+                    telegram_id: t.telegram_id?.toString(),
+                    username: t.username,
+                    first_name: t.first_name,
+                    language_code: t.language_code,
+                    formal_address: t.formal_address,
+                    planned_send_at_utc: t.planned_send_at_utc?.toISOString(),
+                    rendered_text: t.rendered_text,
+                    status: t.status,
+                    error: t.error,
+                    sent_at: t.sent_at?.toISOString(),
+                })),
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Create a new campaign
+    'POST /api/campaigns': async (req, res) => {
+        const body = await parseBody(req);
+        const { title, topic, draft_text, tone, filters, delivery_params, created_by } = body;
+
+        if (!title || !draft_text) {
+            return sendJson(res, { error: 'Title and draft_text are required' }, 400);
+        }
+
+        const validTones = ['short', 'friendly', 'formal'];
+        const campaignTone = validTones.includes(tone) ? tone : 'friendly';
+
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                INSERT INTO admin_campaigns (title, topic, draft_text, tone, filters_json, delivery_params_json, created_by, status)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, 'draft')
+                RETURNING *
+            `, [title, topic || null, draft_text, campaignTone, filters || null, delivery_params || null, created_by || 'admin']);
+
+            const campaign = result.rows[0];
+            sendJson(res, {
+                campaign: {
+                    id: campaign.id,
+                    title: campaign.title,
+                    topic: campaign.topic,
+                    draft_text: campaign.draft_text,
+                    tone: campaign.tone,
+                    filters: campaign.filters_json,
+                    delivery_params: campaign.delivery_params_json,
+                    created_by: campaign.created_by,
+                    created_at: campaign.created_at?.toISOString(),
+                    status: campaign.status,
+                },
+            }, 201);
+        } finally {
+            client.release();
+        }
+    },
+
+    // Update campaign (only in draft status)
+    'POST /api/campaigns/:id/update': async (req, res, params) => {
+        const campaignId = parseInt(params.id);
+        if (isNaN(campaignId)) {
+            return sendJson(res, { error: 'Invalid campaign ID' }, 400);
+        }
+
+        const body = await parseBody(req);
+        const { title, topic, draft_text, tone, filters, delivery_params } = body;
+
+        const client = await pool.connect();
+        try {
+            // Check campaign exists and is in draft status
+            const existing = await client.query(
+                'SELECT status FROM admin_campaigns WHERE id = $1',
+                [campaignId]
+            );
+
+            if (existing.rows.length === 0) {
+                return sendJson(res, { error: 'Campaign not found' }, 404);
+            }
+
+            if (existing.rows[0].status !== 'draft') {
+                return sendJson(res, { error: 'Can only update campaigns in draft status' }, 400);
+            }
+
+            const validTones = ['short', 'friendly', 'formal'];
+            const updates = [];
+            const values = [];
+            let paramIndex = 1;
+
+            if (title !== undefined) {
+                updates.push(`title = $${paramIndex++}`);
+                values.push(title);
+            }
+            if (topic !== undefined) {
+                updates.push(`topic = $${paramIndex++}`);
+                values.push(topic);
+            }
+            if (draft_text !== undefined) {
+                updates.push(`draft_text = $${paramIndex++}`);
+                values.push(draft_text);
+            }
+            if (tone !== undefined && validTones.includes(tone)) {
+                updates.push(`tone = $${paramIndex++}`);
+                values.push(tone);
+            }
+            if (filters !== undefined) {
+                updates.push(`filters_json = $${paramIndex++}`);
+                values.push(filters);
+            }
+            if (delivery_params !== undefined) {
+                updates.push(`delivery_params_json = $${paramIndex++}`);
+                values.push(delivery_params);
+            }
+
+            if (updates.length === 0) {
+                return sendJson(res, { error: 'No fields to update' }, 400);
+            }
+
+            updates.push(`updated_at = NOW()`);
+            values.push(campaignId);
+
+            const result = await client.query(`
+                UPDATE admin_campaigns
+                SET ${updates.join(', ')}
+                WHERE id = $${paramIndex}
+                RETURNING *
+            `, values);
+
+            const campaign = result.rows[0];
+            sendJson(res, {
+                campaign: {
+                    id: campaign.id,
+                    title: campaign.title,
+                    topic: campaign.topic,
+                    draft_text: campaign.draft_text,
+                    tone: campaign.tone,
+                    filters: campaign.filters_json,
+                    delivery_params: campaign.delivery_params_json,
+                    status: campaign.status,
+                    updated_at: campaign.updated_at?.toISOString(),
+                },
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Preview campaign - calculate targets and generate sample translations
+    'POST /api/campaigns/:id/preview': async (req, res, params) => {
+        const campaignId = parseInt(params.id);
+        if (isNaN(campaignId)) {
+            return sendJson(res, { error: 'Invalid campaign ID' }, 400);
+        }
+
+        const client = await pool.connect();
+        try {
+            // Get campaign
+            const campaignResult = await client.query(
+                'SELECT * FROM admin_campaigns WHERE id = $1',
+                [campaignId]
+            );
+
+            if (campaignResult.rows.length === 0) {
+                return sendJson(res, { error: 'Campaign not found' }, 404);
+            }
+
+            const campaign = campaignResult.rows[0];
+
+            if (!['draft', 'preview'].includes(campaign.status)) {
+                return sendJson(res, { error: 'Campaign must be in draft or preview status' }, 400);
+            }
+
+            const filters = campaign.filters_json || {};
+
+            // Build filter query
+            let whereConditions = ['1=1'];
+            const queryParams = [];
+            let paramIndex = 1;
+
+            // Always exclude blocked users by default
+            if (filters.exclude_blocked !== false) {
+                whereConditions.push('is_blocked = false');
+            }
+
+            // Filter: timezone_default (timezone is null or UTC)
+            if (filters.timezone_default === true) {
+                whereConditions.push(`(timezone IS NULL OR timezone = '' OR timezone = 'UTC')`);
+            }
+
+            // Filter: formal_address
+            if (filters.formal_address === true) {
+                whereConditions.push('formal_address = true');
+            } else if (filters.formal_address === false) {
+                whereConditions.push('formal_address = false');
+            }
+
+            // Filter: language_codes
+            if (filters.language_codes && Array.isArray(filters.language_codes) && filters.language_codes.length > 0) {
+                whereConditions.push(`language_code = ANY($${paramIndex++})`);
+                queryParams.push(filters.language_codes);
+            }
+
+            // Filter: onboarding_completed
+            if (filters.onboarding_completed === true) {
+                whereConditions.push('onboarding_completed = true');
+            } else if (filters.onboarding_completed === false) {
+                whereConditions.push('onboarding_completed = false');
+            }
+
+            // Filter: notifications_enabled
+            if (filters.notifications_enabled === true) {
+                whereConditions.push('notifications_enabled = true');
+            } else if (filters.notifications_enabled === false) {
+                whereConditions.push('notifications_enabled = false');
+            }
+
+            // Filter: notification_interval_hours
+            if (filters.notification_interval_hours !== null && filters.notification_interval_hours !== undefined) {
+                whereConditions.push(`notification_interval_hours = $${paramIndex++}`);
+                queryParams.push(filters.notification_interval_hours);
+            }
+
+            // Filter: gender_mode (male/female/unknown)
+            if (filters.gender_mode && filters.gender_mode !== 'any') {
+                whereConditions.push(`gender = $${paramIndex++}`);
+                queryParams.push(filters.gender_mode);
+            }
+
+            // Filter: activity_mode (active_within_days/inactive_days)
+            if (filters.activity_mode === 'active_within_days' && filters.activity_days) {
+                whereConditions.push(`last_active_at >= NOW() - INTERVAL '${parseInt(filters.activity_days)} days'`);
+            } else if (filters.activity_mode === 'inactive_days' && filters.activity_days) {
+                whereConditions.push(`(last_active_at IS NULL OR last_active_at < NOW() - INTERVAL '${parseInt(filters.activity_days)} days')`);
+            }
+
+            const whereClause = whereConditions.join(' AND ');
+
+            // Get matching users
+            const usersResult = await client.query(`
+                SELECT id, telegram_id, username, first_name, language_code, formal_address,
+                       timezone, active_hours_start, active_hours_end, gender
+                FROM users
+                WHERE ${whereClause}
+                ORDER BY id ASC
+            `, queryParams);
+
+            const users = usersResult.rows;
+            const totalTargets = users.length;
+
+            // Get language distribution
+            const langDist = {};
+            for (const user of users) {
+                const lang = user.language_code || 'unknown';
+                langDist[lang] = (langDist[lang] || 0) + 1;
+            }
+
+            // Get gender distribution
+            const genderDist = { male: 0, female: 0, unknown: 0 };
+            for (const user of users) {
+                const gender = user.gender || 'unknown';
+                genderDist[gender] = (genderDist[gender] || 0) + 1;
+            }
+
+            // Clear existing targets
+            await client.query('DELETE FROM admin_campaign_targets WHERE campaign_id = $1', [campaignId]);
+
+            // Insert new targets (without rendered text yet)
+            if (users.length > 0) {
+                const insertValues = users.map((user, idx) => {
+                    const base = idx * 6;
+                    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`;
+                }).join(', ');
+
+                const insertParams = users.flatMap(user => [
+                    campaignId,
+                    user.id,
+                    user.telegram_id,
+                    user.language_code || 'ru',
+                    user.formal_address || false,
+                    'pending'
+                ]);
+
+                await client.query(`
+                    INSERT INTO admin_campaign_targets
+                    (campaign_id, user_id, telegram_id, language_code, formal_address, status)
+                    VALUES ${insertValues}
+                `, insertParams);
+            }
+
+            // Update campaign status and stats
+            await client.query(`
+                UPDATE admin_campaigns
+                SET status = 'preview', total_targets = $2, updated_at = NOW()
+                WHERE id = $1
+            `, [campaignId, totalTargets]);
+
+            // Generate sample translations for preview (2-3 languages)
+            const sampleLanguages = Object.keys(langDist).slice(0, 3);
+            const sampleTranslations = {};
+
+            const openai = getOpenAIClient();
+            if (openai && campaign.draft_text) {
+                for (const lang of sampleLanguages) {
+                    try {
+                        const toneInstruction = campaign.tone === 'short' ? 'Keep it very brief and concise.' :
+                            campaign.tone === 'formal' ? 'Use formal, polite language.' :
+                            'Be warm and friendly.';
+
+                        const langName = {
+                            'ru': 'Russian',
+                            'en': 'English',
+                            'uk': 'Ukrainian',
+                            'es': 'Spanish',
+                            'de': 'German',
+                            'fr': 'French',
+                            'pt': 'Portuguese',
+                            'it': 'Italian',
+                            'zh': 'Chinese',
+                            'ja': 'Japanese',
+                        }[lang] || lang;
+
+                        const response = await openai.chat.completions.create({
+                            model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: `You are a translator and copywriter. Translate and adapt the following message to ${langName}. ${toneInstruction} Do not add any facts or information not present in the original. Return only the translated text, nothing else.`
+                                },
+                                {
+                                    role: 'user',
+                                    content: campaign.draft_text
+                                }
+                            ],
+                            temperature: 0.3,
+                            max_tokens: 500,
+                        });
+
+                        sampleTranslations[lang] = response.choices[0]?.message?.content?.trim() || '';
+                    } catch (err) {
+                        console.error(`Error generating sample for ${lang}:`, err.message);
+                        sampleTranslations[lang] = campaign.draft_text; // Fallback to original
+                    }
+                }
+            } else {
+                // No OpenAI, use draft text as-is
+                for (const lang of sampleLanguages) {
+                    sampleTranslations[lang] = campaign.draft_text;
+                }
+            }
+
+            sendJson(res, {
+                campaign_id: campaignId,
+                status: 'preview',
+                total_targets: totalTargets,
+                language_distribution: langDist,
+                gender_distribution: genderDist,
+                sample_translations: sampleTranslations,
+                filters_applied: filters,
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Schedule campaign for delivery
+    'POST /api/campaigns/:id/schedule': async (req, res, params) => {
+        const campaignId = parseInt(params.id);
+        if (isNaN(campaignId)) {
+            return sendJson(res, { error: 'Invalid campaign ID' }, 400);
+        }
+
+        const client = await pool.connect();
+        try {
+            // Get campaign
+            const campaignResult = await client.query(
+                'SELECT * FROM admin_campaigns WHERE id = $1',
+                [campaignId]
+            );
+
+            if (campaignResult.rows.length === 0) {
+                return sendJson(res, { error: 'Campaign not found' }, 404);
+            }
+
+            const campaign = campaignResult.rows[0];
+
+            if (campaign.status !== 'preview') {
+                return sendJson(res, { error: 'Campaign must be in preview status to schedule' }, 400);
+            }
+
+            if (campaign.total_targets === 0) {
+                return sendJson(res, { error: 'No targets to send to' }, 400);
+            }
+
+            // Calculate planned_send_at_utc for each target based on their active hours
+            const targets = await client.query(`
+                SELECT t.id, t.user_id, u.timezone, u.active_hours_start, u.active_hours_end
+                FROM admin_campaign_targets t
+                JOIN users u ON t.user_id = u.id
+                WHERE t.campaign_id = $1
+            `, [campaignId]);
+
+            const nowUtc = new Date();
+            const deliveryParams = campaign.delivery_params_json || {};
+            const withinHours = deliveryParams.within_hours || 24;
+            const deadline = deliveryParams.not_after ? new Date(deliveryParams.not_after) : null;
+
+            // Generate rendered text and calculate send times
+            const openai = getOpenAIClient();
+
+            for (const target of targets.rows) {
+                try {
+                    // Calculate next valid send time in user's active hours
+                    const plannedTime = calculateNextSendTime(
+                        target.timezone || 'UTC',
+                        target.active_hours_start,
+                        target.active_hours_end,
+                        nowUtc,
+                        withinHours,
+                        deadline
+                    );
+
+                    // Get full user data for personalization
+                    const userInfo = await client.query(`
+                        SELECT u.telegram_id, u.username, u.first_name, u.language_code,
+                               u.formal_address, u.timezone, u.gender,
+                               t.language_code as target_lang, t.formal_address as target_formal
+                        FROM users u
+                        JOIN admin_campaign_targets t ON t.user_id = u.id
+                        WHERE t.id = $1
+                    `, [target.id]);
+
+                    const user = userInfo.rows[0] || {};
+                    const lang = user.target_lang || user.language_code || 'ru';
+                    const formal = user.target_formal ?? user.formal_address ?? false;
+
+                    // Render text using LLM (translation)
+                    let renderedText = campaign.draft_text;
+
+                    if (openai) {
+                        try {
+                            const toneInstruction = campaign.tone === 'short' ? 'Keep it very brief and concise.' :
+                                campaign.tone === 'formal' ? 'Use formal, polite language.' :
+                                'Be warm and friendly.';
+
+                            const formalInstruction = formal ?
+                                'Use formal address (e.g., "you" formal, "Вы" in Russian).' :
+                                'Use informal address (e.g., "you" informal, "ты" in Russian).';
+
+                            const langName = {
+                                'ru': 'Russian', 'en': 'English', 'uk': 'Ukrainian',
+                                'es': 'Spanish', 'de': 'German', 'fr': 'French',
+                                'pt': 'Portuguese', 'it': 'Italian', 'zh': 'Chinese', 'ja': 'Japanese',
+                            }[lang] || lang;
+
+                            // Note: We tell LLM to preserve placeholders
+                            const response = await openai.chat.completions.create({
+                                model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o',
+                                messages: [
+                                    {
+                                        role: 'system',
+                                        content: `You are a translator and copywriter for a positive mindset bot. Translate and adapt the following message to ${langName}. ${toneInstruction} ${formalInstruction} Do not add any facts or information not present in the original. IMPORTANT: Do NOT translate or modify any placeholders in double curly braces like {{first_name}}, {{greeting}}, etc. - keep them exactly as they are. Return only the translated text, nothing else.`
+                                    },
+                                    {
+                                        role: 'user',
+                                        content: campaign.draft_text
+                                    }
+                                ],
+                                temperature: 0.3,
+                                max_tokens: 500,
+                            });
+
+                            renderedText = response.choices[0]?.message?.content?.trim() || campaign.draft_text;
+                        } catch (err) {
+                            console.error(`Error rendering text for target ${target.id}:`, err.message);
+                        }
+                    }
+
+                    // Apply personalization placeholders after translation
+                    renderedText = substitutePersonalization(renderedText, {
+                        telegram_id: user.telegram_id,
+                        username: user.username,
+                        first_name: user.first_name,
+                        language_code: user.language_code,
+                        formal_address: formal,
+                        timezone: user.timezone,
+                        gender: user.gender
+                    });
+
+                    // Update target with rendered text and planned time
+                    await client.query(`
+                        UPDATE admin_campaign_targets
+                        SET rendered_text = $1, planned_send_at_utc = $2, status = 'rendered'
+                        WHERE id = $3
+                    `, [renderedText, plannedTime, target.id]);
+
+                    // Add small delay to avoid rate limiting
+                    await sleep(RATE_LIMIT_DELAY_MS);
+                } catch (err) {
+                    console.error(`Error processing target ${target.id}:`, err.message);
+                    await client.query(`
+                        UPDATE admin_campaign_targets
+                        SET status = 'failed', error = $1
+                        WHERE id = $2
+                    `, [err.message, target.id]);
+                }
+            }
+
+            // Update campaign status
+            await client.query(`
+                UPDATE admin_campaigns
+                SET status = 'scheduled', scheduled_at = NOW(), updated_at = NOW()
+                WHERE id = $1
+            `, [campaignId]);
+
+            sendJson(res, {
+                campaign_id: campaignId,
+                status: 'scheduled',
+                message: 'Campaign scheduled for delivery. Messages will be sent during users\' active hours.',
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Start sending campaign (trigger immediate processing)
+    'POST /api/campaigns/:id/send': async (req, res, params) => {
+        const campaignId = parseInt(params.id);
+        if (isNaN(campaignId)) {
+            return sendJson(res, { error: 'Invalid campaign ID' }, 400);
+        }
+
+        const client = await pool.connect();
+        try {
+            // Get campaign
+            const campaignResult = await client.query(
+                'SELECT * FROM admin_campaigns WHERE id = $1',
+                [campaignId]
+            );
+
+            if (campaignResult.rows.length === 0) {
+                return sendJson(res, { error: 'Campaign not found' }, 404);
+            }
+
+            const campaign = campaignResult.rows[0];
+            const deliveryParams = campaign.delivery_params_json || {};
+            const testMode = deliveryParams.test_mode === true;
+
+            if (!['scheduled', 'sending'].includes(campaign.status)) {
+                return sendJson(res, { error: 'Campaign must be in scheduled or sending status' }, 400);
+            }
+
+            // Update status to sending
+            await client.query(`
+                UPDATE admin_campaigns
+                SET status = 'sending', started_at = COALESCE(started_at, NOW()), updated_at = NOW()
+                WHERE id = $1
+            `, [campaignId]);
+
+            // Get pending targets that are due
+            const pendingTargets = await client.query(`
+                SELECT t.*, u.is_blocked, u.notifications_enabled
+                FROM admin_campaign_targets t
+                JOIN users u ON t.user_id = u.id
+                WHERE t.campaign_id = $1
+                AND t.status IN ('rendered', 'pending')
+                AND (t.planned_send_at_utc IS NULL OR t.planned_send_at_utc <= NOW())
+                ORDER BY t.planned_send_at_utc ASC NULLS LAST
+                LIMIT 50
+            `, [campaignId]);
+
+            let sentCount = 0;
+            let failedCount = 0;
+            let skippedCount = 0;
+
+            // Send messages via Telegram
+            for (const target of pendingTargets.rows) {
+                try {
+                    // Skip blocked users or users with notifications disabled
+                    if (target.is_blocked || !target.notifications_enabled) {
+                        await client.query(`
+                            UPDATE admin_campaign_targets
+                            SET status = 'skipped', error = 'User blocked or notifications disabled'
+                            WHERE id = $1
+                        `, [target.id]);
+                        skippedCount++;
+                        continue;
+                    }
+
+                    const messageText = target.rendered_text || campaign.draft_text;
+
+                    // Test mode: never send, just mark as skipped
+                    if (testMode) {
+                        await client.query(`
+                            UPDATE admin_campaign_targets
+                            SET status = 'skipped', error = 'Test mode: not sent'
+                            WHERE id = $1
+                        `, [target.id]);
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // Send via Telegram API
+                    if (TELEGRAM_BOT_TOKEN) {
+                        const telegramResponse = await fetch(
+                            `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    chat_id: target.telegram_id,
+                                    text: messageText,
+                                    parse_mode: 'HTML',
+                                }),
+                            }
+                        );
+
+                        const result = await telegramResponse.json();
+
+                        if (result.ok) {
+                            // Success - update target
+                            await client.query(`
+                                UPDATE admin_campaign_targets
+                                SET status = 'sent', sent_at = NOW()
+                                WHERE id = $1
+                            `, [target.id]);
+
+                            // Log in conversations
+                            await client.query(`
+                                INSERT INTO conversations (user_id, message_type, content, metadata, created_at)
+                                VALUES ($1, 'admin_broadcast', $2, $3, NOW())
+                            `, [
+                                target.user_id,
+                                messageText,
+                                JSON.stringify({
+                                    campaign_id: campaignId,
+                                    campaign_title: campaign.title,
+                                    language_code: target.language_code,
+                                    formal_address: target.formal_address,
+                                })
+                            ]);
+
+                            sentCount++;
+                        } else {
+                            // Telegram error
+                            const errorMsg = result.description || 'Unknown Telegram error';
+                            await client.query(`
+                                UPDATE admin_campaign_targets
+                                SET status = 'failed', error = $1
+                                WHERE id = $2
+                            `, [errorMsg, target.id]);
+                            failedCount++;
+
+                            // Handle flood control
+                            if (result.error_code === 429 && result.parameters?.retry_after) {
+                                await sleep(result.parameters.retry_after * 1000);
+                            }
+                        }
+                    } else {
+                        // No token - just log
+                        console.log(`[CAMPAIGN ${campaignId}] Would send to ${target.telegram_id}: ${messageText.substring(0, 50)}...`);
+                        await client.query(`
+                            UPDATE admin_campaign_targets
+                            SET status = 'sent', sent_at = NOW()
+                            WHERE id = $1
+                        `, [target.id]);
+                        sentCount++;
+                    }
+
+                    // Rate limiting delay
+                    await sleep(50);
+                } catch (err) {
+                    console.error(`Error sending to target ${target.id}:`, err.message);
+                    await client.query(`
+                        UPDATE admin_campaign_targets
+                        SET status = 'failed', error = $1
+                        WHERE id = $2
+                    `, [err.message, target.id]);
+                    failedCount++;
+                }
+            }
+
+            // Update campaign stats
+            await client.query(`
+                UPDATE admin_campaigns
+                SET sent_count = sent_count + $2, failed_count = failed_count + $3, updated_at = NOW()
+                WHERE id = $1
+            `, [campaignId, sentCount, failedCount]);
+
+            // Check if campaign is complete
+            const remainingResult = await client.query(`
+                SELECT COUNT(*) as remaining
+                FROM admin_campaign_targets
+                WHERE campaign_id = $1 AND status IN ('pending', 'rendered')
+            `, [campaignId]);
+
+            const remaining = parseInt(remainingResult.rows[0].remaining);
+
+            if (remaining === 0) {
+                await client.query(`
+                    UPDATE admin_campaigns
+                    SET status = 'done', completed_at = NOW(), updated_at = NOW()
+                    WHERE id = $1
+                `, [campaignId]);
+            }
+
+            sendJson(res, {
+                campaign_id: campaignId,
+                processed: pendingTargets.rows.length,
+                sent: sentCount,
+                failed: failedCount,
+                skipped: skippedCount,
+                remaining,
+                status: remaining === 0 ? 'done' : 'sending',
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Cancel campaign
+    'POST /api/campaigns/:id/cancel': async (req, res, params) => {
+        const campaignId = parseInt(params.id);
+        if (isNaN(campaignId)) {
+            return sendJson(res, { error: 'Invalid campaign ID' }, 400);
+        }
+
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                UPDATE admin_campaigns
+                SET status = 'cancelled', updated_at = NOW()
+                WHERE id = $1 AND status NOT IN ('done', 'cancelled')
+                RETURNING *
+            `, [campaignId]);
+
+            if (result.rows.length === 0) {
+                return sendJson(res, { error: 'Campaign not found or already completed' }, 404);
+            }
+
+            // Mark pending targets as skipped
+            await client.query(`
+                UPDATE admin_campaign_targets
+                SET status = 'skipped', error = 'Campaign cancelled'
+                WHERE campaign_id = $1 AND status IN ('pending', 'rendered')
+            `, [campaignId]);
+
+            sendJson(res, {
+                campaign_id: campaignId,
+                status: 'cancelled',
+                message: 'Campaign cancelled successfully',
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Delete campaign (only draft/cancelled)
+    'POST /api/campaigns/:id/delete': async (req, res, params) => {
+        const campaignId = parseInt(params.id);
+        if (isNaN(campaignId)) {
+            return sendJson(res, { error: 'Invalid campaign ID' }, 400);
+        }
+
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                DELETE FROM admin_campaigns
+                WHERE id = $1 AND status IN ('draft', 'cancelled')
+                RETURNING id
+            `, [campaignId]);
+
+            if (result.rows.length === 0) {
+                return sendJson(res, { error: 'Campaign not found or cannot be deleted (must be draft or cancelled)' }, 404);
+            }
+
+            sendJson(res, {
+                campaign_id: campaignId,
+                deleted: true,
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // Export campaign targets as CSV
+    'GET /api/campaigns/:id/export': async (req, res, params) => {
+        const campaignId = parseInt(params.id);
+        if (isNaN(campaignId)) {
+            return sendJson(res, { error: 'Invalid campaign ID' }, 400);
+        }
+
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT t.*, u.username, u.first_name
+                FROM admin_campaign_targets t
+                JOIN users u ON t.user_id = u.id
+                WHERE t.campaign_id = $1
+                ORDER BY t.id ASC
+            `, [campaignId]);
+
+            const csvRows = ['ID,User ID,Telegram ID,Username,First Name,Language,Formal,Status,Error,Planned Send,Sent At'];
+
+            for (const row of result.rows) {
+                csvRows.push([
+                    row.id,
+                    row.user_id,
+                    row.telegram_id,
+                    `"${(row.username || '').replace(/"/g, '""')}"`,
+                    `"${(row.first_name || '').replace(/"/g, '""')}"`,
+                    row.language_code,
+                    row.formal_address,
+                    row.status,
+                    `"${(row.error || '').replace(/"/g, '""')}"`,
+                    row.planned_send_at_utc?.toISOString() || '',
+                    row.sent_at?.toISOString() || '',
+                ].join(','));
+            }
+
+            res.writeHead(200, {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': `attachment; filename="campaign_${campaignId}_targets.csv"`,
+                'Access-Control-Allow-Origin': '*',
+            });
+            res.end(csvRows.join('\n'));
+        } finally {
+            client.release();
+        }
+    },
 };
+
+// Helper function to calculate next send time within user's active hours
+function calculateNextSendTime(timezone, activeStart, activeEnd, nowUtc, withinHours, deadline) {
+    try {
+        // Convert times to comparable format
+        const tz = timezone || 'UTC';
+
+        // Get current time in user's timezone
+        const nowInTz = new Date(nowUtc.toLocaleString('en-US', { timeZone: tz }));
+        const nowHour = nowInTz.getHours();
+        const nowMinute = nowInTz.getMinutes();
+        const nowTimeMinutes = nowHour * 60 + nowMinute;
+
+        // Parse active hours (format: "HH:MM:SS" or {hours, minutes})
+        let startMinutes, endMinutes;
+
+        if (typeof activeStart === 'string') {
+            const [h, m] = activeStart.split(':').map(Number);
+            startMinutes = h * 60 + (m || 0);
+        } else if (activeStart && typeof activeStart === 'object') {
+            startMinutes = (activeStart.hours || 0) * 60 + (activeStart.minutes || 0);
+        } else {
+            startMinutes = 9 * 60; // Default 09:00
+        }
+
+        if (typeof activeEnd === 'string') {
+            const [h, m] = activeEnd.split(':').map(Number);
+            endMinutes = h * 60 + (m || 0);
+        } else if (activeEnd && typeof activeEnd === 'object') {
+            endMinutes = (activeEnd.hours || 0) * 60 + (activeEnd.minutes || 0);
+        } else {
+            endMinutes = 21 * 60; // Default 21:00
+        }
+
+        // Handle overnight windows (e.g., 22:00 - 08:00)
+        const isOvernight = endMinutes < startMinutes;
+
+        // Check if current time is within active window
+        let isInWindow;
+        if (isOvernight) {
+            isInWindow = nowTimeMinutes >= startMinutes || nowTimeMinutes < endMinutes;
+        } else {
+            isInWindow = nowTimeMinutes >= startMinutes && nowTimeMinutes < endMinutes;
+        }
+
+        if (isInWindow) {
+            // Current time is in window - send now (or very soon)
+            return new Date(nowUtc.getTime() + Math.random() * 5 * 60 * 1000); // Random 0-5 min delay
+        }
+
+        // Calculate next window start
+        let nextStart = new Date(nowInTz);
+        const startHour = Math.floor(startMinutes / 60);
+        const startMin = startMinutes % 60;
+
+        if (nowTimeMinutes >= endMinutes && !isOvernight) {
+            // After today's window - next day
+            nextStart.setDate(nextStart.getDate() + 1);
+        } else if (isOvernight && nowTimeMinutes >= endMinutes && nowTimeMinutes < startMinutes) {
+            // In the gap of overnight window - use today's start time
+        }
+
+        nextStart.setHours(startHour, startMin, 0, 0);
+
+        // Add random offset (0-30 min) to spread load
+        const randomOffset = Math.random() * 30 * 60 * 1000;
+        const plannedTime = new Date(nextStart.getTime() + randomOffset);
+
+        // Check against deadline
+        if (deadline && plannedTime > deadline) {
+            return null; // Can't send before deadline
+        }
+
+        // Check against within_hours limit
+        const maxTime = new Date(nowUtc.getTime() + withinHours * 60 * 60 * 1000);
+        if (plannedTime > maxTime) {
+            // Try to send at start of window even if it's not ideal
+            return new Date(Math.min(nextStart.getTime(), maxTime.getTime()));
+        }
+
+        return plannedTime;
+    } catch (err) {
+        console.error('Error calculating send time:', err.message);
+        return new Date(nowUtc.getTime() + 60000); // Fallback: 1 minute from now
+    }
+}
 
 // Match route with params
 function matchRoute(method, url) {

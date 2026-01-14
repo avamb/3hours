@@ -48,6 +48,7 @@
                 <li><a href="#" data-page="moments" class="nav-link">Moments</a></li>
                 <li><a href="#" data-page="knowledge" class="nav-link">Knowledge Base</a></li>
                 <li><a href="#" data-page="templates" class="nav-link">Templates</a></li>
+                <li><a href="#" data-page="campaigns" class="nav-link">Campaigns</a></li>
                 <li><a href="#" data-page="dialogs" class="nav-link">Dialogs</a></li>
                 <li><a href="#" data-page="messages" class="nav-link">Messages</a></li>
                 <li><a href="#" data-page="analytics" class="nav-link">Analytics</a></li>
@@ -797,6 +798,235 @@
                     <h3>Recent API Calls</h3>
                     <div id="expenses-recent" class="expenses-table-container">
                         <p class="loading">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campaigns Page -->
+            <div id="page-campaigns" class="page">
+                <h2>Broadcast Campaigns</h2>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid campaigns-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Campaigns</div>
+                        <div class="stat-value" id="campaigns-total">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active</div>
+                        <div class="stat-value" id="campaigns-active">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Completed</div>
+                        <div class="stat-value" id="campaigns-done">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Sent</div>
+                        <div class="stat-value" id="campaigns-total-sent">-</div>
+                    </div>
+                </div>
+
+                <!-- Create Campaign Form -->
+                <div class="campaign-form-section">
+                    <h3 id="campaign-form-title">Create New Campaign</h3>
+                    <form id="campaign-form" class="campaign-form">
+                        <input type="hidden" id="campaign-edit-id" value="">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="campaign-title">Campaign Title *</label>
+                                <input type="text" id="campaign-title" name="title" class="form-input" placeholder="e.g., Timezone Reminder" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="campaign-tone">Tone</label>
+                                <select id="campaign-tone" name="tone" class="select-input">
+                                    <option value="friendly">Friendly</option>
+                                    <option value="short">Short & Concise</option>
+                                    <option value="formal">Formal</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="campaign-topic">Topic/Purpose (optional)</label>
+                                <input type="text" id="campaign-topic" name="topic" class="form-input" placeholder="e.g., Remind users to set their timezone">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="campaign-draft">Draft Message *</label>
+                                <textarea id="campaign-draft" name="draft_text" class="form-input campaign-textarea" rows="4" placeholder="Write your message draft here. It will be translated to each user's language..." required></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Message Personalization Help -->
+                        <div class="personalization-help" style="background: #f0f7ff; border: 1px solid #cce0ff; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+                            <h5 style="margin: 0 0 8px 0; color: #0066cc;">Personalization Placeholders</h5>
+                            <p style="margin: 0; font-size: 13px; color: #555;">
+                                Use <code>{{first_name}}</code>, <code>{{username}}</code>, <code>{{greeting}}</code>,
+                                <code>{{telegram_id}}</code>, <code>{{language_code}}</code>, <code>{{timezone}}</code>,
+                                <code>{{gender}}</code>, <code>{{formal_address}}</code> in your message.
+                                <br><small><code>{{greeting}}</code> = "Привет, Name!" or "Здравствуйте, Name!" based on formal_address</small>
+                            </p>
+                        </div>
+
+                        <!-- Filters Section -->
+                        <div class="filters-section">
+                            <h4>Audience Filters</h4>
+                            <div class="form-row filters-row">
+                                <div class="form-group filter-group">
+                                    <label>
+                                        <input type="checkbox" id="filter-timezone-default" name="timezone_default">
+                                        Timezone not set (UTC/default)
+                                    </label>
+                                </div>
+                                <div class="form-group filter-group">
+                                    <label>
+                                        <input type="checkbox" id="filter-onboarding-incomplete" name="onboarding_incomplete">
+                                        Onboarding incomplete
+                                    </label>
+                                </div>
+                                <div class="form-group filter-group">
+                                    <label>
+                                        <input type="checkbox" id="filter-notifications-disabled" name="notifications_disabled">
+                                        Notifications disabled
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-row filters-row">
+                                <div class="form-group">
+                                    <label for="filter-languages">Languages (comma-separated)</label>
+                                    <input type="text" id="filter-languages" name="languages" class="form-input" placeholder="e.g., ru,en,uk (leave empty for all)">
+                                </div>
+                                <div class="form-group">
+                                    <label for="filter-formal">Address Style</label>
+                                    <select id="filter-formal" name="formal_address" class="select-input">
+                                        <option value="">Any</option>
+                                        <option value="true">Formal (Вы)</option>
+                                        <option value="false">Informal (ты)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="filter-gender">Gender</label>
+                                    <select id="filter-gender" name="gender_mode" class="select-input">
+                                        <option value="any">Any</option>
+                                        <option value="male">Male only</option>
+                                        <option value="female">Female only</option>
+                                        <option value="unknown">Unknown only</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row filters-row">
+                                <div class="form-group">
+                                    <label for="filter-activity-mode">Activity</label>
+                                    <select id="filter-activity-mode" name="activity_mode" class="select-input">
+                                        <option value="any">Any</option>
+                                        <option value="active_within_days">Active within N days</option>
+                                        <option value="inactive_days">Inactive for N days</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="filter-activity-days">Days (N)</label>
+                                    <input type="number" id="filter-activity-days" name="activity_days" class="form-input" placeholder="e.g., 7" min="1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Delivery Settings -->
+                        <div class="delivery-section">
+                            <h4>Delivery Settings</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="delivery-within-hours">Deliver within (hours)</label>
+                                    <input type="number" id="delivery-within-hours" name="within_hours" class="form-input" value="24" min="1" max="168">
+                                </div>
+                                <div class="form-group filter-group">
+                                    <label>
+                                        <input type="checkbox" id="delivery-test-mode" name="test_mode">
+                                        Test mode (don't send, just preview)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+                                <div class="form-group filter-group">
+                                    <label>
+                                        <input type="checkbox" id="delivery-send-on-activity" name="send_on_activity">
+                                        Send only when user is active (activity trigger)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-row activity-trigger-settings" id="activity-trigger-settings" style="display: none;">
+                                <div class="form-group">
+                                    <label for="delivery-activity-window">Activity window (minutes)</label>
+                                    <input type="number" id="delivery-activity-window" name="activity_window_minutes" class="form-input" value="10" min="1" max="60">
+                                    <small style="color: #666;">User must be active within this window</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="delivery-cooldown">Cooldown (minutes)</label>
+                                    <input type="number" id="delivery-cooldown" name="cooldown_minutes" class="form-input" value="60" min="1" max="1440">
+                                    <small style="color: #666;">Min time between sends to same user</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="delivery-max-per-activity">Max per activity</label>
+                                    <input type="number" id="delivery-max-per-activity" name="max_per_activity" class="form-input" value="1" min="1" max="5">
+                                    <small style="color: #666;">Max messages per activity event</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="campaign-submit-btn">Create Campaign</button>
+                            <button type="button" class="btn btn-secondary" id="campaign-cancel-btn" style="display: none;">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Campaigns Table -->
+                <div class="toolbar">
+                    <select id="campaigns-status-filter" class="select-input">
+                        <option value="">All Statuses</option>
+                        <option value="draft">Draft</option>
+                        <option value="preview">Preview</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="sending">Sending</option>
+                        <option value="done">Done</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <button id="refresh-campaigns" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="campaigns-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Targets</th>
+                                <th>Sent</th>
+                                <th>Failed</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="8" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="campaigns-pagination"></div>
+            </div>
+
+            <!-- Campaign Detail Modal -->
+            <div id="campaign-modal" class="modal">
+                <div class="modal-content modal-lg">
+                    <div class="modal-header">
+                        <h3>Campaign Details</h3>
+                        <button class="modal-close">&times;</button>
+                    </div>
+                    <div class="modal-body" id="campaign-modal-body">
+                        <p class="loading">Loading...</p>
+                    </div>
+                    <div class="modal-footer" id="campaign-modal-footer">
+                        <!-- Action buttons will be injected here -->
                     </div>
                 </div>
             </div>
