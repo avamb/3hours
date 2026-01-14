@@ -2030,6 +2030,213 @@ body {
     gap: 4px;
 }
 
+/* Campaign Styles */
+.campaign-form-section {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+}
+
+.campaign-form .form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.campaign-form .form-row:last-child {
+    margin-bottom: 0;
+}
+
+.campaign-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.filters-section,
+.delivery-section {
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.filters-section h4,
+.delivery-section h4 {
+    margin: 0 0 12px 0;
+    color: var(--primary-color);
+    font-size: 14px;
+}
+
+.filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.filter-group {
+    min-width: 150px;
+}
+
+.filter-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.filter-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+/* Campaign status badges */
+.status-badge.status-draft {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+.status-badge.status-preview {
+    background: rgba(251, 191, 36, 0.1);
+    color: #d97706;
+}
+
+.status-badge.status-scheduled {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color);
+}
+
+.status-badge.status-sending {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    animation: pulse 2s infinite;
+}
+
+.status-badge.status-done {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+}
+
+.status-badge.status-cancelled {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
+}
+
+.status-badge.status-pending {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+.status-badge.status-rendered {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color);
+}
+
+.status-badge.status-sent {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+}
+
+.status-badge.status-failed {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
+}
+
+.status-badge.status-skipped {
+    background: rgba(251, 191, 36, 0.1);
+    color: #d97706;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Campaign detail modal */
+.campaign-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.detail-section {
+    background: var(--background-color);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.detail-section h4 {
+    margin: 0 0 12px 0;
+    color: var(--primary-color);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.message-preview {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    white-space: pre-wrap;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.json-preview {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    margin: 0;
+}
+
+.target-status-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.success-text {
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+.error-text {
+    color: var(--error-color);
+    font-weight: 500;
+}
+
+/* Compact table for modals */
+.data-table.compact {
+    font-size: 13px;
+}
+
+.data-table.compact th,
+.data-table.compact td {
+    padding: 8px 12px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     #dashboard-screen {

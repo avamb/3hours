@@ -15,6 +15,7 @@ from src.db.database import init_db, close_db
 from src.bot.handlers import commands, messages, callbacks, feedback
 from src.bot.middlewares.logging import LoggingMiddleware
 from src.bot.middlewares.blocked_user import BlockedUserMiddleware
+from src.bot.middlewares.activity import ActivityMiddleware
 from src.services.scheduler import NotificationScheduler
 
 # Configure logging
@@ -44,8 +45,10 @@ async def main() -> None:
     # Register middlewares (BlockedUserMiddleware first to reject blocked users early)
     dp.message.middleware(BlockedUserMiddleware())
     dp.message.middleware(LoggingMiddleware())
+    dp.message.middleware(ActivityMiddleware(bot))  # Activity tracking and campaign delivery
     dp.callback_query.middleware(BlockedUserMiddleware())
     dp.callback_query.middleware(LoggingMiddleware())
+    dp.callback_query.middleware(ActivityMiddleware(bot))  # Activity tracking and campaign delivery
 
     # Register routers
     dp.include_router(commands.router)
