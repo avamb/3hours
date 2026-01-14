@@ -3771,7 +3771,7 @@ const routes = {
                             messages: [
                                 {
                                     role: 'system',
-                                    content: `You are a translator and copywriter. Translate and adapt the following message to ${langName}. ${toneInstruction} Do not add any facts or information not present in the original. Return only the translated text, nothing else.`
+                                    content: `You are a translator and copywriter. Translate and adapt the following message to ${langName}. ${toneInstruction} Do not add any facts or information not present in the original. IMPORTANT: Do NOT translate or modify any placeholders in double curly braces like {{first_name}}, {{greeting}}, etc. - keep them exactly as they are. Return only the translated text, nothing else.`
                                 },
                                 {
                                     role: 'user',
@@ -3838,9 +3838,22 @@ const routes = {
                 return sendJson(res, { error: 'No targets to send to' }, 400);
             }
 
-            // Calculate planned_send_at_utc for each target based on their active hours
+            // Load target + user data in one query (avoids N+1 DB calls)
             const targets = await client.query(`
-                SELECT t.id, t.user_id, u.timezone, u.active_hours_start, u.active_hours_end
+                SELECT
+                    t.id,
+                    t.user_id,
+                    t.language_code AS target_lang,
+                    t.formal_address AS target_formal,
+                    u.telegram_id,
+                    u.username,
+                    u.first_name,
+                    u.language_code,
+                    u.formal_address,
+                    u.timezone,
+                    u.gender,
+                    u.active_hours_start,
+                    u.active_hours_end
                 FROM admin_campaign_targets t
                 JOIN users u ON t.user_id = u.id
                 WHERE t.campaign_id = $1
@@ -3852,7 +3865,84 @@ const routes = {
             const deadline = deliveryParams.not_after ? new Date(deliveryParams.not_after) : null;
 
             // Generate rendered text and calculate send times
-            const openai = getOpenAIClient();
+            let openai = getOpenAIClient();
+            const translationCache = new Map(); // key -> translated text (placeholders preserved)
+
+            const langNameMap = {
+                'ru': 'Russian', 'en': 'English', 'uk': 'Ukrainian',
+                'es': 'Spanish', 'de': 'German', 'fr': 'French',
+                'pt': 'Portuguese', 'it': 'Italian', 'zh': 'Chinese', 'ja': 'Japanese',
+            };
+
+            const toneInstruction =
+                campaign.tone === 'short' ? 'Keep it very brief and concise.' :
+                campaign.tone === 'formal' ? 'Use formal, polite language.' :
+                'Be warm and friendly.';
+
+            const getFormalInstruction = (formal) => (
+                formal
+                    ? 'Use formal address (e.g., "you" formal, "Вы" in Russian).'
+                    : 'Use informal address (e.g., "you" informal, "ты" in Russian).'
+            );
+
+            const shouldDisableOpenaiForError = (err) => {
+                const msg = String(err?.message || err || '').toLowerCase();
+                return (
+                    err?.status === 429 ||
+                    msg.includes('insufficient_quota') ||
+                    msg.includes('you exceeded your current quota') ||
+                    msg.includes('rate limit')
+                );
+            };
+
+            const getTranslatedBaseText = async (lang, formal) => {
+                // If no OpenAI client, return original draft (placeholders will be substituted later)
+                if (!openai || !campaign.draft_text) {
+                    return campaign.draft_text;
+                }
+
+                const key = `${lang}|${formal ? 'formal' : 'informal'}|${campaign.tone || 'friendly'}`;
+                if (translationCache.has(key)) {
+                    return translationCache.get(key);
+                }
+
+                const langName = langNameMap[lang] || lang;
+                const formalInstruction = getFormalInstruction(formal);
+
+                try {
+                    const response = await openai.chat.completions.create({
+                        model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o',
+                        messages: [
+                            {
+                                role: 'system',
+                                content:
+                                    `You are a translator and copywriter for a positive mindset bot. ` +
+                                    `Translate and adapt the following message to ${langName}. ` +
+                                    `${toneInstruction} ${formalInstruction} ` +
+                                    `Do not add any facts or information not present in the original. ` +
+                                    `IMPORTANT: Do NOT translate or modify any placeholders in double curly braces like ` +
+                                    `{{first_name}}, {{greeting}}, etc. - keep them exactly as they are. ` +
+                                    `Return only the translated text, nothing else.`
+                            },
+                            { role: 'user', content: campaign.draft_text }
+                        ],
+                        temperature: 0.3,
+                        max_tokens: 500,
+                    });
+
+                    const translated = response.choices[0]?.message?.content?.trim() || campaign.draft_text;
+                    translationCache.set(key, translated);
+                    return translated;
+                } catch (err) {
+                    console.error(`Error translating campaign for lang=${lang} formal=${formal}:`, err?.message || err);
+                    if (shouldDisableOpenaiForError(err)) {
+                        // If quota/rate-limit is hit, disable OpenAI for the rest of this request
+                        openai = null;
+                    }
+                    translationCache.set(key, campaign.draft_text);
+                    return campaign.draft_text;
+                }
+            };
 
             for (const target of targets.rows) {
                 try {
@@ -3866,71 +3956,21 @@ const routes = {
                         deadline
                     );
 
-                    // Get full user data for personalization
-                    const userInfo = await client.query(`
-                        SELECT u.telegram_id, u.username, u.first_name, u.language_code,
-                               u.formal_address, u.timezone, u.gender,
-                               t.language_code as target_lang, t.formal_address as target_formal
-                        FROM users u
-                        JOIN admin_campaign_targets t ON t.user_id = u.id
-                        WHERE t.id = $1
-                    `, [target.id]);
+                    const lang = target.target_lang || target.language_code || 'ru';
+                    const formal = (target.target_formal ?? target.formal_address) ?? false;
 
-                    const user = userInfo.rows[0] || {};
-                    const lang = user.target_lang || user.language_code || 'ru';
-                    const formal = user.target_formal ?? user.formal_address ?? false;
-
-                    // Render text using LLM (translation)
-                    let renderedText = campaign.draft_text;
-
-                    if (openai) {
-                        try {
-                            const toneInstruction = campaign.tone === 'short' ? 'Keep it very brief and concise.' :
-                                campaign.tone === 'formal' ? 'Use formal, polite language.' :
-                                'Be warm and friendly.';
-
-                            const formalInstruction = formal ?
-                                'Use formal address (e.g., "you" formal, "Вы" in Russian).' :
-                                'Use informal address (e.g., "you" informal, "ты" in Russian).';
-
-                            const langName = {
-                                'ru': 'Russian', 'en': 'English', 'uk': 'Ukrainian',
-                                'es': 'Spanish', 'de': 'German', 'fr': 'French',
-                                'pt': 'Portuguese', 'it': 'Italian', 'zh': 'Chinese', 'ja': 'Japanese',
-                            }[lang] || lang;
-
-                            // Note: We tell LLM to preserve placeholders
-                            const response = await openai.chat.completions.create({
-                                model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o',
-                                messages: [
-                                    {
-                                        role: 'system',
-                                        content: `You are a translator and copywriter for a positive mindset bot. Translate and adapt the following message to ${langName}. ${toneInstruction} ${formalInstruction} Do not add any facts or information not present in the original. IMPORTANT: Do NOT translate or modify any placeholders in double curly braces like {{first_name}}, {{greeting}}, etc. - keep them exactly as they are. Return only the translated text, nothing else.`
-                                    },
-                                    {
-                                        role: 'user',
-                                        content: campaign.draft_text
-                                    }
-                                ],
-                                temperature: 0.3,
-                                max_tokens: 500,
-                            });
-
-                            renderedText = response.choices[0]?.message?.content?.trim() || campaign.draft_text;
-                        } catch (err) {
-                            console.error(`Error rendering text for target ${target.id}:`, err.message);
-                        }
-                    }
+                    // Translate once per (lang, formal, tone) and reuse (prevents timeouts for large target sets)
+                    let renderedText = await getTranslatedBaseText(lang, formal);
 
                     // Apply personalization placeholders after translation
                     renderedText = substitutePersonalization(renderedText, {
-                        telegram_id: user.telegram_id,
-                        username: user.username,
-                        first_name: user.first_name,
-                        language_code: user.language_code,
+                        telegram_id: target.telegram_id,
+                        username: target.username,
+                        first_name: target.first_name,
+                        language_code: target.language_code,
                         formal_address: formal,
-                        timezone: user.timezone,
-                        gender: user.gender
+                        timezone: target.timezone,
+                        gender: target.gender
                     });
 
                     // Update target with rendered text and planned time
@@ -3940,8 +3980,8 @@ const routes = {
                         WHERE id = $3
                     `, [renderedText, plannedTime, target.id]);
 
-                    // Add small delay to avoid rate limiting
-                    await sleep(RATE_LIMIT_DELAY_MS);
+                    // Keep a tiny delay to reduce load spikes (DB + optional OpenAI)
+                    await sleep(5);
                 } catch (err) {
                     console.error(`Error processing target ${target.id}:`, err.message);
                     await client.query(`
