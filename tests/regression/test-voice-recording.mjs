@@ -6,7 +6,7 @@
 import { readFileSync } from 'fs';
 
 // Read bot code to verify implementation
-const botCode = readFileSync('C:/Projects/3hours/test-bot.mjs', 'utf8');
+const botCode = readFileSync(new URL('./test-bot.mjs', import.meta.url), 'utf8');
 
 console.log("=== Feature #7: Voice Message Recording - Test ===\n");
 

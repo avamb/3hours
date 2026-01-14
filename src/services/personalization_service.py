@@ -1,10 +1,11 @@
 """
 MINDSETHAPPYBOT - Personalization service
 Generates personalized responses using GPT-4 and user history
+Enhanced with Hybrid RAG (Knowledge Base + User Memory + Anti-repetition)
 """
 import logging
 import time
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Tuple
 
 from openai import AsyncOpenAI
 from sqlalchemy import select
@@ -19,6 +20,10 @@ from src.utils.text_filters import (
 )
 from src.utils.localization import get_language_code
 from src.services.api_usage_service import APIUsageService
+from src.services.knowledge_retrieval_service import (
+    KnowledgeRetrievalService,
+    RAGContext,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,13 +105,14 @@ or masculine as the default neutral form in Russian."""
 
 
 class PersonalizationService:
-    """Service for generating personalized responses"""
+    """Service for generating personalized responses with Hybrid RAG"""
 
     def __init__(self):
         settings = get_settings()
         self.client = AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = settings.openai_chat_model
         self.analysis_model = settings.openai_analysis_model
+        self.rag_service = KnowledgeRetrievalService()
 
     async def generate_response(
         self,
@@ -603,3 +609,232 @@ Remember: you're not a psychologist and don't give professional advice. You're j
                 success=success,
                 error_message=error_msg,
             )
+
+    async def generate_dialog_response_with_rag(
+        self,
+        telegram_id: int,
+        message: str,
+        context: List[dict] = None,
+    ) -> Tuple[str, Dict[str, Any]]:
+        """
+        Generate response for free dialog mode with Hybrid RAG.
+
+        Uses:
+        - User's personal history (moments) for emotional/personal context
+        - Knowledge Base for advice/techniques/practices
+        - Anti-repetition to ensure varied responses
+
+        Args:
+            telegram_id: User's Telegram ID
+            message: User's message
+            context: Previous conversation context (OpenAI format)
+
+        Returns:
+            Tuple of (response_text, rag_metadata)
+            rag_metadata contains: rag_mode, moment_ids, kb_chunk_ids, etc.
+        """
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+        rag_metadata = {}
+
+        try:
+            # Step 1: Get user info
+            async with get_session() as session:
+                result = await session.execute(
+                    select(User).where(User.telegram_id == telegram_id)
+                )
+                user = result.scalar_one_or_none()
+
+            address = "вы" if (user and user.formal_address) else "ты"
+            gender = user.gender if user else "unknown"
+            gender_instruction = get_gender_instruction(gender)
+
+            # Step 2: Retrieve RAG context
+            rag_context = await self.rag_service.retrieve_context(telegram_id, message)
+
+            # Step 3: Build context-enriched prompt
+            rag_content_block = self.rag_service.build_context_prompt(rag_context)
+            anti_repetition_block = self.rag_service.build_anti_repetition_instruction(rag_context)
+
+            # Step 4: Build RAG-specific instructions based on query type
+            rag_instruction = self._get_rag_instruction(rag_context)
+
+            # Step 5: Build system prompt with RAG context
+            system_content = f"""{LANGUAGE_INSTRUCTION}
+
+{PROMPT_PROTECTION}
+
+{gender_instruction}
+
+{rag_instruction}
+
+You are a wise and empathetic companion for developing positive thinking.
+The user wants to talk about something. Your principles:
+1. Listen and show understanding
+2. Offer perspective, but DON'T impose solutions
+3. Clearly indicate that the decision is the user's to make
+4. Be warm and supportive
+5. Use the retrieved context below to make your response more relevant and personalized
+
+Remember: you're not a psychologist and don't give professional advice. You're just a friend who listens.
+
+(Russian version / Русская версия):
+Ты — мудрый и эмпатичный собеседник для развития позитивного мышления.
+Пользователь хочет поговорить о чём-то. Твои принципы:
+1. Слушай и проявляй понимание
+2. Давай взгляд со стороны, но НЕ навязывай решения
+3. Явно указывай, что решение принимает сам пользователь
+4. Будь тёплым и поддерживающим
+5. Используй обращение на «{address}»
+6. Используй контекст ниже, чтобы сделать ответ более релевантным и персонализированным
+
+Помни: ты не психолог и не даёшь профессиональных советов. Ты просто друг, который слушает.
+
+{ABROAD_PHRASE_RULE_RU}
+
+{FORBIDDEN_SYMBOLS_RULE_RU}
+
+{rag_content_block}
+
+{anti_repetition_block}"""
+
+            messages = [{"role": "system", "content": system_content}]
+
+            if context:
+                messages.extend(context)
+
+            messages.append({"role": "user", "content": message})
+
+            # Step 6: Generate response
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=350,
+                temperature=0.75,  # Slightly higher for more variety
+            )
+
+            if response.usage:
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
+
+            response_text = apply_all_filters(response.choices[0].message.content.strip())
+
+            # Step 7: Check for repetition and retry if needed
+            response_fingerprint = self.rag_service.compute_fingerprint(response_text)
+            if response_fingerprint in rag_context.recent_fingerprints:
+                logger.info("Detected repeated response, retrying with higher temperature")
+                # Retry with explicit rephrase instruction
+                messages[-1] = {
+                    "role": "user",
+                    "content": f"{message}\n\n[ВАЖНО: Перефразируй свой ответ радикально, используй другие слова и структуру / IMPORTANT: Rephrase your response radically, use different words and structure]"
+                }
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    max_tokens=350,
+                    temperature=0.9,  # Higher temperature for more creativity
+                )
+                if response.usage:
+                    input_tokens += response.usage.prompt_tokens
+                    output_tokens += response.usage.completion_tokens
+                response_text = apply_all_filters(response.choices[0].message.content.strip())
+
+            # Step 8: Update KB usage counts
+            if rag_context.kb_item_ids:
+                await self.rag_service.increment_kb_usage(rag_context.kb_item_ids)
+
+            # Step 9: Build metadata for logging
+            rag_metadata = self.rag_service.build_rag_metadata(rag_context, response_text)
+
+            return response_text, rag_metadata
+
+        except Exception as e:
+            logger.error(f"Failed to generate RAG dialog response: {e}")
+            success = False
+            error_msg = str(e)
+            # Fallback to model-only response
+            return "Я тебя слышу. Расскажи больше, если хочешь. 💝", {
+                "rag_mode": "error",
+                "error": str(e),
+                "retrieval_used": False,
+            }
+
+        finally:
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.model,
+                operation_type="free_dialog_rag",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                telegram_id=telegram_id,
+                success=success,
+                error_message=error_msg,
+            )
+
+    def _get_rag_instruction(self, rag_context: RAGContext) -> str:
+        """
+        Get RAG-specific instruction based on query type and available context.
+        """
+        has_moments = bool(rag_context.moments)
+        has_kb = bool(rag_context.kb_chunks)
+
+        if rag_context.query_type == 'A':
+            # Personal/emotional query
+            if has_moments:
+                return """
+=== RAG MODE: PERSONAL ===
+This is a personal/emotional query. You MUST use the user's personal history provided below.
+Reference their past positive moments naturally in your response.
+If Knowledge Base content is provided, use it to enhance your supportive approach.
+
+(Русский): Это личный/эмоциональный запрос. ОБЯЗАТЕЛЬНО используй личную историю пользователя.
+Естественно упоминай его прошлые позитивные моменты в ответе."""
+            else:
+                return """
+=== RAG MODE: PERSONAL (no history) ===
+This is a personal/emotional query but the user has no recorded history yet.
+Be warm and supportive without references to past moments.
+
+(Русский): Это личный запрос, но у пользователя пока нет записанной истории.
+Будь тёплым и поддерживающим без ссылок на прошлое."""
+
+        elif rag_context.query_type == 'B':
+            # Advice/technique query
+            if has_kb:
+                return """
+=== RAG MODE: KNOWLEDGE ===
+This is a request for advice/techniques/practices. You MUST base your response on the Knowledge Base content below.
+Use the specific phrases, concepts, and approaches from the retrieved documents.
+Do NOT make up techniques - use what's provided. If nothing is provided, say you're not sure.
+
+(Русский): Это запрос на совет/техники/практики. ОБЯЗАТЕЛЬНО основывай ответ на контенте Базы Знаний ниже.
+Используй конкретные фразы, концепции и подходы из полученных документов.
+НЕ выдумывай техники - используй то, что предоставлено."""
+            else:
+                return """
+=== RAG MODE: KNOWLEDGE (no KB match) ===
+This is a request for advice, but no relevant Knowledge Base content was found.
+Be honest that you're sharing general supportive thoughts, not specific techniques.
+
+(Русский): Это запрос на совет, но релевантный контент в Базе Знаний не найден.
+Честно скажи, что делишься общими поддерживающими мыслями, а не конкретными техниками."""
+
+        else:
+            # General query
+            if has_kb or has_moments:
+                return """
+=== RAG MODE: GENERAL ===
+This is a general query. Use any relevant context provided below to make your response more helpful.
+
+(Русский): Это общий запрос. Используй любой релевантный контекст ниже для улучшения ответа."""
+            else:
+                return """
+=== RAG MODE: MODEL-ONLY ===
+No relevant context was found. Respond based on your general knowledge while staying supportive.
+
+(Русский): Релевантный контекст не найден. Отвечай на основе общих знаний, оставаясь поддерживающим."""

@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test script for language change setting
  * Tests Feature #81: Language change setting
@@ -123,7 +124,7 @@ console.log("-".repeat(50));
 
 // Check actual bot-data.json
 try {
-    const DATA_FILE = 'C:/Projects/3hours/bot-data.json';
+    const DATA_FILE = fileURLToPath(new URL('../../bot-data.json', import.meta.url));
     const data = JSON.parse(readFileSync(DATA_FILE, 'utf8'));
     console.log("Current bot-data.json users:");
     if (data.users) {

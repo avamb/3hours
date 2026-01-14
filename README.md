@@ -124,6 +124,16 @@ mindsethappybot/
 pytest tests/ -v
 ```
 
+### Регрессионные тесты (Node.js)
+
+Регрессионные сценарии (`test-*.mjs`) хранятся в `tests/regression/` (не в корне репозитория).
+
+Пример запуска:
+
+```bash
+node tests/regression/test-api.mjs
+```
+
 ### Миграции базы данных
 
 ```bash

@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test script for bot state recovery after crash
  * Tests Feature #104: Bot state recovery after crash
@@ -5,7 +6,7 @@
 
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 
-const TEST_DATA_FILE = 'C:/Projects/3hours/test-crash-recovery-data.json';
+const TEST_DATA_FILE = fileURLToPath(new URL('./test-crash-recovery-data.json', import.meta.url));
 
 // Simulate data that was saved before crash
 const savedStateBeforeCrash = {

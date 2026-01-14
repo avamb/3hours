@@ -31,6 +31,7 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_active_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Relationships
     moments = relationship("Moment", back_populates="user", cascade="all, delete-orphan")

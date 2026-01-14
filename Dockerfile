@@ -27,9 +27,9 @@ COPY src/ ./src/
 COPY alembic.ini .
 COPY alembic/ ./alembic/
 
-# Copy entrypoint script
+# Copy entrypoint script and fix Windows line endings
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Use entrypoint for migrations and startup
 ENTRYPOINT ["/entrypoint.sh"]

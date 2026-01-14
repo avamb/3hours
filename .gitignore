@@ -58,6 +58,12 @@ htmlcov/
 .pytest_cache/
 .tox/
 
+# Node.js regression tests (keep out of repo root)
+/test-*.mjs
+
+# Regression test runtime artifacts (generated at execution time)
+tests/regression/test-*-data.json
+
 # Type checking
 .mypy_cache/
 
@@ -76,6 +82,16 @@ temp/
 
 # Docker
 docker-compose.override.yml
+
+# Local backups / dumps (never commit)
+backup.sql
+*backup*.sql
+*.dump
+*.sql.gz
+
+# Local knowledge base test packs (never commit)
+kb_test_pack/
+tolstoy_blagodarnost.txt
 
 # Agent files (keep features.db for development)
 .agent.lock

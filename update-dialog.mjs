@@ -3,8 +3,9 @@
  */
 
 import { readFileSync, writeFileSync } from 'fs';
+import { fileURLToPath } from 'url';
 
-const filePath = 'C:/Projects/3hours/test-bot.mjs';
+const filePath = fileURLToPath(new URL('./tests/regression/test-bot.mjs', import.meta.url));
 let content = readFileSync(filePath, 'utf8');
 
 // 1. Add OpenAI API key constant after BOT_TOKEN
