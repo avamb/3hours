@@ -2,44 +2,43 @@
 
 ## Current Status: 183/183 features complete (100%)
 
-## Last Session: Session 957 (January 14, 2026)
+## Last Session: Session 958 (January 14, 2026)
 
 ### What was done:
 - Comprehensive regression testing of 3 randomly selected features
 - All tests passed with no issues found
 - Screenshots captured for visual verification
 - No console errors detected
+- Test data created and cleaned up properly
 
 ### Regression Testing Results:
 
-1. **Feature 24 - Free dialog mode**: PASS
-   - Free dialog messages are saved and displayed correctly
-   - Multiple languages tested (English, Spanish, German, Russian)
-   - Bot responds contextually and supportively
-   - Conversations saved in database and viewable in admin panel
-   - Filter by "Free Dialog" type working correctly
+1. **Feature 60 - Double submit prevention**: PASS
+   - Reindex button shows confirmation dialog before action
+   - Delete button shows confirmation dialog before action
+   - Canceling confirmation prevents the action
+   - Confirmation dialogs protect against accidental double-clicks
+   - Single deletion occurs when confirmed
 
-2. **Feature 133 - Knowledge Base page in admin panel**: PASS
-   - Statistics cards: Total Items, Indexed (Ready), Pending (Processing), Total Chunks
-   - Upload form with Title, Category, Tags fields
-   - File upload button supporting TXT, PDF, MD files
-   - Status filter dropdown (All Statuses, Indexed, Pending, Error)
-   - Table with columns: ID, Title, Type, Category, Status, Chunks, Usage, Created, Actions
-   - Refresh button functioning
+2. **Feature 167 - User gender detection**: PASS
+   - Gender column visible on Users page
+   - Male users correctly identified with emoji: Andrei, Yitzhak, Anthony, Георгий
+   - Female users correctly identified: Tatlana, Svetlana, Valeria, MarinaBakanova
+   - Gender detection based on Telegram data and name analysis
 
-3. **Feature 45 - Response time tracking**: PASS
-   - User statistics showing Questions Sent: 50, Questions Answered: 16
-   - Response Rate: 32% correctly calculated
-   - Current Streak and Longest Streak displayed
-   - Total Moments tracked per user
-   - All statistics accessible via User Details modal
+3. **Feature 176 - Auto-index Knowledge Base uploads**: PASS
+   - Uploaded TXT file "REGRESSION_TEST_958_KB" via admin UI
+   - Status correctly changed: pending → indexing → indexed
+   - Chunks created automatically (1 chunk for test document)
+   - Statistics updated: Total Items, Indexed, Total Chunks
+   - Reindex button re-processes document correctly
+   - Delete button removes document and chunks
+   - All counts returned to 0 after cleanup
 
 ### Pages Verified:
 - Dashboard: HEALTHY status, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
-- Knowledge Base Page: Upload form, statistics cards, file management table
-- Dialogs Page: User list, message filtering, conversation history
-- Analytics Page: User funnel, retention cohorts, activity heatmap, language distribution
-- Users Page: User table with filtering, detailed user modal with statistics
+- Knowledge Base: Upload form, auto-indexing, statistics cards, reindex/delete actions
+- Users Page: User table with gender detection, 11 users total
 
 ### Console Errors: NONE
 All pages loaded without JavaScript errors.
@@ -63,8 +62,6 @@ All pages loaded without JavaScript errors.
 - All regression tests passed this session
 
 ## Screenshots Captured:
-- regression_knowledge_base_957.png - Knowledge Base page with upload form and statistics
-- regression_dialogs_957.png - Dialogs page with user conversation history
-- regression_free_dialog_957.png - Free dialog messages filtered view
-- regression_analytics_957.png - Analytics page with user funnel visualization
-- regression_user_stats_957.png - User details modal with statistics
+- regression_kb_indexed_958.png - Knowledge Base with indexed document
+- regression_users_gender_958.png - Users page with gender detection
+- regression_kb_clean_958.png - Knowledge Base after cleanup
