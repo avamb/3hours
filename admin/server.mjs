@@ -3322,6 +3322,30 @@ const routes = {
         }
     },
 
+    // Get campaign stats summary (MUST be before :id route to avoid matching 'stats' as id)
+    'GET /api/campaigns/stats': async (req, res) => {
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT
+                    COUNT(*) as total_campaigns,
+                    COUNT(*) FILTER (WHERE status = 'draft') as draft,
+                    COUNT(*) FILTER (WHERE status = 'preview') as preview,
+                    COUNT(*) FILTER (WHERE status = 'scheduled') as scheduled,
+                    COUNT(*) FILTER (WHERE status = 'sending') as sending,
+                    COUNT(*) FILTER (WHERE status = 'done') as done,
+                    COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled,
+                    COALESCE(SUM(sent_count), 0) as total_sent,
+                    COALESCE(SUM(failed_count), 0) as total_failed
+                FROM admin_campaigns
+            `);
+
+            sendJson(res, result.rows[0]);
+        } finally {
+            client.release();
+        }
+    },
+
     // Get single campaign with targets
     'GET /api/campaigns/:id': async (req, res, params) => {
         const campaignId = parseInt(params.id);
@@ -4177,30 +4201,6 @@ const routes = {
                 'Access-Control-Allow-Origin': '*',
             });
             res.end(csvRows.join('\n'));
-        } finally {
-            client.release();
-        }
-    },
-
-    // Get campaign stats summary
-    'GET /api/campaigns/stats': async (req, res) => {
-        const client = await pool.connect();
-        try {
-            const result = await client.query(`
-                SELECT
-                    COUNT(*) as total_campaigns,
-                    COUNT(*) FILTER (WHERE status = 'draft') as draft,
-                    COUNT(*) FILTER (WHERE status = 'preview') as preview,
-                    COUNT(*) FILTER (WHERE status = 'scheduled') as scheduled,
-                    COUNT(*) FILTER (WHERE status = 'sending') as sending,
-                    COUNT(*) FILTER (WHERE status = 'done') as done,
-                    COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled,
-                    COALESCE(SUM(sent_count), 0) as total_sent,
-                    COALESCE(SUM(failed_count), 0) as total_failed
-                FROM admin_campaigns
-            `);
-
-            sendJson(res, result.rows[0]);
         } finally {
             client.release();
         }
