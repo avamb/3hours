@@ -2111,12 +2111,14 @@ const routes = {
 
             const user = userResult.rows[0];
 
-            // Get conversations for user (chronological order for chat view)
+            // Get conversations for user.
+            // IMPORTANT: We want the *latest* messages. The UI renders oldest->newest by reversing,
+            // so we return newest-first here (DESC) to make the UI display correctly.
             const dialogResult = await client.query(`
                 SELECT id, message_type, content, metadata, created_at
                 FROM conversations
                 WHERE user_id = $1
-                ORDER BY created_at ASC
+                ORDER BY created_at DESC
                 LIMIT $2
             `, [userId, limit]);
 
