@@ -2530,20 +2530,42 @@ async function createCampaign(formData) {
             filters.language_codes = languages.split(',').map(l => l.trim()).filter(l => l);
         }
 
-        const inactiveDays = formData.get('inactive_days');
-        if (inactiveDays) {
-            filters.inactive_days = parseInt(inactiveDays);
-        }
-
         const formalAddress = formData.get('formal_address');
         if (formalAddress === 'true') filters.formal_address = true;
         else if (formalAddress === 'false') filters.formal_address = false;
+
+        // Gender filter
+        const genderMode = formData.get('gender_mode');
+        if (genderMode && genderMode !== 'any') {
+            filters.gender_mode = genderMode;
+        }
+
+        // Activity filter
+        const activityMode = formData.get('activity_mode');
+        if (activityMode && activityMode !== 'any') {
+            filters.activity_mode = activityMode;
+            const activityDays = formData.get('activity_days');
+            if (activityDays) {
+                filters.activity_days = parseInt(activityDays);
+            }
+        }
 
         // Build delivery params
         const deliveryParams = {};
         const withinHours = formData.get('within_hours');
         if (withinHours) deliveryParams.within_hours = parseInt(withinHours);
         if (formData.get('test_mode')) deliveryParams.test_mode = true;
+
+        // Send on activity settings
+        if (formData.get('send_on_activity')) {
+            deliveryParams.send_on_activity = true;
+            const activityWindow = formData.get('activity_window_minutes');
+            if (activityWindow) deliveryParams.activity_window_minutes = parseInt(activityWindow);
+            const cooldown = formData.get('cooldown_minutes');
+            if (cooldown) deliveryParams.cooldown_minutes = parseInt(cooldown);
+            const maxPerActivity = formData.get('max_per_activity');
+            if (maxPerActivity) deliveryParams.max_per_activity = parseInt(maxPerActivity);
+        }
 
         const data = {
             title: formData.get('title'),
@@ -2578,20 +2600,42 @@ async function updateCampaign(id, formData) {
             filters.language_codes = languages.split(',').map(l => l.trim()).filter(l => l);
         }
 
-        const inactiveDays = formData.get('inactive_days');
-        if (inactiveDays) {
-            filters.inactive_days = parseInt(inactiveDays);
-        }
-
         const formalAddress = formData.get('formal_address');
         if (formalAddress === 'true') filters.formal_address = true;
         else if (formalAddress === 'false') filters.formal_address = false;
+
+        // Gender filter
+        const genderMode = formData.get('gender_mode');
+        if (genderMode && genderMode !== 'any') {
+            filters.gender_mode = genderMode;
+        }
+
+        // Activity filter
+        const activityMode = formData.get('activity_mode');
+        if (activityMode && activityMode !== 'any') {
+            filters.activity_mode = activityMode;
+            const activityDays = formData.get('activity_days');
+            if (activityDays) {
+                filters.activity_days = parseInt(activityDays);
+            }
+        }
 
         // Build delivery params
         const deliveryParams = {};
         const withinHours = formData.get('within_hours');
         if (withinHours) deliveryParams.within_hours = parseInt(withinHours);
         if (formData.get('test_mode')) deliveryParams.test_mode = true;
+
+        // Send on activity settings
+        if (formData.get('send_on_activity')) {
+            deliveryParams.send_on_activity = true;
+            const activityWindow = formData.get('activity_window_minutes');
+            if (activityWindow) deliveryParams.activity_window_minutes = parseInt(activityWindow);
+            const cooldown = formData.get('cooldown_minutes');
+            if (cooldown) deliveryParams.cooldown_minutes = parseInt(cooldown);
+            const maxPerActivity = formData.get('max_per_activity');
+            if (maxPerActivity) deliveryParams.max_per_activity = parseInt(maxPerActivity);
+        }
 
         const data = {
             title: formData.get('title'),
@@ -2630,14 +2674,24 @@ async function editCampaign(id) {
         document.getElementById('filter-onboarding-incomplete').checked = filters.onboarding_completed === false;
         document.getElementById('filter-notifications-disabled').checked = filters.notifications_enabled === false;
         document.getElementById('filter-languages').value = filters.language_codes?.join(',') || '';
-        document.getElementById('filter-inactive-days').value = filters.inactive_days || '';
         document.getElementById('filter-formal').value = filters.formal_address === true ? 'true' :
             filters.formal_address === false ? 'false' : '';
+        document.getElementById('filter-gender').value = filters.gender_mode || 'any';
+        document.getElementById('filter-activity-mode').value = filters.activity_mode || 'any';
+        document.getElementById('filter-activity-days').value = filters.activity_days || '';
 
         // Populate delivery params
         const delivery = campaign.delivery_params || {};
         document.getElementById('delivery-within-hours').value = delivery.within_hours || 24;
         document.getElementById('delivery-test-mode').checked = delivery.test_mode || false;
+        document.getElementById('delivery-send-on-activity').checked = delivery.send_on_activity || false;
+        document.getElementById('delivery-activity-window').value = delivery.activity_window_minutes || 10;
+        document.getElementById('delivery-cooldown').value = delivery.cooldown_minutes || 60;
+        document.getElementById('delivery-max-per-activity').value = delivery.max_per_activity || 1;
+
+        // Show/hide activity trigger settings
+        document.getElementById('activity-trigger-settings').style.display =
+            delivery.send_on_activity ? 'flex' : 'none';
 
         // Update form UI
         document.getElementById('campaign-form-title').textContent = 'Edit Campaign';
@@ -2658,6 +2712,14 @@ function resetCampaignForm() {
     document.getElementById('campaign-submit-btn').textContent = 'Create Campaign';
     document.getElementById('campaign-cancel-btn').style.display = 'none';
     document.getElementById('delivery-within-hours').value = 24;
+    document.getElementById('filter-gender').value = 'any';
+    document.getElementById('filter-activity-mode').value = 'any';
+    document.getElementById('filter-activity-days').value = '';
+    document.getElementById('delivery-send-on-activity').checked = false;
+    document.getElementById('activity-trigger-settings').style.display = 'none';
+    document.getElementById('delivery-activity-window').value = 10;
+    document.getElementById('delivery-cooldown').value = 60;
+    document.getElementById('delivery-max-per-activity').value = 1;
 }
 
 async function viewCampaign(id) {
@@ -2783,7 +2845,12 @@ async function previewCampaign(id) {
 
     try {
         const result = await api(`/campaigns/${id}/preview`, { method: 'POST' });
-        alert(`Preview generated!\n\nTotal targets: ${result.total_targets}\n\nLanguages: ${Object.entries(result.language_distribution).map(([l, c]) => `${l}: ${c}`).join(', ')}`);
+        let message = `Preview generated!\n\nTotal targets: ${result.total_targets}`;
+        message += `\n\nLanguages: ${Object.entries(result.language_distribution).map(([l, c]) => `${l}: ${c}`).join(', ')}`;
+        if (result.gender_distribution) {
+            message += `\n\nGender: ${Object.entries(result.gender_distribution).map(([g, c]) => `${g}: ${c}`).join(', ')}`;
+        }
+        alert(message);
         await loadCampaignsPage();
     } catch (error) {
         alert('Error generating preview: ' + error.message);
@@ -2855,6 +2922,12 @@ document.getElementById('campaign-form')?.addEventListener('submit', async (e) =
 
 // Campaign cancel button
 document.getElementById('campaign-cancel-btn')?.addEventListener('click', resetCampaignForm);
+
+// Send on activity toggle - show/hide activity settings
+document.getElementById('delivery-send-on-activity')?.addEventListener('change', (e) => {
+    document.getElementById('activity-trigger-settings').style.display =
+        e.target.checked ? 'flex' : 'none';
+});
 
 // Campaign status filter
 document.getElementById('campaigns-status-filter')?.addEventListener('change', () => loadCampaigns(0));

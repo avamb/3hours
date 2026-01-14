@@ -183,6 +183,41 @@ function vectorLiteral(embedding) {
 }
 
 /**
+ * Substitute personalization placeholders in text
+ * Supported tokens: {{first_name}}, {{username}}, {{telegram_id}}, {{language_code}},
+ *                   {{timezone}}, {{gender}}, {{formal_address}}, {{greeting}}
+ * @param {string} text - Text with placeholders
+ * @param {object} user - User object with properties
+ * @returns {string} - Text with substituted values
+ */
+function substitutePersonalization(text, user) {
+    if (!text) return text;
+
+    // Get first_name with fallback
+    const firstName = user.first_name || user.username || 'User';
+    const username = user.username || 'User';
+    const timezone = user.timezone || 'UTC';
+    const formalAddress = user.formal_address ? 'true' : 'false';
+
+    // Generate greeting based on formal_address
+    const greeting = user.formal_address
+        ? `Здравствуйте, ${firstName}!`
+        : `Привет, ${firstName}!`;
+
+    // Substitute all known placeholders
+    return text
+        .replace(/\{\{first_name\}\}/g, firstName)
+        .replace(/\{\{username\}\}/g, username)
+        .replace(/\{\{telegram_id\}\}/g, String(user.telegram_id || ''))
+        .replace(/\{\{language_code\}\}/g, user.language_code || 'ru')
+        .replace(/\{\{timezone\}\}/g, timezone)
+        .replace(/\{\{gender\}\}/g, user.gender || 'unknown')
+        .replace(/\{\{formal_address\}\}/g, formalAddress)
+        .replace(/\{\{greeting\}\}/g, greeting);
+    // Unknown placeholders are left as-is (variant A from spec)
+}
+
+/**
  * Create embedding with retry logic for rate limiting
  * @param {OpenAI} client - OpenAI client
  * @param {string} text - Text to embed
@@ -3632,9 +3667,17 @@ const routes = {
                 queryParams.push(filters.notification_interval_hours);
             }
 
-            // Filter: inactive_days (last_active_at older than N days)
-            if (filters.inactive_days !== null && filters.inactive_days !== undefined) {
-                whereConditions.push(`(last_active_at IS NULL OR last_active_at < NOW() - INTERVAL '${parseInt(filters.inactive_days)} days')`);
+            // Filter: gender_mode (male/female/unknown)
+            if (filters.gender_mode && filters.gender_mode !== 'any') {
+                whereConditions.push(`gender = $${paramIndex++}`);
+                queryParams.push(filters.gender_mode);
+            }
+
+            // Filter: activity_mode (active_within_days/inactive_days)
+            if (filters.activity_mode === 'active_within_days' && filters.activity_days) {
+                whereConditions.push(`last_active_at >= NOW() - INTERVAL '${parseInt(filters.activity_days)} days'`);
+            } else if (filters.activity_mode === 'inactive_days' && filters.activity_days) {
+                whereConditions.push(`(last_active_at IS NULL OR last_active_at < NOW() - INTERVAL '${parseInt(filters.activity_days)} days')`);
             }
 
             const whereClause = whereConditions.join(' AND ');
@@ -3642,7 +3685,7 @@ const routes = {
             // Get matching users
             const usersResult = await client.query(`
                 SELECT id, telegram_id, username, first_name, language_code, formal_address,
-                       timezone, active_hours_start, active_hours_end
+                       timezone, active_hours_start, active_hours_end, gender
                 FROM users
                 WHERE ${whereClause}
                 ORDER BY id ASC
@@ -3656,6 +3699,13 @@ const routes = {
             for (const user of users) {
                 const lang = user.language_code || 'unknown';
                 langDist[lang] = (langDist[lang] || 0) + 1;
+            }
+
+            // Get gender distribution
+            const genderDist = { male: 0, female: 0, unknown: 0 };
+            for (const user of users) {
+                const gender = user.gender || 'unknown';
+                genderDist[gender] = (genderDist[gender] || 0) + 1;
             }
 
             // Clear existing targets
@@ -3750,6 +3800,7 @@ const routes = {
                 status: 'preview',
                 total_targets: totalTargets,
                 language_distribution: langDist,
+                gender_distribution: genderDist,
                 sample_translations: sampleTranslations,
                 filters_applied: filters,
             });
@@ -3815,15 +3866,21 @@ const routes = {
                         deadline
                     );
 
-                    // Get user's language and formal preference for rendering
-                    const targetInfo = await client.query(`
-                        SELECT language_code, formal_address FROM admin_campaign_targets WHERE id = $1
+                    // Get full user data for personalization
+                    const userInfo = await client.query(`
+                        SELECT u.telegram_id, u.username, u.first_name, u.language_code,
+                               u.formal_address, u.timezone, u.gender,
+                               t.language_code as target_lang, t.formal_address as target_formal
+                        FROM users u
+                        JOIN admin_campaign_targets t ON t.user_id = u.id
+                        WHERE t.id = $1
                     `, [target.id]);
 
-                    const lang = targetInfo.rows[0]?.language_code || 'ru';
-                    const formal = targetInfo.rows[0]?.formal_address || false;
+                    const user = userInfo.rows[0] || {};
+                    const lang = user.target_lang || user.language_code || 'ru';
+                    const formal = user.target_formal ?? user.formal_address ?? false;
 
-                    // Render text using LLM
+                    // Render text using LLM (translation)
                     let renderedText = campaign.draft_text;
 
                     if (openai) {
@@ -3842,12 +3899,13 @@ const routes = {
                                 'pt': 'Portuguese', 'it': 'Italian', 'zh': 'Chinese', 'ja': 'Japanese',
                             }[lang] || lang;
 
+                            // Note: We tell LLM to preserve placeholders
                             const response = await openai.chat.completions.create({
                                 model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o',
                                 messages: [
                                     {
                                         role: 'system',
-                                        content: `You are a translator and copywriter for a positive mindset bot. Translate and adapt the following message to ${langName}. ${toneInstruction} ${formalInstruction} Do not add any facts or information not present in the original. Return only the translated text, nothing else.`
+                                        content: `You are a translator and copywriter for a positive mindset bot. Translate and adapt the following message to ${langName}. ${toneInstruction} ${formalInstruction} Do not add any facts or information not present in the original. IMPORTANT: Do NOT translate or modify any placeholders in double curly braces like {{first_name}}, {{greeting}}, etc. - keep them exactly as they are. Return only the translated text, nothing else.`
                                     },
                                     {
                                         role: 'user',
@@ -3863,6 +3921,17 @@ const routes = {
                             console.error(`Error rendering text for target ${target.id}:`, err.message);
                         }
                     }
+
+                    // Apply personalization placeholders after translation
+                    renderedText = substitutePersonalization(renderedText, {
+                        telegram_id: user.telegram_id,
+                        username: user.username,
+                        first_name: user.first_name,
+                        language_code: user.language_code,
+                        formal_address: formal,
+                        timezone: user.timezone,
+                        gender: user.gender
+                    });
 
                     // Update target with rendered text and planned time
                     await client.query(`

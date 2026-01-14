@@ -858,6 +858,17 @@
                             </div>
                         </div>
 
+                        <!-- Message Personalization Help -->
+                        <div class="personalization-help" style="background: #f0f7ff; border: 1px solid #cce0ff; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+                            <h5 style="margin: 0 0 8px 0; color: #0066cc;">Personalization Placeholders</h5>
+                            <p style="margin: 0; font-size: 13px; color: #555;">
+                                Use <code>{{first_name}}</code>, <code>{{username}}</code>, <code>{{greeting}}</code>,
+                                <code>{{telegram_id}}</code>, <code>{{language_code}}</code>, <code>{{timezone}}</code>,
+                                <code>{{gender}}</code>, <code>{{formal_address}}</code> in your message.
+                                <br><small><code>{{greeting}}</code> = "Привет, Name!" or "Здравствуйте, Name!" based on formal_address</small>
+                            </p>
+                        </div>
+
                         <!-- Filters Section -->
                         <div class="filters-section">
                             <h4>Audience Filters</h4>
@@ -887,16 +898,35 @@
                                     <input type="text" id="filter-languages" name="languages" class="form-input" placeholder="e.g., ru,en,uk (leave empty for all)">
                                 </div>
                                 <div class="form-group">
-                                    <label for="filter-inactive-days">Inactive for N days</label>
-                                    <input type="number" id="filter-inactive-days" name="inactive_days" class="form-input" placeholder="e.g., 7" min="0">
-                                </div>
-                                <div class="form-group">
                                     <label for="filter-formal">Address Style</label>
                                     <select id="filter-formal" name="formal_address" class="select-input">
                                         <option value="">Any</option>
                                         <option value="true">Formal (Вы)</option>
                                         <option value="false">Informal (ты)</option>
                                     </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="filter-gender">Gender</label>
+                                    <select id="filter-gender" name="gender_mode" class="select-input">
+                                        <option value="any">Any</option>
+                                        <option value="male">Male only</option>
+                                        <option value="female">Female only</option>
+                                        <option value="unknown">Unknown only</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row filters-row">
+                                <div class="form-group">
+                                    <label for="filter-activity-mode">Activity</label>
+                                    <select id="filter-activity-mode" name="activity_mode" class="select-input">
+                                        <option value="any">Any</option>
+                                        <option value="active_within_days">Active within N days</option>
+                                        <option value="inactive_days">Inactive for N days</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="filter-activity-days">Days (N)</label>
+                                    <input type="number" id="filter-activity-days" name="activity_days" class="form-input" placeholder="e.g., 7" min="1">
                                 </div>
                             </div>
                         </div>
@@ -914,6 +944,31 @@
                                         <input type="checkbox" id="delivery-test-mode" name="test_mode">
                                         Test mode (don't send, just preview)
                                     </label>
+                                </div>
+                            </div>
+                            <div class="form-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+                                <div class="form-group filter-group">
+                                    <label>
+                                        <input type="checkbox" id="delivery-send-on-activity" name="send_on_activity">
+                                        Send only when user is active (activity trigger)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-row activity-trigger-settings" id="activity-trigger-settings" style="display: none;">
+                                <div class="form-group">
+                                    <label for="delivery-activity-window">Activity window (minutes)</label>
+                                    <input type="number" id="delivery-activity-window" name="activity_window_minutes" class="form-input" value="10" min="1" max="60">
+                                    <small style="color: #666;">User must be active within this window</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="delivery-cooldown">Cooldown (minutes)</label>
+                                    <input type="number" id="delivery-cooldown" name="cooldown_minutes" class="form-input" value="60" min="1" max="1440">
+                                    <small style="color: #666;">Min time between sends to same user</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="delivery-max-per-activity">Max per activity</label>
+                                    <input type="number" id="delivery-max-per-activity" name="max_per_activity" class="form-input" value="1" min="1" max="5">
+                                    <small style="color: #666;">Max messages per activity event</small>
                                 </div>
                             </div>
                         </div>
