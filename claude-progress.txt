@@ -2,24 +2,33 @@
 
 ## Current Status: 182/182 features complete (100%)
 
-## Last Session: Session 900 (January 14, 2026)
+## Last Session: Session 901 (January 14, 2026)
 
 ### What was done:
-- Performed comprehensive regression testing on 3 random features:
-  - Feature #15 (Delete individual moment) - Ran regression test, verified delete confirmation dialog, moment removal from list and database
-  - Feature #165 (Social network parsing error handling) - Verified code shows proper error message when profile parsing fails
-  - Feature #108 (Admin Messages tab) - Verified Messages page displays all scheduled questions with proper filtering and pagination
-- All Docker containers running healthy:
-  - bot: 3hours-bot-1 (Up 23 minutes)
+- Performed regression testing on Feature #131 (Admin Dialogs page)
+- **FOUND AND FIXED BUG**: The dialogs user endpoint `/api/dialogs/user/:userId` was not implementing message_type and search filters
+  - Frontend was sending filter parameters but backend was ignoring them
+  - Added dynamic SQL query building with parameterized filters
+  - Message type filter now correctly filters by message_type field
+  - Search filter now uses ILIKE for case-insensitive text search
+- Rebuilt and tested admin container
+- Verified both filters work correctly:
+  - Message type filter: Selecting "User Response" shows only user_response messages
+  - Search filter: Searching "парк" shows only messages containing that text
+  - Combined filtering works (e.g., user responses containing "парк")
+- Committed fix: `fix(admin): add filtering support to dialogs user endpoint`
+
+### Docker Status:
+- All containers running healthy:
+  - bot: 3hours-bot-1 (Running)
   - admin: 3hours-admin-1 (Healthy, port 18088)
+  - postgres: 3hours-postgres-1 (Healthy)
   - postgres_dev: 3hours-postgres_dev-1 (Healthy)
-- Admin panel verified working:
-  - Overview: Database CONNECTED (11 MB), Bot RUNNING (8 pending notifications), OpenAI CONFIGURED
-  - Users: 11 total users
-  - Moments: 23 moments with topics cloud, mood analysis
-  - Messages: Scheduled questions visible, type filtering works
-- Zero console errors in browser
-- All 182 features still passing
+
+### Admin Panel Verified:
+- Overview: Database CONNECTED, Bot RUNNING, OpenAI CONFIGURED
+- Dialogs page: Fully functional with filters and search
+- Zero console errors
 
 ## Architecture:
 - Telegram bot (Python/aiogram) for positive mindset development
@@ -31,3 +40,4 @@
 ## Project Status:
 - 100% COMPLETE - All 182 features passing
 - Ready for production deployment
+- Regression bug in dialogs filtering was found and fixed this session
