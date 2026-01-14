@@ -2,7 +2,7 @@
 
 ## Current Status: 183/183 features complete (100%)
 
-## Last Session: Session 946 (January 14, 2026)
+## Last Session: Session 947 (January 14, 2026)
 
 ### What was done:
 - Comprehensive regression testing of admin panel
@@ -24,14 +24,7 @@
    - Export CSV functionality available
    - Gender indicators with emojis
 
-3. **User Dialogs (click on user row)**: PASS
-   - Feature #179 verified working
-   - Clicking user row opens full dialog history
-   - 42 messages shown for andreiandreev62
-   - Multiple message types displayed correctly
-   - Export CSV and JSON functionality available
-
-4. **Analytics Page**: PASS
+3. **Analytics Page**: PASS
    - Key metrics: 11 users, 9 onboarded, 1 active (7d), 9% retention rate
    - User funnel visualization with drop-off percentages
    - Retention cohorts table
@@ -39,14 +32,14 @@
    - Activity heatmap
    - Language distribution chart
 
-5. **Moments Page**: PASS
-   - 23 total moments, 15 this week
+4. **Moments Page**: PASS
+   - 23 total moments, 13 this week
    - Topics cloud with clickable topics
    - Mood scores displayed correctly
    - Filtering by user, date, mood working
    - Export CSV available
 
-6. **Bot Scheduler**: PASS
+5. **Bot Scheduler**: PASS
    - APScheduler running every minute for notification processing
    - Hourly scheduling of user notifications working
    - Summary delivery check running hourly
