@@ -31,7 +31,7 @@ async function api(endpoint, options = {}) {
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
-        throw new Error(error.detail || 'Request failed');
+        throw new Error(error.detail || error.error || 'Request failed');
     }
 
     return response.json();
@@ -2554,7 +2554,10 @@ async function createCampaign(formData) {
             delivery_params: Object.keys(deliveryParams).length > 0 ? deliveryParams : null,
         };
 
-        await api('/campaigns', 'POST', data);
+        await api('/campaigns', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
         resetCampaignForm();
         await loadCampaignsPage();
     } catch (error) {
@@ -2599,7 +2602,10 @@ async function updateCampaign(id, formData) {
             delivery_params: Object.keys(deliveryParams).length > 0 ? deliveryParams : null,
         };
 
-        await api(`/campaigns/${id}/update`, 'POST', data);
+        await api(`/campaigns/${id}/update`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
         resetCampaignForm();
         await loadCampaignsPage();
     } catch (error) {
@@ -2776,7 +2782,7 @@ async function previewCampaign(id) {
     if (!confirm('Generate preview for this campaign? This will calculate target users and sample translations.')) return;
 
     try {
-        const result = await api(`/campaigns/${id}/preview`, 'POST');
+        const result = await api(`/campaigns/${id}/preview`, { method: 'POST' });
         alert(`Preview generated!\n\nTotal targets: ${result.total_targets}\n\nLanguages: ${Object.entries(result.language_distribution).map(([l, c]) => `${l}: ${c}`).join(', ')}`);
         await loadCampaignsPage();
     } catch (error) {
@@ -2788,7 +2794,7 @@ async function scheduleCampaign(id) {
     if (!confirm('Schedule this campaign for delivery? Messages will be rendered and scheduled based on user timezones.')) return;
 
     try {
-        const result = await api(`/campaigns/${id}/schedule`, 'POST');
+        const result = await api(`/campaigns/${id}/schedule`, { method: 'POST' });
         alert(result.message || 'Campaign scheduled successfully!');
         await loadCampaignsPage();
     } catch (error) {
@@ -2800,7 +2806,7 @@ async function sendCampaign(id) {
     if (!confirm('Start sending this campaign now? Messages will be delivered immediately to users in their active hours.')) return;
 
     try {
-        const result = await api(`/campaigns/${id}/send`, 'POST');
+        const result = await api(`/campaigns/${id}/send`, { method: 'POST' });
         alert(`Sending progress:\n\nProcessed: ${result.processed}\nSent: ${result.sent}\nFailed: ${result.failed}\nSkipped: ${result.skipped}\nRemaining: ${result.remaining}\n\nStatus: ${result.status}`);
         await loadCampaignsPage();
     } catch (error) {
@@ -2812,7 +2818,7 @@ async function cancelCampaign(id) {
     if (!confirm('Cancel this campaign? Pending messages will not be sent.')) return;
 
     try {
-        await api(`/campaigns/${id}/cancel`, 'POST');
+        await api(`/campaigns/${id}/cancel`, { method: 'POST' });
         await loadCampaignsPage();
     } catch (error) {
         alert('Error cancelling campaign: ' + error.message);
@@ -2823,7 +2829,7 @@ async function deleteCampaign(id) {
     if (!confirm('Delete this campaign? This action cannot be undone.')) return;
 
     try {
-        await api(`/campaigns/${id}/delete`, 'POST');
+        await api(`/campaigns/${id}/delete`, { method: 'POST' });
         await loadCampaignsPage();
     } catch (error) {
         alert('Error deleting campaign: ' + error.message);

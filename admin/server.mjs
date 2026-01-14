@@ -3879,6 +3879,8 @@ const routes = {
             }
 
             const campaign = campaignResult.rows[0];
+            const deliveryParams = campaign.delivery_params_json || {};
+            const testMode = deliveryParams.test_mode === true;
 
             if (!['scheduled', 'sending'].includes(campaign.status)) {
                 return sendJson(res, { error: 'Campaign must be in scheduled or sending status' }, 400);
@@ -3922,6 +3924,17 @@ const routes = {
                     }
 
                     const messageText = target.rendered_text || campaign.draft_text;
+
+                    // Test mode: never send, just mark as skipped
+                    if (testMode) {
+                        await client.query(`
+                            UPDATE admin_campaign_targets
+                            SET status = 'skipped', error = 'Test mode: not sent'
+                            WHERE id = $1
+                        `, [target.id]);
+                        skippedCount++;
+                        continue;
+                    }
 
                     // Send via Telegram API
                     if (TELEGRAM_BOT_TOKEN) {
