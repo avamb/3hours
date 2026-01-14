@@ -2,7 +2,7 @@
 
 ## Current Status: 183/183 features complete (100%)
 
-## Last Session: Session 954 (January 14, 2026)
+## Last Session: Session 955 (January 14, 2026)
 
 ### What was done:
 - Comprehensive regression testing of 3 randomly selected features
@@ -12,33 +12,39 @@
 
 ### Regression Testing Results:
 
-1. **Feature 65 - Telegram user_id validation**: PASS
-   - Users page shows 11 users with valid Telegram IDs
-   - User details modal displays: Telegram ID, Username, Name, Gender, Language, Timezone
-   - All user data properly validated and stored
-   - User statistics (moments, streaks, response rate) working correctly
+1. **Feature 137 - System Logs page in admin panel**: PASS
+   - Stats displayed: 0 Errors, 0 Warnings, 2 Info (24h), 62 Total Logs
+   - Filter dropdowns working: Level (All/ERROR/WARNING/INFO/DEBUG), Source (admin/api/bot/etc.)
+   - Date range filters present
+   - Log entries expandable with JSON details
+   - Pagination working (2 pages)
+   - Tested filtering by "admin" source - correctly filtered results
 
-2. **Feature 103 - Follow-up question handling**: PASS
-   - Dialogs page shows complete conversation history
-   - Bot questions with various formulations (Что хорошего произошло?, Чему ты улыбнулся?, etc.)
-   - Bot replies are supportive and personalized
-   - Follow-up questions are gentle ("Чем он особенно запомнился или порадовал тебя?")
-   - Multi-language support verified (Russian, English, Spanish, German)
-   - Users can ignore follow-ups and start new topics
+2. **Feature 169 - Gender detection in settings menu**: PASS
+   - Users page shows Gender column
+   - Male users display: M (Andrei, Yitzhak, Anthony)
+   - Female users display: F (Tatlana, Svetlana, Valeria, MarinaBakanova)
+   - Unset gender shows: -
+   - Gender properly stored and displayed in user details modal
 
-3. **Feature 109 - Summary (weekly/monthly)**: PASS
-   - SummaryService implementation verified in src/services/summary_service.py
-   - Weekly summaries: Sundays at 10:00 local time
-   - Monthly summaries: 1st of month at 10:00 local time
-   - Summaries include: moment count, main themes, brightest moments, inspiring conclusions
-   - Personalization: name, address form (ты/вы), gender-appropriate language
-   - Scheduler integration confirmed in scheduler.py
+3. **Feature 127 - Social Profile section in settings**: PASS
+   - User details modal shows "Social Profile" section
+   - LinkedIn: Shows clickable link to user's profile
+   - Interests: technology, web development, digital projects, project management, automation, marketing, startups
+   - Bio: Full bio text with personal and professional details
+   - Data persisted correctly from bot settings
 
 ### Pages Verified:
-- Dashboard: HEALTHY status, 11 users, 23 moments, bot running
-- Users Page: All 11 users with correct data, filtering/sorting working
-- Dialogs Page: Full conversation history, message types labeled correctly
-- Analytics Page: User funnel, retention cohorts, activity heatmap, language distribution
+- Dashboard: HEALTHY status, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
+- Users Page: 11 users with filtering/sorting, Gender column working
+- Logs Page: Filtering by level/source, expandable details, pagination
+- Dialogs Page: Full conversation history, multiple message types (user response, bot question, bot reply, free dialog, admin message)
+
+### Additional Observations:
+- Bot sending scheduled questions at proper intervals
+- Multi-language support working (Russian, English, Spanish, German)
+- Bot replies are personalized and supportive
+- Follow-up questions are gentle and contextual
 
 ### Console Errors: NONE
 All pages loaded without JavaScript errors.
@@ -62,7 +68,7 @@ All pages loaded without JavaScript errors.
 - All regression tests passed this session
 
 ## Screenshots Captured:
-- regression_dashboard_954.png - Dashboard overview with healthy status
-- regression_user_details_954.png - User details modal with statistics
-- regression_dialogs_954.png - User dialogs page with conversation history
-- regression_analytics_954.png - Analytics page with user funnel
+- regression_logs_955.png - System Logs page with filtering and expanded details
+- regression_users_gender_955.png - Users page showing Gender column
+- regression_user_details_social_955.png - User details modal with Social Profile
+- regression_dialogs_955.png - Dialogs page with conversation history
