@@ -525,6 +525,19 @@ body {
     background-color: rgba(79, 70, 229, 0.02);
 }
 
+.data-table tr.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.data-table tr.clickable-row:hover {
+    background-color: rgba(79, 70, 229, 0.08);
+}
+
+.data-table tr.clickable-row:active {
+    background-color: rgba(79, 70, 229, 0.12);
+}
+
 .data-table td.loading {
     text-align: center;
     padding: 40px;
@@ -1043,6 +1056,19 @@ body {
 .status-badge.disabled {
     background: rgba(107, 114, 128, 0.1);
     color: var(--secondary-color);
+}
+
+/* Timezone indicators */
+.timezone-set {
+    color: var(--success-color);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.timezone-default {
+    color: var(--text-muted);
+    font-style: italic;
+    white-space: nowrap;
 }
 
 /* Feedback Styles */

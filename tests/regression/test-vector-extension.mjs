@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 /**
  * Test PostgreSQL pgvector Setup - Feature #88
  * Verifies pgvector extension equivalent is properly configured
@@ -7,7 +8,7 @@
 import { readFileSync, existsSync } from 'fs';
 
 // Read bot code to verify implementation
-const botCode = readFileSync('C:/Projects/3hours/test-bot.mjs', 'utf8');
+const botCode = readFileSync(new URL('./test-bot.mjs', import.meta.url), 'utf8');
 
 console.log("=== Feature #88: PostgreSQL pgvector Setup - Test ===\n");
 console.log("Note: This implementation uses JSON file storage with OpenAI embeddings");
@@ -26,7 +27,7 @@ console.log(`Load data function exists: ${hasLoadFunction ? '✅ YES' : '❌ NO'
 const hasSaveFunction = botCode.includes("function saveDataToFile()");
 console.log(`Save data function exists: ${hasSaveFunction ? '✅ YES' : '❌ NO'}`);
 
-const dataFileExists = existsSync('C:/Projects/3hours/bot-data.json');
+const dataFileExists = existsSync(fileURLToPath(new URL('../../bot-data.json', import.meta.url)));
 console.log(`Data file exists: ${dataFileExists ? '✅ YES' : '❌ NO'}\n`);
 
 // Step 2: Verify vector extension enabled (embedding functionality)
