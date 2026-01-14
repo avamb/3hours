@@ -2,13 +2,13 @@
 
 ## Current Status: 182/182 features complete (100%)
 
-## Last Session: Session 927 (January 14, 2026)
+## Last Session: Session 928 (January 14, 2026)
 
 ### What was done:
 - Performed regression testing on 3 random features:
-  - **Feature #171 (Timezone settings)**: PASS - User details modal shows UTC timezone, international system working
-  - **Feature #135 (Message Templates CRUD)**: PASS - Templates page working with language/category filters, Edit/Delete actions
-  - **Feature #172 (Language menu)**: PASS - Language settings displayed (en, ru, uk) in user details and user list
+  - **Feature #180 (User timezone display)**: PASS - Users table shows Timezone column, user details modal displays timezone info
+  - **Feature #44 (Reset settings to defaults)**: PASS - Code verified: reset_settings_to_defaults() in user_service.py, callback handler in callbacks.py, button in settings keyboard
+  - **Feature #112 (DB migrations on Dokploy)**: PASS - Entrypoint script handles migrations before bot start, waits for PostgreSQL, no separate migrate service needed
 
 ### Verification Details:
 1. **Admin Panel Dashboard**: All systems healthy
@@ -17,17 +17,26 @@
    - OpenAI: CONFIGURED
    - 11 users, 23 moments
 
-2. **Templates Page**: Full CRUD functionality verified
-   - Create form with text, language, category, formal/active checkboxes
-   - Filter by language (All/Russian/English/Ukrainian)
-   - Filter by category (follow_up: 18, main: 30, return_inactive: 12)
-   - Edit/Delete buttons on each row
-   - Pagination working
+2. **Users Page**: Full functionality verified
+   - Timezone column visible in table
+   - User details modal shows timezone info
+   - Search, filters, export CSV all working
+   - View button opens detailed user modal
 
-3. **Users Page**: User management verified
-   - Search, language filter, status filter, sort options
-   - Export CSV button
-   - User details modal with all settings visible
+3. **Reset Settings Feature**: Code verified
+   - Button: "🔄 Reset settings" in settings keyboard
+   - Handler: callback_settings_reset in callbacks.py
+   - Service: reset_settings_to_defaults() resets to:
+     - formal_address: False
+     - active_hours: 09:00 - 21:00
+     - notification_interval: 3 hours
+     - notifications_enabled: True
+
+4. **Migration System**: Verified in docker-compose.yml and Dockerfile
+   - Entrypoint script: docker/entrypoint.sh
+   - Waits for PostgreSQL before migrations
+   - Runs `alembic upgrade head` automatically
+   - SKIP_MIGRATIONS env var available for edge cases
 
 ### Docker Status:
 - All containers running healthy:
@@ -39,9 +48,9 @@
 ### Console Errors: NONE
 
 ### Regression Test Results:
-- Feature #171 - Timezone settings: PASS
-- Feature #135 - Message Templates CRUD: PASS  
-- Feature #172 - Language menu: PASS
+- Feature #180 - User timezone display: PASS
+- Feature #44 - Reset settings to defaults: PASS
+- Feature #112 - DB migrations on Dokploy: PASS
 
 ## Architecture:
 - Telegram bot (Python/aiogram) for positive mindset development
