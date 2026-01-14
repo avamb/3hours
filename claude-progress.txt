@@ -2,16 +2,16 @@
 
 ## Current Status: 182/182 features complete (100%)
 
-## Last Session: Session 921 (January 14, 2026)
+## Last Session: Session 922 (January 14, 2026)
 
 ### What was done:
 - Performed comprehensive regression testing on 3 random features:
-  - **Feature #37 (Network timeout handling)**: PASS - Bot running stable, APScheduler executing jobs every minute successfully, 0 errors in logs for 24h
-  - **Feature #105 (Admin Panel)**: PASS - Dashboard showing Database CONNECTED (11 MB), Bot RUNNING (7 pending notifications), OpenAI CONFIGURED, 11 users, 23 moments
-  - **Feature #162 (Menu Languages)**: PASS - Templates available in Russian (ru), English (en), Ukrainian (uk) with formal/informal variants
+  - **Feature #154 (Expenses)**: PASS - API cost tracking working correctly showing 26 requests, 5,747 tokens, $0.0137 total cost. Breakdown by model (gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1) and by operation (moment_response, free_dialog, topic_extraction, mood_analysis, embedding, transcription) all displaying correctly.
+  - **Feature #176 (Auto-index Knowledge Base uploads)**: PASS - Uploaded test document "TEST_SESSION922_DOC", verified status changed from Pending to Indexed, chunks_count updated to 1. Auto-indexing pipeline working correctly. Test document deleted after verification.
+  - **Feature #19 (Settings menu display)**: PASS - User details modal shows all configurable settings: Language, Address Form (ты/вы), Timezone, Active Hours, Notification Interval, Notifications toggle.
 - All Docker containers running healthy
 - Zero console errors in admin panel
-- System Logs showing 0 errors, 0 warnings for 24h
+- Bot logs showing APScheduler jobs executing successfully every minute
 
 ### Docker Status:
 - All containers running healthy:
@@ -22,14 +22,14 @@
 
 ### Verified Admin Panel Sections:
 - Dashboard Overview: Database (11 MB), Bot (Running), OpenAI (Configured)
-- Users: 11 users with language settings (en, ru, uk)
-- Templates: 60+ templates across 3 languages with formal/informal forms
-- System Logs: 60 total logs, 0 errors, 0 warnings
+- Users: 11 users with language settings (en, ru, uk), gender, timezone
+- Knowledge Base: Upload, auto-indexing, reindex, delete all working
+- Expenses: Token usage tracking by model and operation
 
 ### Regression Test Results:
-- Feature #37 - Network timeout handling: PASS
-- Feature #105 - Admin Panel: PASS
-- Feature #162 - Menu Languages: PASS
+- Feature #154 - Expenses: PASS
+- Feature #176 - Auto-index Knowledge Base: PASS
+- Feature #19 - Settings menu display: PASS
 - All systems verified working correctly
 
 ## Architecture:
