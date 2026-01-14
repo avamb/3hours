@@ -2090,6 +2090,8 @@ const routes = {
         const userId = parseInt(params.userId);
         const query = parseQuery(req.url);
         const limit = Math.min(parseInt(query.limit) || 100, 500);
+        const messageType = query.message_type || '';
+        const search = query.search || '';
 
         if (!Number.isFinite(userId)) {
             sendJson(res, { detail: 'Invalid user id' }, 400);
@@ -2111,16 +2113,31 @@ const routes = {
 
             const user = userResult.rows[0];
 
-            // Get conversations for user.
+            // Build dynamic query with filters
+            let sqlQuery = 'SELECT id, message_type, content, metadata, created_at FROM conversations WHERE user_id = $1';
+            const sqlParams = [userId];
+            let paramIdx = 2;
+
+            // Filter by message type
+            if (messageType) {
+                sqlQuery += ' AND message_type = $' + paramIdx;
+                sqlParams.push(messageType);
+                paramIdx++;
+            }
+
+            // Filter by search text in content
+            if (search) {
+                sqlQuery += ' AND content ILIKE $' + paramIdx;
+                sqlParams.push('%' + search + '%');
+                paramIdx++;
+            }
+
             // IMPORTANT: We want the *latest* messages. The UI renders oldest->newest by reversing,
             // so we return newest-first here (DESC) to make the UI display correctly.
-            const dialogResult = await client.query(`
-                SELECT id, message_type, content, metadata, created_at
-                FROM conversations
-                WHERE user_id = $1
-                ORDER BY created_at DESC
-                LIMIT $2
-            `, [userId, limit]);
+            sqlQuery += ' ORDER BY created_at DESC LIMIT $' + paramIdx;
+            sqlParams.push(limit);
+
+            const dialogResult = await client.query(sqlQuery, sqlParams);
 
             sendJson(res, {
                 user: {
