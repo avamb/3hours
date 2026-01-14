@@ -18,7 +18,9 @@ This repo is deployed via Dokploy from Git branches. You MUST respect these rule
 - `master` is the main integration branch.
 - `prod` contains ONLY stable, production-ready versions.
 - `dev` is the staging branch used for Dokploy development deployments.
-- Never push directly to `prod` unless explicitly asked; work on `dev` first and promote to `prod` later.
+- **NEVER edit the `prod` branch. `prod` is read-only**: do not commit, merge, rebase, cherry-pick, or push to `prod`.
+- You may **only read** `prod` for comparisons and investigation (e.g., `git show origin/prod:...`, `git diff origin/prod..origin/master`).
+- All changes must land via PRs into `dev` and/or `master`, then be promoted to `prod` via a dedicated promote branch + PR.
 
 ### Docker Compose policy (Prod + Dev must run side-by-side)
 - NEVER use `container_name` in `docker-compose.yml` (it breaks parallel prod+dev deployments on the same host).
