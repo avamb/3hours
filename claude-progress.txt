@@ -1,4 +1,4 @@
-## Session 1066 - January 15, 2026
+## Session 1067 - January 15, 2026
 
 ### Status: ALL FEATURES COMPLETE (185/185 - 100%)
 
@@ -24,7 +24,8 @@ Verified the following core features via browser automation:
    - Topics Cloud visualization working
    - Mood analysis (Very Positive, Positive, Neutral, Negative)
    - Both text and voice sources captured
-   - Multiple users with moments
+   - 3 unique users with moments
+   - Avg Mood: 0.56
    - Filters by user, date range, mood
 
 4. **Logs Page** - PASSED
@@ -32,7 +33,7 @@ Verified the following core features via browser automation:
    - 7 Info logs, 67 Total Logs
    - Multiple log sources: admin, bot.callback, bot.message
    - Log filtering by level and source working
-   - Pagination working
+   - Pagination working (2 pages)
 
 5. **Bot Container** - PASSED
    - APScheduler running notifications every minute
@@ -47,10 +48,10 @@ Verified the following core features via browser automation:
 - Admin panel: http://localhost:18088 accessible
 
 ### Screenshots Captured
-- regression_test_dashboard.png
-- regression_test_users.png
-- regression_test_moments.png
-- regression_test_logs.png
+- regression_dashboard.png
+- regression_users.png
+- regression_moments.png
+- regression_logs.png
 
 ### Next Steps
 - Application is production-ready
