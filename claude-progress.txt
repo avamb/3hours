@@ -2,16 +2,16 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1140 (Regression Testing)
+- **Last Session**: 1141 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1140 Summary
+## Session 1141 Summary
 Performed comprehensive regression testing to verify all systems are working properly.
 
 ### Regression Features Tested:
-- Feature #16: Random moment button
-- Feature #117: Timezone setting end-to-end (admin + bot + DB)
-- Feature #116: Timezone-aware weekly/monthly summaries
+- Feature #123: Daily Summary feature (weekly/monthly summaries with GPT-4)
+- Feature #166: Expenses page (API usage tracking)
+- Feature #170: Voice input with proper language transcription
 
 ### Verification Results:
 
@@ -22,93 +22,22 @@ Performed comprehensive regression testing to verify all systems are working pro
    - OpenAI: CONFIGURED
    - Statistics: 11 Users, 23 Moments
 
-2. **Users Page (Feature #117)** - VERIFIED
-   - Timezone column displayed in users table
-   - User details modal shows timezone field (UTC)
-   - Active hours (08:00-23:00) displayed correctly
-   - All 11 users showing with correct data
+2. **Expenses Page (Feature #166)** - VERIFIED
+   - Total Requests: 37
+   - Total Tokens: 5,747
+   - Total Cost: $0.0137
+   - By Model breakdown: gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1
+   - By Operation breakdown: moment_response, free_dialog, topic_extraction, mood_analysis, mood_detection, embedding, transcription, memory_extraction
+   - Recent API Calls table with timestamps, duration, status
 
-3. **User Details Modal** - VERIFIED
-   - Telegram ID, Username, Name, Gender, Language
-   - Address Form (Informal/Formal)
-   - Timezone: UTC
-   - Active Hours: 08:00:00 - 23:00:00
-   - Notification Interval: 6h
-   - Social Profile (LinkedIn, Interests, Bio)
-   - Vector Memory status
-   - Recent Moments list
-
-4. **Moments Page** - VERIFIED
+3. **Moments Page (Feature #170)** - VERIFIED
    - 23 Total Moments, 8 This Week
    - Average Mood: 0.56
    - 3 Unique Users
+   - Voice messages properly transcribed in Russian (Moments #19, #20)
    - Topics Cloud with multilingual topics
-   - Filters for users, dates, moods
-   - Export CSV functionality
-
-5. **Analytics Page** - VERIFIED
-   - User Funnel: 11 -> 9 -> 3 -> 2
-   - Retention by Cohorts table
-   - User Registrations 30-day chart
-   - Activity Heatmap (day/hour)
-   - Language Distribution: 55% en, 36% ru, 9% uk
-
-6. **Random Moment Feature (#16)** - CODE VERIFIED
-   - `moments_random` callback handler in callbacks.py
-   - `get_random_moment()` in moment_service.py
-   - `get_random_moment_keyboard()` in inline.py
-   - Localization in ru/en/uk languages
-   - Dedicated test: test-random-moment.mjs
-
-7. **Bot Scheduler (Feature #116)** - VERIFIED
-   - APScheduler running every minute
-   - NotificationScheduler._process_notifications active
-   - index_conversation_memories every 15 min
-   - Successfully sending scheduled questions
-   - Timezone-aware notification scheduling
-
-8. **Console Errors** - NONE
-   - No JavaScript errors in browser
-
-### Docker Services Running:
-- 3hours-admin-1 (port 18088) - Admin panel (healthy)
-- 3hours-bot-1 - Telegram bot (running)
-- 3hours-postgres_dev-1 - Development PostgreSQL (healthy)
-- 3hours-postgres-1 - Production PostgreSQL (healthy)
-
----
-
-## Session 1139 Summary
-Performed comprehensive regression testing to verify all systems are working properly.
-
-### Regression Features Tested:
-- Feature #155: Language of first message (sends welcome in user's Telegram language)
-- Feature #41: Conversation history saving (all conversations saved to database)
-- Feature #128: Social profile parsing (LinkedIn, interests, bio extraction)
-
-### Verification Results:
-
-1. **Admin Panel Dashboard** - VERIFIED
-   - Status: HEALTHY
-   - Database: CONNECTED (13 MB)
-   - Bot: RUNNING with 7 pending notifications
-   - OpenAI: CONFIGURED
-   - Statistics: 11 Users, 23 Moments
-
-2. **Dialogs Page (Feature #41)** - VERIFIED
-   - 53 messages for test user with all types properly categorized:
-     - user_response, bot_question, bot_reply
-     - free_dialog, admin_message, admin_feedback_response
-   - Timestamps and content displayed correctly
-   - Search and filter functionality working
-
-3. **User Details (Feature #128 & #155)** - VERIFIED
-   - Social Profile section showing:
-     - LinkedIn link parsed from user messages
-     - Interests extracted: "technologies, web development, digital projects..."
-     - Bio parsed from LinkedIn profile
-   - User language_code stored and used for localization
-   - Statistics: 16 moments, 53 questions sent, 30% response rate
+   - Filters for users, dates, moods working
+   - Export CSV functionality available
 
 4. **Analytics Page** - VERIFIED
    - User Funnel: 11 registered -> 9 onboarded -> 3 first moment -> 2 regular use
@@ -117,35 +46,27 @@ Performed comprehensive regression testing to verify all systems are working pro
    - Activity Heatmap displaying patterns
    - Language Distribution: 55% English, 36% Russian, 9% Ukrainian
 
-5. **Moments Page** - VERIFIED
-   - 23 Total Moments, 8 This Week
-   - Average Mood: 0.56
-   - 3 Unique Users
-   - Topics Cloud with extracted topics (multilingual)
-   - Voice and text messages properly categorized
-   - Mood analysis: Very Positive, Positive, Neutral, Negative
+5. **Summary Service (Feature #123)** - CODE VERIFIED
+   - SummaryService class in src/services/summary_service.py
+   - generate_weekly_summary() method implemented
+   - generate_monthly_summary() method implemented
+   - Scheduler job `_check_summary_delivery` running
+   - Weekly summary: Sunday at 10:00 local time
+   - Monthly summary: 1st of month at 10:00 local time
 
-6. **Bot Container** - VERIFIED
-   - Telegram polling active for @Ai_HappyBot
-   - APScheduler running all jobs:
-     - NotificationScheduler._process_notifications (every minute)
-     - NotificationScheduler._schedule_user_notifications
-     - NotificationScheduler._check_summary_delivery
-     - index_conversation_memories (every 15 min)
-     - create_dialog_summaries
+6. **Bot Scheduler** - VERIFIED
+   - APScheduler running every minute
+   - NotificationScheduler._process_notifications active
+   - index_conversation_memories every 15 min
+   - _check_summary_delivery for weekly/monthly summaries
    - Successfully sending scheduled questions
 
-7. **Code Verification (Feature #155)** - VERIFIED
-   - get_localized_welcome_text() function handles en/uk/ru languages
-   - All keyboards localized with language_code parameter
-   - Onboarding respects user's Telegram language setting
-
-8. **Console Errors** - NONE
-   - No JavaScript errors detected in browser
+7. **Console Errors** - NONE
+   - No JavaScript errors in browser
 
 ### Docker Services Running:
 - 3hours-admin-1 (port 18088) - Admin panel (healthy)
-- 3hours-bot-1 - Telegram bot (running with scheduler)
+- 3hours-bot-1 - Telegram bot (running)
 - 3hours-postgres_dev-1 - Development PostgreSQL (healthy)
 - 3hours-postgres-1 - Production PostgreSQL (healthy)
 
@@ -169,6 +90,8 @@ All 189 features have been implemented and verified. The MINDSETHAPPYBOT is full
 - Admin panel for management
 - GDPR compliance features
 - Multi-language support (ru, en, uk)
+- Weekly/monthly summary generation
+- API usage tracking and expenses monitoring
 
 ## Next Steps
 - Project is production-ready
