@@ -22,7 +22,7 @@ from src.db.database import get_session
 from src.db.models import User, ScheduledNotification, QuestionTemplate
 from src.bot.keyboards.inline import get_question_keyboard
 from src.services.conversation_log_service import ConversationLogService
-from src.services.memory_indexer_job import index_conversation_memories
+from src.services.memory_indexer_job import index_conversation_memories, create_dialog_summaries
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +169,15 @@ class NotificationScheduler:
             index_conversation_memories,
             trigger=IntervalTrigger(minutes=15),
             id="memory_indexer",
+            replace_existing=True,
+        )
+
+        # Create dialog summaries every 2 hours
+        # Compresses multiple raw memories into semantic summaries
+        self.scheduler.add_job(
+            create_dialog_summaries,
+            trigger=IntervalTrigger(hours=2),
+            id="dialog_summary_creator",
             replace_existing=True,
         )
 
