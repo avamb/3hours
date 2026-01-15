@@ -2,10 +2,10 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1187 (Regression Testing)
+- **Last Session**: 1188 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1187 Summary
+## Session 1188 Summary
 Performed comprehensive regression testing via browser automation to verify system health.
 
 ### Docker Containers Status:
@@ -16,28 +16,30 @@ Performed comprehensive regression testing via browser automation to verify syst
 
 ### Regression Features Verified:
 
-1. **Feature #56 - Vector similarity search accuracy** - VERIFIED
+1. **Feature #43 - Formal/informal templates** - VERIFIED
+   - User details modal shows "Address Form: Informal (ты)"
+   - Setting controls whether bot uses formal (вы) or informal (ты) address
+   - Settings visible in user profile with all other configuration options
+
+2. **Feature #75 - Moments grouping by topics** - VERIFIED
    - Moments page shows 23 total moments from 3 unique users
-   - Topics Cloud displays extracted topics with counts (e.g., "парк (2)", "университет (2)")
+   - Topics Cloud displays extracted topics with counts (e.g., "парк (2)", "университет (2)", "работа (2)")
    - Average mood score: 0.56
    - Filters working: User, Date, Mood dropdowns
-
-2. **Feature #127 - Social Profile section in settings** - VERIFIED
-   - User details modal shows Social Profile section
-   - LinkedIn link displayed and clickable
-   - Interests: технологии, веб-разработка, цифровые проекты, etc.
-   - Bio: Full professional bio text displayed
+   - Each moment has associated topic tags extracted
 
 3. **Feature #25 - Exit free dialog mode** - VERIFIED
-   - Free dialog messages tracked in conversation history
-   - Filter by "Free Dialog" shows 5 messages in multiple languages (EN, RU, ES, DE)
+   - Free dialog messages tracked in conversation history (marked as "free dialog" type)
+   - Multiple free dialog conversations in various languages (EN, RU, ES, DE)
+   - Bot replies appropriately in the language used by the user
+   - Filter by "Free Dialog" type available in Dialogs page
    - Users can switch between normal mode and free dialog mode
 
 ### Additional Pages Verified:
 - **Dashboard**: All stats correct (11 users, 23 moments, 7 pending notifications)
 - **System Health**: HEALTHY, Database CONNECTED (13 MB), Bot RUNNING, OpenAI CONFIGURED
+- **Users**: 11 users with full details (gender, language, timezone, streaks, moments count)
 - **Dialogs**: 53 messages for andreiandreev62, message type filter, search, export (CSV/JSON)
-- **Analytics**: User Funnel, Retention by Cohorts, Activity Heatmap, Language Distribution
 
 ### Console Status:
 - No JavaScript errors detected
