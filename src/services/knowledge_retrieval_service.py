@@ -586,6 +586,34 @@ Reply with ONLY a single letter: A, B, or C."""
                         sum(len(s.content) for s in dialog_snippets) +
                         sum(len(s.content) for s in dialog_summaries)
                     )
+            else:
+                # General query (type C) - balance all sources, prefer KB
+                kb_chars = sum(len(c.content) for c in kb_chunks)
+                while kb_chars > MAX_CONTEXT_CHARS // 3 and kb_chunks:
+                    kb_chunks.pop()
+                    kb_chars = sum(len(c.content) for c in kb_chunks)
+
+                mem_chars = (
+                    sum(len(m.content) for m in moments) +
+                    sum(len(d.content) for d in dialog_memories) +
+                    sum(len(s.content) for s in dialog_snippets) +
+                    sum(len(s.content) for s in dialog_summaries)
+                )
+                while mem_chars > MAX_CONTEXT_CHARS // 3 and (moments or dialog_memories or dialog_snippets or dialog_summaries):
+                    if dialog_snippets:
+                        dialog_snippets.pop()
+                    elif moments:
+                        moments.pop()
+                    elif dialog_summaries:
+                        dialog_summaries.pop()
+                    elif dialog_memories:
+                        dialog_memories.pop()
+                    mem_chars = (
+                        sum(len(m.content) for m in moments) +
+                        sum(len(d.content) for d in dialog_memories) +
+                        sum(len(s.content) for s in dialog_snippets) +
+                        sum(len(s.content) for s in dialog_summaries)
+                    )
 
         return RAGContext(
             query_type=query_type,

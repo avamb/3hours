@@ -639,6 +639,7 @@ If message is just greeting/pleasantry/question with no personal facts, return:
         """
         async with get_session() as session:
             # Get raw dialog memories not yet included in any summary
+            # Check by conversation ID (not memory ID) since summaries store conversation IDs
             result = await session.execute(
                 text("""
                     SELECT cm.*
@@ -649,7 +650,7 @@ If message is just greeting/pleasantry/question with no personal facts, return:
                         SELECT 1 FROM conversation_memories s
                         WHERE s.user_id = :user_id
                         AND s.kind = :summary_kind
-                        AND cm.id = ANY(s.source_conversation_ids)
+                        AND cm.source_conversation_ids && s.source_conversation_ids
                     )
                     ORDER BY cm.created_at ASC
                 """),
@@ -797,18 +798,21 @@ OUTPUT: A single paragraph summarizing the user's messages."""
         self,
         user_id: int,
         summary_text: str,
-        source_memory_ids: List[int],
+        source_conversation_ids: List[int],
         embedding: List[float],
     ) -> Optional[int]:
         """
         Store a dialog summary in the database.
+        
+        Args:
+            source_conversation_ids: List of conversation IDs (not memory IDs) that were summarized
         """
         fingerprint = self.compute_fingerprint(summary_text)
 
         async with get_session() as session:
             conv_memory = ConversationMemory(
                 user_id=user_id,
-                source_conversation_ids=source_memory_ids,
+                source_conversation_ids=source_conversation_ids,
                 content=summary_text,
                 embedding=embedding,
                 kind=DIALOG_SUMMARY_KIND,
@@ -816,7 +820,7 @@ OUTPUT: A single paragraph summarizing the user's messages."""
                 fingerprint=fingerprint,
                 memory_metadata={
                     "source": "dialog_summary",
-                    "summarized_count": len(source_memory_ids),
+                    "summarized_conversations_count": len(source_conversation_ids),
                 },
             )
             session.add(conv_memory)
@@ -825,7 +829,7 @@ OUTPUT: A single paragraph summarizing the user's messages."""
 
             logger.info(
                 f"Stored dialog summary #{conv_memory.id} for user {user_id}, "
-                f"summarized {len(source_memory_ids)} raw memories"
+                f"summarized {len(source_conversation_ids)} conversations"
             )
             return conv_memory.id
 
@@ -863,8 +867,15 @@ OUTPUT: A single paragraph summarizing the user's messages."""
             return None
 
         # Store summary
-        source_ids = [m.id for m in memories]
-        summary_id = await self.store_summary(user.id, summary_text, source_ids, embedding)
+        # Collect conversation IDs from source memories (not memory IDs)
+        # Each raw memory has source_conversation_ids=[conversation.id]
+        conversation_ids = []
+        for mem in memories:
+            if mem.source_conversation_ids:
+                conversation_ids.extend(mem.source_conversation_ids)
+        # Deduplicate
+        conversation_ids = list(set(conversation_ids))
+        summary_id = await self.store_summary(user.id, summary_text, conversation_ids, embedding)
 
         return summary_id
 

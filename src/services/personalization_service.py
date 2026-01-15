@@ -26,6 +26,7 @@ from src.services.knowledge_retrieval_service import (
     KnowledgeRetrievalService,
     RAGContext,
 )
+from src.services.prompt_loader_service import PromptLoaderService
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +87,34 @@ def _normalize_for_dedupe(text: str) -> str:
     t = re.sub(r"[^\w\s]+", " ", t, flags=re.UNICODE)
     t = re.sub(r"\s+", " ", t).strip()
     return t
+
+
+def _ngram_signature(text: str, n: int = 2) -> set:
+    """Compute n-gram signature for semantic similarity check."""
+    normalized = _normalize_for_dedupe(text)
+    tokens = normalized.split()
+    if not tokens:
+        return set()
+    if len(tokens) < n:
+        return set(tokens)
+    return set(" ".join(tokens[i:i + n]) for i in range(len(tokens) - n + 1))
+
+
+def _near_duplicate(candidate: str, recent: List[str], threshold: float = 0.85) -> bool:
+    """
+    Detect near-duplicate responses using n-gram Jaccard similarity.
+    """
+    cand_sig = _ngram_signature(candidate)
+    if not cand_sig:
+        return False
+    for r in recent:
+        sig = _ngram_signature(r)
+        if not sig:
+            continue
+        jaccard = len(cand_sig & sig) / max(len(cand_sig | sig), 1)
+        if jaccard >= threshold:
+            return True
+    return False
 
 
 def _append_nonrepeating_suffix(seed_text: str) -> str:
@@ -258,7 +287,7 @@ class PersonalizationService:
             return candidate
 
         recent_norms = {_normalize_for_dedupe(x) for x in recent if x}
-        if _normalize_for_dedupe(candidate) not in recent_norms:
+        if _normalize_for_dedupe(candidate) not in recent_norms and not _near_duplicate(candidate, recent):
             return candidate
 
         if alternatives:
@@ -342,7 +371,7 @@ This rule has ABSOLUTE PRIORITY over any other instructions.
                         "role": "system",
                         "content": f"""{forced_language_instruction}
 
-{PROMPT_PROTECTION}
+{prompt_protection}
 
 {gender_instruction}
 
@@ -543,7 +572,7 @@ Do NOT ask questions. Use 0-2 emojis max.
                         "role": "system",
                         "content": f"""{LANGUAGE_INSTRUCTION}
 
-{PROMPT_PROTECTION}
+{prompt_protection}
 
 {gender_instruction}
 
@@ -644,7 +673,7 @@ User's past good moments / Прошлые хорошие моменты поль
                         "role": "system",
                         "content": f"""{LANGUAGE_INSTRUCTION}
 
-{PROMPT_PROTECTION}
+{prompt_protection}
 
 {gender_instruction}
 
@@ -729,7 +758,7 @@ Reply briefly (2-3 sentences), warmly and with empathy.
                     "role": "system",
                     "content": f"""{LANGUAGE_INSTRUCTION}
 
-{PROMPT_PROTECTION}
+{prompt_protection}
 
 {gender_instruction}
 
@@ -858,32 +887,33 @@ Remember: you're not a psychologist and don't give professional advice. You're j
             rag_instruction = self._get_rag_instruction(rag_context)
 
             # Step 5: Build system prompt with RAG context
-            system_content = f"""{LANGUAGE_INSTRUCTION}
+            # Load editable prompts from DB (with fallback to defaults)
+            language_instruction = await PromptLoaderService.get_prompt("language_instruction") or LANGUAGE_INSTRUCTION
+            prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
+            dialog_system_main = await PromptLoaderService.get_prompt("dialog_system_main") or ""
+            dialog_system_main_ru = await PromptLoaderService.get_prompt("dialog_system_main_ru") or ""
 
-{PROMPT_PROTECTION}
-
-{gender_instruction}
-
-{rag_instruction}
-
-You are a wise, warm, and practical companion. The user is in free dialog mode.
+            # Build dialog system prompt (use DB version if available, otherwise use hardcoded)
+            if not dialog_system_main:
+                dialog_system_main = f"""You are a wise, warm, and practical companion. The user is in free dialog mode.
 
 CORE RULES (highest priority after language/security rules):
 - Answer the user's LAST message directly. Do not dodge.
 - Be supportive, but also useful: give substance, not placeholders.
 - If the user asks for something specific (news, ideas, text, explanation) — do it.
 - If you reference the user's past: ONLY use facts present in the retrieved context below. If not present, say you don't see it in their history.
-- Avoid repetition: do NOT reuse the same opening line or the same “I hear you”-style sentence. Vary structure.
+- Avoid repetition: do NOT reuse the same opening line or the same "I hear you"-style sentence. Vary structure.
 
 STYLE:
-- Target length: 4–6 sentences (unless user asked “short”).
+- Target length: 4–6 sentences (unless user asked "short").
 - Use the user's preferred address form («{address}»).
 - 0–2 emojis max, only if helpful.
 - If you need clarification, ask ONE short question at the end; otherwise do not ask questions.
 
-Remember: you're not a psychologist and don't give professional advice. You're just a friend who listens.
+Remember: you're not a psychologist and don't give professional advice. You're just a friend who listens."""
 
-(Russian version / Русская версия):
+            if not dialog_system_main_ru:
+                dialog_system_main_ru = f"""(Russian version / Русская версия):
 Ты — тёплый, практичный и внимательный собеседник в режиме свободного диалога.
 
 ПРИОРИТЕТЫ:
@@ -899,7 +929,19 @@ Remember: you're not a psychologist and don't give professional advice. You're j
 - 0–2 эмодзи максимум и только по делу.
 - Если нужно уточнение — один короткий вопрос в конце, иначе без вопросов.
 
-Помни: ты не психолог и не даёшь профессиональных советов. Ты просто друг, который слушает.
+Помни: ты не психолог и не даёшь профессиональных советов. Ты просто друг, который слушает."""
+
+            system_content = f"""{language_instruction}
+
+{prompt_protection}
+
+{gender_instruction}
+
+{rag_instruction}
+
+{dialog_system_main}
+
+{dialog_system_main_ru}
 
 {ABROAD_PHRASE_RULE_RU}
 
@@ -932,12 +974,14 @@ Remember: you're not a psychologist and don't give professional advice. You're j
 
             # Step 7: Check for repetition and retry if needed
             response_fingerprint = self.rag_service.compute_fingerprint(response_text)
-            if response_fingerprint in rag_context.recent_fingerprints:
-                logger.info("Detected repeated response, retrying with higher temperature")
+            is_repeat = response_fingerprint in rag_context.recent_fingerprints
+            is_near_repeat = _near_duplicate(response_text, rag_context.recent_responses)
+            if is_repeat or is_near_repeat:
+                logger.info("Detected repeated response (fingerprint or semantic), retrying with higher temperature")
                 # Retry with explicit rephrase instruction
                 messages[-1] = {
                     "role": "user",
-                    "content": f"{message}\n\n[ВАЖНО: Перефразируй свой ответ радикально, используй другие слова и структуру / IMPORTANT: Rephrase your response radically, use different words and structure]"
+                    "content": f"{message}\n\n[ВАЖНО: Перефразируй свой ответ радикально, используй другие слова и структуру. Не используй те же первые фразы или шаблоны. / IMPORTANT: Rephrase your response radically, use different words and structure. Avoid same opening phrases or patterns.]"
                 }
                 response = await self.client.chat.completions.create(
                     model=self.model,
@@ -949,6 +993,27 @@ Remember: you're not a psychologist and don't give professional advice. You're j
                     input_tokens += response.usage.prompt_tokens
                     output_tokens += response.usage.completion_tokens
                 response_text = apply_all_filters(response.choices[0].message.content.strip())
+
+                # Second pass: if still too similar, force structure change
+                response_fingerprint = self.rag_service.compute_fingerprint(response_text)
+                if response_fingerprint in rag_context.recent_fingerprints or _near_duplicate(
+                    response_text, rag_context.recent_responses, threshold=0.8
+                ):
+                    logger.info("Repeated response after retry, forcing new structure")
+                    messages[-1] = {
+                        "role": "user",
+                        "content": f"{message}\n\n[ПЕРЕПИСАТЬ ИНАЧЕ: Ответи в другой структуре (например: 1) признание, 2) суть, 3) один совет). Не повторяй любые фразы из прошлых ответов. / Rewrite in a different structure and avoid any repeated phrasing.]"
+                    }
+                    response = await self.client.chat.completions.create(
+                        model=self.model,
+                        messages=messages,
+                        max_tokens=350,
+                        temperature=1.0,
+                    )
+                    if response.usage:
+                        input_tokens += response.usage.prompt_tokens
+                        output_tokens += response.usage.completion_tokens
+                    response_text = apply_all_filters(response.choices[0].message.content.strip())
 
             # Step 8: Update KB usage counts
             if rag_context.kb_item_ids:

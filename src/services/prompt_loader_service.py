@@ -9,7 +9,8 @@ Features:
 - Versioning support for prompt management
 """
 import logging
-from typing import Optional, Dict, List, Any
+import time
+from typing import Optional, Dict, List, Any, Tuple
 from datetime import datetime
 from dataclasses import dataclass
 from functools import lru_cache
@@ -117,9 +118,10 @@ class PromptLoaderService:
     Falls back to DEFAULT_PROMPTS if no DB entry exists.
     """
 
-    # In-memory cache: key -> content
-    _cache: Dict[str, str] = {}
+    # In-memory cache: key -> (content, timestamp)
+    _cache: Dict[str, Tuple[str, float]] = {}
     _cache_loaded: bool = False
+    _cache_ttl_seconds: int = 300  # 5 minutes TTL for auto-refresh
 
     @classmethod
     def clear_cache(cls) -> None:
@@ -131,8 +133,16 @@ class PromptLoaderService:
     @classmethod
     async def _load_active_prompts(cls) -> None:
         """Load all active prompts into cache."""
-        if cls._cache_loaded:
-            return
+        import time
+        # Check if cache is still valid (within TTL)
+        if cls._cache_loaded and cls._cache:
+            # Check if oldest entry is still fresh
+            oldest_timestamp = min((ts for _, ts in cls._cache.values()), default=0)
+            if time.time() - oldest_timestamp < cls._cache_ttl_seconds:
+                return
+            # Cache expired, reload
+            cls._cache.clear()
+            cls._cache_loaded = False
 
         async with get_session() as session:
             result = await session.execute(
@@ -140,8 +150,9 @@ class PromptLoaderService:
             )
             prompts = result.scalars().all()
 
+            current_time = time.time()
             for prompt in prompts:
-                cls._cache[prompt.key] = prompt.content
+                cls._cache[prompt.key] = (prompt.content, current_time)
 
         cls._cache_loaded = True
         logger.debug(f"Loaded {len(cls._cache)} prompts into cache")
@@ -158,7 +169,8 @@ class PromptLoaderService:
         """
         # Check cache first
         if key in cls._cache:
-            return cls._cache[key]
+            content, _ = cls._cache[key]
+            return content
 
         # Load from DB if not cached
         async with get_session() as session:
@@ -175,7 +187,7 @@ class PromptLoaderService:
             prompt = result.scalar_one_or_none()
 
             if prompt:
-                cls._cache[key] = prompt.content
+                cls._cache[key] = (prompt.content, time.time())
                 return prompt.content
 
         # Fall back to defaults
