@@ -60,10 +60,20 @@ REMEMBER_PATTERNS = [
     r'\bя\s+рассказывал[аи]?\b',  # я рассказывал/а (Russian - I told you about)
     r'\bты\s+знаешь\b',  # ты знаешь (Russian - you know)
     r'\bмы\s+обсуждали\b',  # мы обсуждали (Russian - we discussed)
+    r'\bчто\s+мы\s+обсуждали\b',  # что мы обсуждали (Russian - what we discussed)
+    r'\bнапомни\s+.*разговор\b',  # напомни...разговор (Russian - remind me...conversation)
+    r'\bтемы\s+.*разговор\b',  # темы...разговор (Russian - topics...conversation)
+    r'\bосновные\s+темы\b',  # основные темы (Russian - main topics)
     r'\bremember\b',  # English - remember
     r'\bi\s+told\s+you\b',  # English - I told you
     r'\bi\s+mentioned\b',  # English - I mentioned
     r'\bwe\s+discussed\b',  # English - we discussed
+    r'\bwhat\s+did\s+we\s+discuss\b',  # English - what did we discuss
+    r'\bwhat\s+we\s+discussed\b',  # English - what we discussed
+    r'\bremind\s+.*conversation\b',  # English - remind...conversation
+    r'\bremind\s+.*topics\b',  # English - remind...topics
+    r'\bmain\s+topics\b',  # English - main topics
+    r'\btopics\s+.*talk\b',  # English - topics...talk
     r'\byou\s+know\b',  # English - you know
     r'\bчто\s+я\s+.*сказал[аи]?\b',  # что я сказал/а (Russian - what I said)
 ]
@@ -740,7 +750,9 @@ DO NOT invent or assume facts the user didn't tell you.
 === ANTI-HALLUCINATION RULE ===
 The user is asking about something they told you before.
 You have NO stored information about what the user mentioned.
-Honestly say you don't have that information stored and ask them to tell you again.
+Say: "I don't see that in our conversation history. Could you tell me about it again?" (EN)
+or "Я не вижу этого в нашей истории разговоров. Можешь рассказать об этом снова?" (RU)
+DO NOT say "I can't recall" or "I don't remember" - always reference checking the history.
 DO NOT invent or assume facts the user didn't tell you.
 """
 
