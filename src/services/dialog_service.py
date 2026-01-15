@@ -69,6 +69,7 @@ class DialogService:
         Returns:
             Bot's response
         """
+        logger.info(f"Processing dialog message from user {telegram_id}: {message[:100]}")
         # Save user message
         await self._save_conversation(
             telegram_id=telegram_id,

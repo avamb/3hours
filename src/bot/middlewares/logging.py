@@ -31,6 +31,7 @@ class LoggingMiddleware(BaseMiddleware):
                 user = event.from_user
                 if event.text:
                     msg = f"Message from {user.id} (@{user.username}): {event.text[:200]}"
+                    logger.info(f"LoggingMiddleware: {msg}")  # Добавляем логирование в stdout
                     asyncio.create_task(_system_logs.log(
                         level="INFO",
                         source="bot.message",

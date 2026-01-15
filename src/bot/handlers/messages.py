@@ -294,6 +294,7 @@ async def handle_text_message(message: Message) -> None:
     - Could be feedback input
     - Could be any other text input
     """
+    logger.info(f"Received text message from user {message.from_user.id}: {message.text[:100]}")
     text = message.text.strip()
 
     # Check if text is empty or whitespace only
@@ -327,6 +328,12 @@ async def handle_text_message(message: Message) -> None:
         language_code = detected_lang
 
     # Dialog mode: route to DialogService (persists to conversations)
+    # Автоматически активируем диалог, если пользователь не в диалоге
+    # Это позволяет обрабатывать все сообщения через RAG
+    if not dialog_service.is_in_dialog(message.from_user.id):
+        dialog_service.start_dialog(message.from_user.id)
+        logger.info(f"Auto-activated dialog for user {message.from_user.id}")
+    
     if dialog_service.is_in_dialog(message.from_user.id):
         from src.bot.keyboards.inline import get_dialog_keyboard
         # Show typing indicator while generating AI response
