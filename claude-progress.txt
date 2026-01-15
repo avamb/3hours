@@ -1,48 +1,45 @@
-## Session 1058 - January 15, 2026
+## Session 1059 - January 15, 2026
 
 ### Status: ALL FEATURES COMPLETE (185/185 - 100%)
 
 ### Regression Testing Completed
 Verified the following features via browser automation:
 
-1. **Dashboard Overview** - PASSED
+1. **Feature #144: Export moments to CSV** - PASSED
+   - Export CSV button on Moments page working
+   - Downloaded file contains all fields: ID, User ID, Username, Name, Content, Source, Mood Score, Topics, Created At
+   - All 23 moments exported correctly with proper formatting
+   - Topics and mood scores included as specified
+
+2. **Feature #156: Dialog language detection** - PASSED
+   - Bot correctly adapts to user's language
+   - Russian to Russian: "Какой хороший день" -> "Рад слышать..."
+   - English to English: "How can you help me?" -> "I can help you by providing support..."
+   - Spanish to Spanish: "Sabes hablar espanol..." -> "Hola! Claro, puedo hablar en espanol..."
+   - German to German: "Heute ist das Wetter wunderschon..." -> "Das klingt wirklich wunderbar!..."
+   - Language switching works mid-conversation
+
+3. **Feature #12: History filtering by period** - PASSED
+   - Date filter working (From date / To date fields)
+   - Mood filter working (All Moods, Very Positive, Positive, Neutral, Negative)
+   - User filter working (dropdown with all users)
+   - Combined filters work together correctly
+   - Export CSV respects applied filters
+
+4. **Dashboard Overview** - PASSED
    - Database: CONNECTED (13 MB)
    - Bot: RUNNING (8 pending notifications)
    - OpenAI: CONFIGURED
    - 11 Total Users, 23 Total Moments, 8 Moments This Week
-   - Recent Activity showing admin messages and bot questions
+   - Recent Activity showing various message types
 
-2. **Users Page** - PASSED
-   - 11 users displayed with full details
-   - Search and filters working (language, status, sort)
-   - Export CSV functionality available
-   - Gender icons displayed correctly (M / F)
-   - Moments count and streak tracking working
-   - Timezone column showing UTC
-
-3. **Dialogs Page** - PASSED
-   - User list with message count and last activity
-   - Messenger-style dialog view for selected user
-   - Clicking specific user shows ONLY their dialogs
-   - Filter by message type working
-   - Search in dialog functionality available
+5. **User Dialogs Page** - PASSED
+   - 2 users with dialog history displayed
+   - Messenger-style dialog view working
+   - Message type filters (All Types, User Response, Bot Question, etc.)
+   - Search in dialog functionality
    - Export CSV and JSON buttons available
    - Full conversation history displayed chronologically
-   - Bot responding in multiple languages (Russian, Spanish, German, English)
-
-4. **Notifications Page** - PASSED
-   - 8 pending notifications scheduled for today (9:00 AM and 10:00 AM)
-   - Many sent notifications confirming scheduler is active
-   - Filters by user, status (Pending/Sent), and date range
-   - Pagination working (3 pages)
-   - Sent At timestamps showing successful delivery
-
-5. **Feedback Page** - PASSED (Feature #130 regression)
-   - 5 feedback entries displayed
-   - Categories: Bug reports and Ideas
-   - Status tracking: New (0), Reviewed (4), Implemented (1), Rejected (0)
-   - View buttons for detailed feedback
-   - User feedback from bot's Feedback button working correctly
 
 ### Console Errors: ZERO
 
@@ -61,11 +58,12 @@ Verified the following features via browser automation:
 - All scheduled jobs running on time
 
 ### Screenshots Captured
-- regression_session1058_dashboard.png
-- regression_session1058_users.png
-- regression_session1058_dialogs.png
-- regression_session1058_notifications.png
-- regression_session1058_feedback.png
+- regression_session1059_moments_export.png
+- regression_session1059_dialogs_multilang.png
+- regression_session1059_dialogs_top.png
+- regression_session1059_date_filter.png
+- regression_session1059_combined_filters.png
+- regression_session1059_dashboard.png
 
 ### Next Steps
 - Application is production-ready
