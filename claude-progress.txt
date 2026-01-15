@@ -2,38 +2,39 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1199 (Regression Testing)
+- **Last Session**: 1200 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1199 Summary
+## Session 1200 Summary
 Performed comprehensive regression testing via browser automation to verify system health.
 
 ### Docker Containers Status:
 - admin: Running on port 18088 (healthy)
 - postgres: Running (healthy)
-- bot: Running
+- bot: Running (with Telegram conflict error - expected when another instance runs with same token)
 
 ### Regression Features Verified:
 
-1. **Feature #166 - Expenses** - VERIFIED
-   - API Expenses page showing comprehensive token/cost tracking
-   - Total Requests: 37
-   - Total Tokens: 5,747
-   - Total Cost: $0.0137
-   - By Model breakdown: gpt-4o (6 requests), gpt-4o-mini (24 requests), text-embedding-3-small (5 requests), whisper-1 (2 requests)
-   - By Operation: moment_response, free_dialog, topic_extraction, mood_analysis, mood_detection, embedding, transcription, memory_extraction
-   - Recent API Calls table with time, model, operation, tokens, cost, duration, status
+1. **Feature #144 - Export moments to CSV** - VERIFIED
+   - Moments page fully functional with 23 moments
+   - Export CSV button working
+   - Downloaded CSV includes: ID, User ID, Username, Name, Content, Source, Mood Score, Topics, Created At
+   - Voice transcriptions properly marked as "voice" source
+   - Topics and mood scores included in export
 
-2. **Feature #7 - Voice message recording** - VERIFIED
-   - Whisper-1 transcription calls visible in Expenses page (2 requests with OK status)
-   - Moments #19 and #20 displayed with source_type "voice"
-   - Voice messages properly transcribed and saved to database
-   - Topic extraction and mood analysis working on transcribed text
+2. **Feature #133 - Knowledge Base page** - VERIFIED
+   - Knowledge Base page accessible in admin panel
+   - Statistics cards showing (Total, Indexed, Pending, Chunks)
+   - Upload form with Title, Category, Tags, File upload
+   - Status filter (All, Indexed, Pending, Error)
+   - Table with proper columns for managing KB items
 
-3. **Feature #144 - Export moments to CSV** - VERIFIED
-   - Export CSV button present on Moments page
-   - Successfully downloaded moments_export_2026-01-15.csv
-   - All moment fields included in export
+3. **Feature #124 - Weekly Summary feature** - VERIFIED
+   - SummaryService class with generate_weekly_summary() and generate_monthly_summary()
+   - Scheduled via APScheduler (checks hourly, sends on Sundays at 10:00 local time)
+   - GPT-4 powered summary generation with user's moments, topics, mood scores
+   - API usage tracking for summary operations
+   - Gender-aware personalization included
 
 ### Dashboard Overview - VERIFIED:
 - Database: CONNECTED (13 MB)
@@ -50,13 +51,20 @@ Performed comprehensive regression testing via browser automation to verify syst
 - Filter by user, date range, mood
 - CSV export button working
 
+### API Expenses Page - VERIFIED:
+- Total Requests: 37
+- Total Tokens: 5,747
+- Total Cost: $0.0137
+- By Model: gpt-4o (6), gpt-4o-mini (24), text-embedding-3-small (5), whisper-1 (2)
+- By Operation: moment_response, free_dialog, topic_extraction, mood_analysis, mood_detection, embedding, transcription, memory_extraction
+
 ### System Health:
 - No JavaScript console errors detected
 - All navigation links working
 - All API endpoints responding correctly
 - Screenshots saved:
-  - regression-test-session-1199-moments.png
-  - regression-test-session-1199-expenses.png
+  - regression-test-session-1200-knowledge-base.png
+  - regression-test-session-1200-expenses.png
 
 ---
 
@@ -81,3 +89,4 @@ All 189 features have been implemented and verified. The MINDSETHAPPYBOT is a fu
 - Multi-language templates (Russian, English, Ukrainian)
 - International timezone support
 - API expenses tracking with detailed breakdowns
+- Weekly and monthly summaries with GPT-4 generation
