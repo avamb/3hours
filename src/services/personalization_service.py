@@ -6,14 +6,15 @@ Enhanced with Hybrid RAG (Knowledge Base + User Memory + Anti-repetition)
 import logging
 import hashlib
 import time
+import re
 from typing import List, Optional, Dict, Any, Tuple
 
 from openai import AsyncOpenAI
-from sqlalchemy import select
+from sqlalchemy import select, and_
 
 from src.config import get_settings
 from src.db.database import get_session
-from src.db.models import User, Moment
+from src.db.models import User, Moment, Conversation
 from src.utils.text_filters import (
     ABROAD_PHRASE_RULE_RU,
     FORBIDDEN_SYMBOLS_RULE_RU,
@@ -74,6 +75,36 @@ def _stable_choice(seed_text: str, options: List[str]) -> str:
     seed = (seed_text or "").encode("utf-8", errors="ignore")
     idx = hashlib.sha256(seed).digest()[0] % len(options)
     return options[idx]
+
+
+def _normalize_for_dedupe(text: str) -> str:
+    """
+    Normalize text for repetition checks.
+    Catches repeats with different emojis/punctuation/spacing.
+    """
+    t = (text or "").strip().lower()
+    t = re.sub(r"[^\w\s]+", " ", t, flags=re.UNICODE)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
+
+
+def _append_nonrepeating_suffix(seed_text: str) -> str:
+    suffixes = [
+        "Если хочешь, можем продолжить с этого места и развернуть мысль.",
+        "Я рядом и готов(а) продолжать, когда тебе удобно.",
+        "Пусть это будет твоей тихой поддержкой на сегодня.",
+        "Давай держаться за этот маленький тёплый факт как за опору сегодня.",
+        "Если нужно — могу помочь оформить это в 1–2 чётких мысли.",
+        "Хочешь — сделаем это ещё проще и понятнее в двух шагах.",
+    ]
+    return _stable_choice(seed_text or "", suffixes)
+
+
+def _pick_first_nonrepeating(options: List[str], recent_norms: set) -> Optional[str]:
+    for opt in options:
+        if _normalize_for_dedupe(opt) not in recent_norms:
+            return opt
+    return None
 
 
 def _fallback_dialog_reply(user_message: str, address: str = "ты") -> str:
@@ -179,6 +210,68 @@ class PersonalizationService:
         self.model = settings.openai_chat_model
         self.analysis_model = settings.openai_analysis_model
         self.rag_service = KnowledgeRetrievalService()
+
+    async def _get_recent_bot_replies(self, telegram_id: int, limit: int = 8) -> List[str]:
+        """
+        Fetch recent bot replies from DB for de-duplication.
+        Best-effort: on any failure, return empty list.
+        """
+        try:
+            async with get_session() as session:
+                user_res = await session.execute(select(User).where(User.telegram_id == telegram_id))
+                user = user_res.scalar_one_or_none()
+                if not user:
+                    return []
+
+                rows_res = await session.execute(
+                    select(Conversation.content)
+                    .where(
+                        and_(
+                            Conversation.user_id == user.id,
+                            Conversation.message_type == "bot_reply",
+                        )
+                    )
+                    .order_by(Conversation.created_at.desc())
+                    .limit(limit)
+                )
+                return [r[0] for r in rows_res.all() if r and r[0]]
+        except Exception:
+            return []
+
+    async def _avoid_repetition(
+        self,
+        telegram_id: int,
+        candidate: str,
+        seed_text: str,
+        alternatives: Optional[List[str]] = None,
+    ) -> str:
+        """
+        Ensure we don't repeat (near-)identical replies word-for-word.
+        Works even when OpenAI is down (429) by choosing a different fallback or adding a varying suffix.
+        """
+        candidate = (candidate or "").strip()
+        if not candidate:
+            return candidate
+
+        recent = await self._get_recent_bot_replies(telegram_id, limit=8)
+        if not recent:
+            return candidate
+
+        recent_norms = {_normalize_for_dedupe(x) for x in recent if x}
+        if _normalize_for_dedupe(candidate) not in recent_norms:
+            return candidate
+
+        if alternatives:
+            alt = _pick_first_nonrepeating(alternatives, recent_norms)
+            if alt:
+                return alt
+
+        suffix = _append_nonrepeating_suffix(seed_text or candidate)
+        expanded = f"{candidate} {suffix}".strip()
+        if _normalize_for_dedupe(expanded) not in recent_norms:
+            return expanded
+
+        return f"{candidate} {suffix} (перефразирую, чтобы не повторяться).".strip()
 
     async def generate_response(
         self,
@@ -293,21 +386,35 @@ Do NOT ask questions. Use 0-2 emojis max.
                 input_tokens = response.usage.prompt_tokens
                 output_tokens = response.usage.completion_tokens
 
-            return apply_all_filters(response.choices[0].message.content.strip())
+            response_text = apply_all_filters(response.choices[0].message.content.strip())
+            response_text = await self._avoid_repetition(
+                telegram_id=telegram_id,
+                candidate=response_text,
+                seed_text=moment_content,
+            )
+            return response_text
 
         except Exception as e:
             logger.error(f"Failed to generate response: {e}")
             success = False
             error_msg = str(e)
-            # Non-repetitive fallback (no OpenAI available)
-            return _stable_choice(
-                moment_content,
-                [
-                    "Спасибо, что поделился. Это правда звучит как тёплый, хороший момент — пусть он останется с тобой ещё надолго. 🌟",
-                    "Классный момент — в таких вещах и есть опора на день. Спасибо, что рассказал(а).",
-                    "Очень здорово, что у тебя было такое хорошее событие. Пусть оно добавит тебе сил и спокойствия. 💝",
-                ],
+            fallback_options = [
+                "Спасибо, что поделился. Это правда звучит как тёплый, хороший момент — пусть он останется с тобой ещё надолго. 🌟",
+                "Классный момент — в таких вещах и есть опора на день. Спасибо, что рассказал(а).",
+                "Очень здорово, что у тебя было такое хорошее событие. Пусть оно добавит тебе сил и спокойствия. 💝",
+                "Спасибо, что отметил(а) это. Иногда именно такие детали делают день устойчивее и добрее.",
+                "Здорово, что у тебя был этот момент. Пусть он добавит уверенности и мягкого настроя на дальше.",
+                "Это правда хороший штрих дня. Держись за него как за маленький маячок — он работает.",
+                "Ценно, что ты это заметил(а). Такие вещи помогают собрать день в нормальное состояние.",
+            ]
+            candidate = _stable_choice(moment_content, fallback_options)
+            candidate = await self._avoid_repetition(
+                telegram_id=telegram_id,
+                candidate=candidate,
+                seed_text=moment_content,
+                alternatives=fallback_options,
             )
+            return apply_all_filters(candidate)
 
         finally:
             # Log API usage
@@ -675,7 +782,13 @@ Remember: you're not a psychologist and don't give professional advice. You're j
             logger.error(f"Failed to generate dialog response: {e}")
             success = False
             error_msg = str(e)
-            return _fallback_dialog_reply(message, address=address)
+            fallback = _fallback_dialog_reply(message, address=address)
+            fallback = await self._avoid_repetition(
+                telegram_id=telegram_id,
+                candidate=fallback,
+                seed_text=message,
+            )
+            return apply_all_filters(fallback)
 
         finally:
             # Log API usage
@@ -851,7 +964,14 @@ Remember: you're not a psychologist and don't give professional advice. You're j
             success = False
             error_msg = str(e)
             # Fallback to model-only response
-            return _fallback_dialog_reply(message, address=address), {
+            fallback = _fallback_dialog_reply(message, address=address)
+            fallback = await self._avoid_repetition(
+                telegram_id=telegram_id,
+                candidate=fallback,
+                seed_text=message,
+            )
+            fallback = apply_all_filters(fallback)
+            return fallback, {
                 "rag_mode": "error",
                 "error": str(e),
                 "retrieval_used": False,
