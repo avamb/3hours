@@ -149,6 +149,9 @@ function navigateTo(page) {
         case 'knowledge':
             loadKnowledgePage();
             break;
+        case 'prompts':
+            loadPromptsPage();
+            break;
         case 'templates':
             loadTemplatesPage();
             break;
@@ -529,6 +532,12 @@ async function showUserDetail(userId) {
                     </div>
                 </div>
             ` : ''}
+            <div class="detail-section">
+                <h4>🧠 Vector Memory</h4>
+                <div id="vector-memory-section" data-user-id="${userId}">
+                    <p class="loading">Loading memory status...</p>
+                </div>
+            </div>
             ${moments.length > 0 ? `
                 <div class="detail-section">
                     <h4>Recent Moments</h4>
@@ -570,10 +579,188 @@ async function showUserDetail(userId) {
             </div>
             ` : ''}
         `;
+        // Load vector memory status asynchronously
+        loadUserMemoryStatus(userId);
     } catch (error) {
         modalBody.innerHTML = `<p class="error-message">Error loading user details: ${error.message}</p>`;
     }
 }
+
+// Load and display user's vector memory status
+async function loadUserMemoryStatus(userId) {
+    const section = document.getElementById('vector-memory-section');
+    if (!section) return;
+
+    try {
+        const status = await api(`/users/${userId}/memory/status`);
+
+        // Format kinds breakdown
+        const kindsItems = Object.entries(status.kinds_breakdown || {})
+            .filter(([_, count]) => count > 0)
+            .map(([kind, count]) => `<span class="memory-kind-badge">${kind}: ${count}</span>`)
+            .join(' ');
+
+        // Determine status badge
+        const statusBadge = status.indexing_status === 'indexed'
+            ? '<span class="status-badge enabled">✅ Indexed</span>'
+            : status.indexing_status === 'pending'
+            ? '<span class="status-badge pending">⚠️ Pending</span>'
+            : '<span class="status-badge warning">⏳ Partial</span>';
+
+        section.innerHTML = `
+            <div class="user-detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Indexing Status</div>
+                    <div class="detail-value">${statusBadge}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Memory Chunks</div>
+                    <div class="detail-value">${status.memories_count}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Pending Conversations</div>
+                    <div class="detail-value">${status.pending_conversations} / ${status.total_conversations}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Last Indexed</div>
+                    <div class="detail-value">${status.last_indexed_at ? formatRelativeTime(status.last_indexed_at) : 'Never'}</div>
+                </div>
+                ${status.avg_importance ? `
+                <div class="detail-item">
+                    <div class="detail-label">Avg Importance</div>
+                    <div class="detail-value">${status.avg_importance}</div>
+                </div>
+                ` : ''}
+            </div>
+            ${kindsItems ? `
+            <div class="memory-kinds-breakdown" style="margin-top: 10px;">
+                <div class="detail-label">Memory Types</div>
+                <div style="margin-top: 5px;">${kindsItems}</div>
+            </div>
+            ` : ''}
+            ${status.memories_count > 0 ? `
+            <div style="margin-top: 15px;">
+                <button class="btn btn-secondary btn-small" onclick="showMemoryChunks(${userId})">
+                    📄 View Memory Chunks (${status.memories_count})
+                </button>
+                <button class="btn btn-secondary btn-small" onclick="showMemoryUsage(${userId})" style="margin-left: 8px;">
+                    📊 View Usage Trace
+                </button>
+            </div>
+            ` : `
+            <div style="margin-top: 10px; color: #666;">
+                No memory chunks extracted yet. Memory is extracted from user conversations during periodic indexing.
+            </div>
+            `}
+        `;
+    } catch (error) {
+        section.innerHTML = `<p class="text-muted">Error loading memory status: ${error.message}</p>`;
+    }
+}
+
+// Show memory chunks modal
+async function showMemoryChunks(userId) {
+    const modal = document.getElementById('user-modal');
+    const modalBody = document.getElementById('user-modal-body');
+
+    modalBody.innerHTML = '<p class="loading">Loading memory chunks...</p>';
+
+    try {
+        const { chunks, total } = await api(`/users/${userId}/memory/chunks?limit=50`);
+
+        modalBody.innerHTML = `
+            <div style="margin-bottom: 15px;">
+                <button class="btn btn-secondary btn-small" onclick="showUserDetail(${userId})">
+                    ← Back to User Details
+                </button>
+                <span style="margin-left: 15px; font-weight: bold;">Memory Chunks (${total} total)</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kind</th>
+                        <th>Content</th>
+                        <th>Importance</th>
+                        <th>Source</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${chunks.map(chunk => `
+                        <tr>
+                            <td>${chunk.id}</td>
+                            <td><span class="memory-kind-badge">${chunk.kind}</span></td>
+                            <td title="${escapeHtml(chunk.content)}">${escapeHtml(chunk.content.substring(0, 100))}${chunk.content.length > 100 ? '...' : ''}</td>
+                            <td>${chunk.importance?.toFixed(2) || '-'}</td>
+                            <td>Conv: ${chunk.source_conversation_ids?.join(', ') || '-'}</td>
+                            <td>${formatRelativeTime(chunk.created_at)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            ${chunks.length === 0 ? '<p class="text-muted">No memory chunks found.</p>' : ''}
+        `;
+    } catch (error) {
+        modalBody.innerHTML = `
+            <button class="btn btn-secondary btn-small" onclick="showUserDetail(${userId})">
+                ← Back to User Details
+            </button>
+            <p class="error-message" style="margin-top: 15px;">Error loading chunks: ${error.message}</p>
+        `;
+    }
+}
+
+// Show memory usage trace
+async function showMemoryUsage(userId) {
+    const modal = document.getElementById('user-modal');
+    const modalBody = document.getElementById('user-modal-body');
+
+    modalBody.innerHTML = '<p class="loading">Loading memory usage...</p>';
+
+    try {
+        const { usage, total } = await api(`/users/${userId}/memory/usage?limit=30`);
+
+        modalBody.innerHTML = `
+            <div style="margin-bottom: 15px;">
+                <button class="btn btn-secondary btn-small" onclick="showUserDetail(${userId})">
+                    ← Back to User Details
+                </button>
+                <span style="margin-left: 15px; font-weight: bold;">Memory Usage Trace (${total} replies with retrieval)</span>
+            </div>
+            <div class="activity-list">
+                ${usage.map(item => `
+                    <div class="activity-item" style="flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; width: 100%; justify-content: space-between;">
+                            <div>
+                                ${item.moments_count > 0 ? `<span class="status-badge" style="background: #e3f2fd; color: #1565c0;">📖 ${item.moments_count} moments</span>` : ''}
+                                ${item.kb_chunks_count > 0 ? `<span class="status-badge" style="background: #e8f5e9; color: #2e7d32;">📚 ${item.kb_chunks_count} KB</span>` : ''}
+                                ${item.dialog_memory_count > 0 ? `<span class="status-badge" style="background: #fff3e0; color: #e65100;">🧠 ${item.dialog_memory_count} memory</span>` : ''}
+                                ${item.is_remember_query ? `<span class="status-badge" style="background: #fce4ec; color: #c2185b;">🔍 Remember Query</span>` : ''}
+                                ${item.query_type ? `<span class="text-muted" style="margin-left: 8px;">Type: ${item.query_type}</span>` : ''}
+                            </div>
+                            <div class="activity-time">${formatRelativeTime(item.created_at)}</div>
+                        </div>
+                        <div class="activity-text" style="margin-top: 8px; font-size: 0.9em;">${escapeHtml(item.content_preview || '')}</div>
+                    </div>
+                `).join('')}
+            </div>
+            ${usage.length === 0 ? '<p class="text-muted">No bot replies with retrieval metadata found.</p>' : ''}
+        `;
+    } catch (error) {
+        modalBody.innerHTML = `
+            <button class="btn btn-secondary btn-small" onclick="showUserDetail(${userId})">
+                ← Back to User Details
+            </button>
+            <p class="error-message" style="margin-top: 15px;">Error loading usage: ${error.message}</p>
+        `;
+    }
+}
+
+// Make memory functions globally accessible
+window.loadUserMemoryStatus = loadUserMemoryStatus;
+window.showMemoryChunks = showMemoryChunks;
+window.showMemoryUsage = showMemoryUsage;
 
 async function blockUser(userId) {
     if (!confirm('Are you sure you want to block this user? They will not be able to interact with the bot.')) {
@@ -2953,3 +3140,164 @@ window.cancelCampaign = cancelCampaign;
 window.deleteCampaign = deleteCampaign;
 window.exportCampaignTargets = exportCampaignTargets;
 window.closeCampaignModal = closeCampaignModal;
+
+// =============================================================================
+// PROMPTS PAGE - System Prompt Management
+// =============================================================================
+
+let currentPromptKey = null;
+let promptsData = [];
+
+async function loadPromptsPage() {
+    try {
+        const response = await fetch('/api/prompts');
+        const data = await response.json();
+        promptsData = data.prompts || [];
+        renderPromptsList();
+    } catch (error) {
+        console.error('Error loading prompts:', error);
+        document.getElementById('prompts-list-content').innerHTML =
+            '<p class="error">Error loading prompts</p>';
+    }
+}
+
+function renderPromptsList() {
+    const container = document.getElementById('prompts-list-content');
+    if (!container) return;
+
+    if (promptsData.length === 0) {
+        container.innerHTML = '<p>No prompts found</p>';
+        return;
+    }
+
+    container.innerHTML = promptsData.map(prompt => `
+        <div class="prompt-item ${currentPromptKey === prompt.key ? 'active' : ''}"
+             onclick="selectPrompt('${prompt.key}')">
+            <div class="prompt-item-key">${prompt.key}</div>
+            <div class="prompt-item-status">
+                ${prompt.using_default ?
+                    '<span class="badge badge-info">Default</span>' :
+                    `<span class="badge badge-success">v${prompt.active_version}</span>`}
+                ${prompt.is_system ? '<span class="badge badge-secondary">System</span>' : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+async function selectPrompt(key) {
+    currentPromptKey = key;
+    renderPromptsList();
+
+    try {
+        const response = await fetch(`/api/prompts/${encodeURIComponent(key)}`);
+        const data = await response.json();
+
+        if (data.error) {
+            alert('Error loading prompt: ' + data.error);
+            return;
+        }
+
+        document.getElementById('prompts-editor-placeholder').style.display = 'none';
+        document.getElementById('prompts-editor-content').style.display = 'block';
+
+        document.getElementById('prompts-editor-title').textContent = `Edit: ${key}`;
+        document.getElementById('prompt-key').value = key;
+
+        const activeVersion = data.versions.find(v => v.is_active);
+        document.getElementById('prompt-content').value = activeVersion ? activeVersion.content : '';
+        document.getElementById('prompt-notes').value = '';
+
+        renderPromptVersions(data.versions, key);
+
+    } catch (error) {
+        console.error('Error loading prompt:', error);
+        alert('Error loading prompt');
+    }
+}
+
+function renderPromptVersions(versions, key) {
+    const container = document.getElementById('prompts-versions');
+    if (!container) return;
+
+    if (versions.length === 0) {
+        container.innerHTML = '<p>No versions yet</p>';
+        return;
+    }
+
+    container.innerHTML = versions.map(v => `
+        <div class="version-item ${v.is_active ? 'active' : ''}">
+            <div class="version-header">
+                <span class="version-number">${v.is_default ? 'Default' : `Version ${v.version}`}</span>
+                ${v.is_active ? '<span class="badge badge-success">Active</span>' : ''}
+            </div>
+            <div class="version-meta">
+                ${v.notes || 'No notes'}<br>
+                <small>${new Date(v.updated_at).toLocaleString()}</small>
+            </div>
+            ${!v.is_active && !v.is_default ? `
+                <button class="btn btn-sm btn-secondary" onclick="activatePromptVersion('${key}', ${v.version})">Activate</button>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+async function savePrompt() {
+    if (!currentPromptKey) return;
+    const content = document.getElementById('prompt-content').value.trim();
+    const notes = document.getElementById('prompt-notes').value.trim();
+    if (!content) { alert('Content cannot be empty'); return; }
+
+    try {
+        const response = await fetch(`/api/prompts/${encodeURIComponent(currentPromptKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, notes, set_active: true })
+        });
+        const data = await response.json();
+        if (data.error) { alert('Error: ' + data.error); return; }
+        alert('Prompt saved successfully');
+        await loadPromptsPage();
+        await selectPrompt(currentPromptKey);
+    } catch (error) {
+        console.error('Error saving prompt:', error);
+        alert('Error saving prompt');
+    }
+}
+
+async function resetPromptToDefault() {
+    if (!currentPromptKey) return;
+    if (!confirm('Reset this prompt to default?')) return;
+
+    try {
+        const response = await fetch(`/api/prompts/${encodeURIComponent(currentPromptKey)}/activate/0`, { method: 'POST' });
+        const data = await response.json();
+        if (data.error) { alert('Error: ' + data.error); return; }
+        alert('Reset to default');
+        await loadPromptsPage();
+        await selectPrompt(currentPromptKey);
+    } catch (error) {
+        console.error('Error resetting prompt:', error);
+        alert('Error resetting prompt');
+    }
+}
+
+async function activatePromptVersion(key, version) {
+    try {
+        const response = await fetch(`/api/prompts/${encodeURIComponent(key)}/activate/${version}`, { method: 'POST' });
+        const data = await response.json();
+        if (data.error) { alert('Error: ' + data.error); return; }
+        alert(`Version ${version} activated`);
+        await loadPromptsPage();
+        await selectPrompt(key);
+    } catch (error) {
+        console.error('Error activating version:', error);
+        alert('Error activating version');
+    }
+}
+
+document.getElementById('save-prompt-btn')?.addEventListener('click', savePrompt);
+document.getElementById('reset-prompt-btn')?.addEventListener('click', resetPromptToDefault);
+
+window.selectPrompt = selectPrompt;
+window.activatePromptVersion = activatePromptVersion;
+

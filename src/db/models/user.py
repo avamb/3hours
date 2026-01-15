@@ -33,6 +33,9 @@ class User(Base):
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Tracking field for incremental memory indexing
+    last_memory_indexed_conversation_id: Mapped[int] = mapped_column(Integer, default=0)
+
     # Relationships
     moments = relationship("Moment", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
@@ -40,6 +43,7 @@ class User(Base):
     scheduled_notifications = relationship("ScheduledNotification", back_populates="user", cascade="all, delete-orphan")
     feedback = relationship("Feedback", back_populates="user", cascade="all, delete-orphan")
     social_profile = relationship("SocialProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    conversation_memories = relationship("ConversationMemory", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, telegram_id={self.telegram_id}, username={self.username})>"
