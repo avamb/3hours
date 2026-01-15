@@ -349,6 +349,9 @@ async def handle_text_message(message: Message) -> None:
             return False
         if "?" in s:
             return True
+        # mid-sentence intents like "я хочу вспомнить..." should still route as a request
+        if any(k in low for k in ("вспомн", "помни", "напомни", "покажи", "найди", "расскажи", "объясни")):
+            return True
         request_starts = (
             "как ",
             "почему ",
@@ -378,8 +381,47 @@ async def handle_text_message(message: Message) -> None:
             return True
         return False
 
+    async def _should_continue_request_flow(telegram_id: int) -> bool:
+        """
+        If the last bot_reply was produced by dialog pipeline (has rag metadata),
+        treat the next user message as continuation even if it doesn't look like a request.
+        """
+        try:
+            from datetime import datetime, timedelta
+            from sqlalchemy import select, and_
+            from src.db.database import get_session
+            from src.db.models import User, Conversation
+
+            async with get_session() as session:
+                res_u = await session.execute(select(User).where(User.telegram_id == telegram_id))
+                u = res_u.scalar_one_or_none()
+                if not u:
+                    return False
+
+                since = datetime.utcnow() - timedelta(minutes=10)
+                res = await session.execute(
+                    select(Conversation)
+                    .where(
+                        and_(
+                            Conversation.user_id == u.id,
+                            Conversation.created_at >= since,
+                            Conversation.message_type == "bot_reply",
+                        )
+                    )
+                    .order_by(Conversation.created_at.desc())
+                    .limit(1)
+                )
+                last = res.scalar_one_or_none()
+                if not last or not last.message_metadata:
+                    return False
+                meta = last.message_metadata or {}
+                # dialog_service stores rag_metadata; normal mode uses {"source":"text",...}
+                return "rag_mode" in meta or "retrieval_used" in meta
+        except Exception:
+            return False
+
     # Normal mode: if user asks a question/request, answer it directly (RAG dialog pipeline).
-    if _looks_like_question_or_request(text):
+    if _looks_like_question_or_request(text) or await _should_continue_request_flow(message.from_user.id):
         await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
         response = await dialog_service.process_dialog_message(
             telegram_id=message.from_user.id,
