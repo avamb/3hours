@@ -62,6 +62,16 @@ class Settings(BaseSettings):
         description="Maximum number of similar moments to retrieve"
     )
 
+    # Semantic Anti-Repeat Settings
+    semantic_antirepeat_threshold: float = Field(
+        default=0.85,
+        description="Cosine similarity threshold for semantic anti-repeat (0.85 = very similar)"
+    )
+    semantic_antirepeat_history_limit: int = Field(
+        default=10,
+        description="Number of recent bot replies to check for semantic similarity"
+    )
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
