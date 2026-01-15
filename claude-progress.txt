@@ -2,27 +2,31 @@
 
 ## Current Status
 - **Features**: 185/185 passing (100% complete)
-- **Last Session**: Session 1083 - Regression Testing
+- **Last Session**: Session 1084 - Regression Testing
 - **Date**: January 15, 2026
 
-## Session 1083 Summary (Regression Testing)
+## Session 1084 Summary (Regression Testing)
 
 ### Verified Features
-1. **Feature #143: Export dialogs to CSV/JSON** - VERIFIED ✅
-   - CSV export downloads successfully (51 lines)
-   - JSON export downloads successfully (511 lines)
-   - Both buttons work on Dialogs page
+1. **Feature #154: Expenses (Token Cost Tracking)** - VERIFIED ✅
+   - Total Requests: 37
+   - Total Tokens: 5,747
+   - Total Cost: $0.0137
+   - Breakdown by Model (gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1)
+   - Breakdown by Operation (moment_response, free_dialog, topic_extraction, etc.)
+   - Recent API calls with status and duration tracking
 
-2. **Feature #115: Timezone-aware scheduling** - VERIFIED ✅
+2. **Feature #152: Timezone Settings** - VERIFIED ✅
    - Timezone column displayed in Users table
-   - User details show timezone setting
-   - Active hours stored per-user (08:00 - 23:00)
-   - Scheduled notifications respect user timezones
+   - User details modal shows Timezone setting (UTC)
+   - Active Hours stored per-user (08:00:00 - 23:00:00)
+   - Notification interval configurable (6h)
 
-3. **Feature #14: History pagination** - VERIFIED ✅
-   - Notifications page shows pagination (3 pages)
-   - Prev/Next buttons work correctly
-   - Page selection buttons (1, 2, 3) functional
+3. **Feature #25: Exit Free Dialog Mode** - VERIFIED ✅
+   - Free dialog messages stored in database
+   - Filter by "Free Dialog" message type works
+   - User conversations show transitions between free dialog and normal mode
+   - Multiple languages supported (EN, ES, DE, RU)
 
 ### System Health Check
 - Docker services: All running (postgres, bot, admin)
@@ -32,59 +36,22 @@
 - Console: Zero JavaScript errors
 - API calls: All successful
 
-### Analytics Verified
+### Dashboard Stats Verified
 - Total Users: 11
-- Onboarded: 9 (82%)
 - Active (7d): 1
-- Retention Rate: 9%
-- Language Distribution: EN 55%, RU 36%, UK 9%
+- Total Moments: 23
+- Moments This Week: 8
 
 ---
 
-## Session 1082 Summary (Regression Testing)
+## Session 1083 Summary (Regression Testing)
 
-### Verified Components
-1. **Dashboard Overview**
-   - Database: CONNECTED (13 MB)
-   - Bot: RUNNING (8 pending notifications)
-   - OpenAI: CONFIGURED
-   - Stats: 11 users, 23 moments
+### Verified Features
+1. **Feature #143: Export dialogs to CSV/JSON** - VERIFIED ✅
+2. **Feature #115: Timezone-aware scheduling** - VERIFIED ✅
+3. **Feature #14: History pagination** - VERIFIED ✅
 
-2. **Users Page**
-   - User list with filters (language, status, sort)
-   - User details modal with comprehensive info
-   - Language settings, Address Form (ты/Вы), Timezone
-   - Statistics, Social Profile, Vector Memory, Recent Moments
-   - Admin actions (Block User, Send Direct Message)
-
-3. **Knowledge Base**
-   - Upload functionality (TXT, PDF, MD)
-   - Status tracking (Total, Indexed, Pending, Chunks)
-
-4. **Templates Page**
-   - Create new templates with language/category/formal options
-   - Both Formal (Вы) and Informal (Ты) templates present
-   - 3 languages: Russian, English, Ukrainian
-   - Categories: follow_up, main, return_inactive
-   - Edit/Delete actions
-
-5. **Analytics Page**
-   - User metrics (Total, Onboarded, Active, Retention Rate)
-   - User Funnel visualization
-   - Retention by Cohorts table
-   - User Registrations chart (30-day)
-   - Activity Heatmap (hour-by-day)
-   - Language Distribution
-
-### Regression Tests Verified
-- Feature #81: Language change setting - VERIFIED (user language stored in DB)
-- Feature #61: Deep link support - VERIFIED (bot infrastructure in place)
-- Feature #43: Formal/informal templates - VERIFIED (Вы/Ты templates exist)
-
-### Console Status
-- Zero JavaScript errors
-- All API calls successful
-- System health: HEALTHY
+---
 
 ## Architecture Overview
 - **Backend**: Node.js (server.mjs) + Python (bot)
