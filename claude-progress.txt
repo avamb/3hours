@@ -2,57 +2,52 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1164 (Regression Testing)
+- **Last Session**: 1165 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1164 Summary
+## Session 1165 Summary
 Performed regression testing to verify all systems are working properly.
 
 ### Regression Features Verified:
-- Feature #146: System status in admin dashboard - VERIFIED
-- Feature #183: Campaigns personalization and filters - VERIFIED
-- Feature #4: Main menu keyboard display - VERIFIED
+- Feature #168: Dialogs according to gender - VERIFIED
+- Feature #59: Concurrent message handling - VERIFIED
+- Feature #98: Longest streak preservation - VERIFIED
 
 ### Verification Results:
 
-1. **System Status in Admin Dashboard (Feature #146)** - VERIFIED
-   - Dashboard shows system status cards
-   - Database: CONNECTED (Size: 13 MB)
-   - Bot: RUNNING (8 pending notifications)
-   - OpenAI: CONFIGURED (API key set)
-   - Overall status: HEALTHY (displayed in header)
-   - Statistics cards: 11 Users, 23 Moments, Activity metrics
+1. **Dialogs According to Gender (Feature #168)** - VERIFIED
+   - Gender column in Users table shows 👨 M (Male) and 👩 F (Female)
+   - Gender detection from name/surname/username implemented in gender_detection.py
+   - Gender-specific grammar instructions in personalization_service.py
+   - get_gender_instruction() provides Russian-specific declensions for male/female
+   - Settings UI allows users to change gender via inline keyboard
 
-2. **Campaigns Personalization and Filters (Feature #183)** - VERIFIED
-   - Personalization placeholders documented: {{first_name}}, {{username}}, {{greeting}}, {{telegram_id}}, {{language_code}}, {{timezone}}, {{gender}}, {{formal_address}}
-   - {{greeting}} explanation: "Привет, Name!" or "Здравствуйте, Name!" based on formal_address
-   - Audience Filters working:
-     - Gender dropdown: Any, Male only, Female only, Unknown only
-     - Activity dropdown: Any, Active within N days, Inactive for N days
-     - Days (N) input field
-     - Additional filters: Timezone not set, Onboarding incomplete, Notifications disabled, Languages, Address Style
-   - Delivery Settings:
-     - "Deliver within (hours)" input
-     - "Test mode (don't send, just preview)" checkbox
-     - "Send only when user is active (activity trigger)" checkbox
-   - Existing campaigns visible in table with proper status indicators
+2. **Concurrent Message Handling (Feature #59)** - VERIFIED
+   - Bot uses aiogram 3.x framework with native async support
+   - 486 async/await occurrences across handlers
+   - All message handlers are async functions
+   - No blocking operations in message processing pipeline
 
-3. **Main Menu Keyboard Display (Feature #4)** - VERIFIED
-   - Reply keyboard implementation in src/bot/keyboards/reply.py
-   - All 4 required buttons present:
-     - 📖 Мои моменты (menu_moments)
-     - 📊 Статистика (menu_stats)
-     - ⚙️ Настройки (menu_settings)
-     - 💬 Поговорить (menu_talk)
-   - Additional button: 💡 Предложить идею (menu_feedback)
-   - Localization strings for all 3 languages (ru, en, uk)
-   - Keyboard settings: resize_keyboard=True, is_persistent=True
+3. **Longest Streak Preservation (Feature #98)** - VERIFIED
+   - User Details modal shows both Current Streak and Longest Streak
+   - Database model has separate fields: current_streak and longest_streak
+   - Stats service logic: `if current_streak > longest_streak: longest_streak = current_streak`
+   - Longest streak is never decreased, only updated when exceeded
+   - Example: andreiandreev62 has Current: 1 day, Longest: 1 day
 
 ### Docker Services Running:
 - 3hours-admin-1 (port 18088) - Admin panel (healthy)
 - 3hours-bot-1 - Telegram bot (running)
 - 3hours-postgres_dev-1 - Development PostgreSQL (healthy)
 - 3hours-postgres-1 - Production PostgreSQL (healthy)
+
+### System Health:
+- Dashboard: HEALTHY status displayed
+- Database: CONNECTED (13 MB)
+- Bot: RUNNING (2 pending notifications)
+- OpenAI: CONFIGURED (API key set)
+- Users: 11 total, 1 active in 7 days
+- Moments: 23 total, 8 this week
 
 ### Console Errors: NONE
 
@@ -79,6 +74,7 @@ All 189 features have been implemented and verified. The MINDSETHAPPYBOT is full
 - Weekly/monthly summary generation
 - API usage tracking and expenses monitoring
 - Broadcast campaigns with personalization
+- Gender-aware dialog generation
 
 ## Next Steps
 - Project is production-ready
