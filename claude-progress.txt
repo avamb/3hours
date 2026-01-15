@@ -2,34 +2,32 @@
 
 ## Current Status
 - **Features**: 185/185 passing (100% complete)
-- **Last Session**: 1126 (Regression Testing)
+- **Last Session**: 1127 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1126 Summary
+## Session 1127 Summary
 Performed comprehensive regression testing of core features:
 
 ### Regression Tests Verified:
 
-1. **Feature 160 - Record Sorting in Admin Panel** ✅
-   - Users table sorts correctly with "Newest First" (ID 11 → ID 1)
-   - Moments table sorted by creation date (newest at top)
-   - All filters and sorting options working
+1. **Feature 23 - Toggle notifications on/off** ✅
+   - User details modal shows notifications status (Enabled/Disabled)
+   - Notification interval displayed (6h)
+   - Active hours visible (08:00:00 - 23:00:00)
+   - Admin panel Users page fully functional
 
-2. **Feature 159 - Feedback Response Functionality** ✅
-   - Feedback page displays 5 feedback items
-   - Status breakdown: New (0), Reviewed (4), Implemented (1), Rejected (0)
-   - Modal opens with full details, status update, and response form
-   - "Send to user via Telegram" checkbox functional
-   - Previous admin responses displayed
+2. **Feature 55 - Embedding creation for moments** ✅
+   - Database verified: 22/23 moments have embeddings
+   - Embedding dimensions: 1536 (correct for OpenAI text-embedding-3-small)
+   - Only "\start" command lacks embedding (expected behavior)
+   - Vector storage working correctly with pgvector
 
-3. **Feature 83 - Supportive but Not Pushy Tone** ✅
-   - 60+ message templates across 3 categories:
-     - main (30): Primary questions
-     - follow_up (18): Encouraging follow-ups
-     - return_inactive (12): Gentle re-engagement
-   - Templates in Russian, English, Ukrainian
-   - Both formal (Вы) and informal (Ты) forms
-   - Warm, friendly language without guilt-inducing phrases
+3. **Feature 24 - Free dialog mode** ✅
+   - Dialogs page shows message history with proper types
+   - Free dialog messages recorded with timestamps
+   - Bot responds contextually in multiple languages (RU, EN, ES, DE)
+   - Conversations saved for personalization context
+   - Supportive and empathetic tone maintained
 
 ### System Health Verified:
 - Dashboard: HEALTHY status
@@ -40,10 +38,9 @@ Performed comprehensive regression testing of core features:
 
 ### Admin Panel Pages Tested:
 - Overview Dashboard: Working
-- Users Page: 11 users, sorting/filtering functional
-- Moments Page: 23 moments, topics cloud, mood scores
-- Templates Page: 76+ templates with Create/Edit/Delete
-- Feedback Page: Full CRUD with Telegram integration
+- Users Page: 11 users with full details
+- Moments Page: 23 moments with topics cloud and mood scores
+- Dialogs Page: Full conversation history with filtering
 
 ### Docker Services Running:
 - 3hours-admin-1 (port 18088) - Admin panel (healthy)
