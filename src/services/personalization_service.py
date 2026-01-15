@@ -90,7 +90,6 @@ def _normalize_for_dedupe(text: str) -> str:
     return t
 
 
-<<<<<<< HEAD
 def _ngram_signature(text: str, n: int = 2) -> set:
     """Compute n-gram signature for semantic similarity check."""
     normalized = _normalize_for_dedupe(text)
