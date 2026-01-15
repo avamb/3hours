@@ -338,6 +338,56 @@ async def handle_text_message(message: Message) -> None:
         await message.answer(response, reply_markup=get_dialog_keyboard(language_code))
         return
 
+    def _looks_like_question_or_request(t: str) -> bool:
+        """
+        Lightweight intent routing:
+        if user asks a question / requests help, answer it (dialog-style) instead of saving as a "moment".
+        """
+        s = (t or "").strip()
+        low = s.lower()
+        if not s:
+            return False
+        if "?" in s:
+            return True
+        request_starts = (
+            "как ",
+            "почему ",
+            "зачем ",
+            "что ",
+            "когда ",
+            "где ",
+            "какой ",
+            "какая ",
+            "какие ",
+            "сколько ",
+            "расскажи",
+            "объясни",
+            "помоги",
+            "подскажи",
+            "посоветуй",
+            "составь",
+            "сделай",
+            "дай",
+            "найди",
+            "вспомни",
+        )
+        if low.startswith(request_starts):
+            return True
+        # short "one-word" commands often mean a request ("планка", "балет", etc.)
+        if len(low.split()) <= 2 and len(low) <= 20:
+            return True
+        return False
+
+    # Normal mode: if user asks a question/request, answer it directly (RAG dialog pipeline).
+    if _looks_like_question_or_request(text):
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        response = await dialog_service.process_dialog_message(
+            telegram_id=message.from_user.id,
+            message=text,
+        )
+        await message.answer(response, reply_markup=get_main_menu_keyboard(language_code))
+        return
+
     # Normal mode: log to conversations for admin visibility
     await conversation_log.log(
         telegram_id=message.from_user.id,
