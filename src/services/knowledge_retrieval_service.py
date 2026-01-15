@@ -481,6 +481,7 @@ Reply with ONLY a single letter: A, B, or C."""
         # Step 1: Classify query type
         query_type = await self.classify_query_type(query)
         is_remember = query_type == 'R'
+        logger.info(f"RAG query classification for user {telegram_id}: type={query_type}, query='{query[:100]}'")
 
         # Step 2: Create query embedding
         query_embedding = await self.embedding_service.create_embedding(query)
@@ -524,6 +525,9 @@ Reply with ONLY a single letter: A, B, or C."""
             dialog_snippets = await self.search_dialog_snippets(telegram_id, query_embedding)
             moments = await self.search_moments(telegram_id, query_embedding)
             # DO NOT search KB for remember queries - prevents hallucination
+            logger.info(f"RAG search (R-remember) for user {telegram_id}: "
+                       f"memories={len(dialog_memories)}, summaries={len(dialog_summaries)}, "
+                       f"snippets={len(dialog_snippets)}, moments={len(moments)}")
         elif query_type == 'A':
             # Personal/emotional - dialog memory + summaries + moments required, KB optional
             dialog_memories = await self.search_dialog_memories(telegram_id, query_embedding, limit=3)
@@ -533,6 +537,9 @@ Reply with ONLY a single letter: A, B, or C."""
             dialog_snippets = await self.search_dialog_snippets(telegram_id, query_embedding, limit=snippet_limit)
             moments = await self.search_moments(telegram_id, query_embedding)
             kb_chunks = await self.search_knowledge_base(query_embedding, limit=3)
+            logger.info(f"RAG search (A-personal) for user {telegram_id}: "
+                       f"memories={len(dialog_memories)}, summaries={len(dialog_summaries)}, "
+                       f"snippets={len(dialog_snippets)}, moments={len(moments)}, kb_chunks={len(kb_chunks)}")
         elif query_type == 'B':
             # Seeking advice - KB required, dialog memory + summaries + moments optional
             kb_chunks = await self.search_knowledge_base(query_embedding)
@@ -540,6 +547,9 @@ Reply with ONLY a single letter: A, B, or C."""
             dialog_summaries = await self.search_dialog_summaries(telegram_id, query_embedding, limit=2)
             dialog_snippets = await self.search_dialog_snippets(telegram_id, query_embedding, limit=2)
             moments = await self.search_moments(telegram_id, query_embedding, limit=2)
+            logger.info(f"RAG search (B-advice) for user {telegram_id}: "
+                       f"kb_chunks={len(kb_chunks)}, memories={len(dialog_memories)}, "
+                       f"summaries={len(dialog_summaries)}, snippets={len(dialog_snippets)}, moments={len(moments)}")
         else:
             # General - try all, prefer KB
             kb_chunks = await self.search_knowledge_base(query_embedding, limit=4)
@@ -547,6 +557,9 @@ Reply with ONLY a single letter: A, B, or C."""
             dialog_summaries = await self.search_dialog_summaries(telegram_id, query_embedding, limit=2)
             dialog_snippets = await self.search_dialog_snippets(telegram_id, query_embedding, limit=2)
             moments = await self.search_moments(telegram_id, query_embedding, limit=2)
+            logger.info(f"RAG search (C-general) for user {telegram_id}: "
+                       f"kb_chunks={len(kb_chunks)}, memories={len(dialog_memories)}, "
+                       f"summaries={len(dialog_summaries)}, snippets={len(dialog_snippets)}, moments={len(moments)}")
 
         # Log summary usage
         if dialog_summaries:

@@ -117,10 +117,32 @@ class DialogService:
             metadata=rag_metadata,
         )
 
-        logger.info(f"Dialog response with RAG: mode={rag_metadata.get('rag_mode')}, "
-                    f"kb_chunks={rag_metadata.get('kb_chunks_count', 0)}, "
-                    f"moments={rag_metadata.get('moments_count', 0)}, "
-                    f"semantic_retries={retry_count}")
+        # Detailed RAG logging
+        rag_mode = rag_metadata.get('rag_mode', '?')
+        kb_count = rag_metadata.get('kb_chunks_count', 0)
+        moments_count = rag_metadata.get('moments_count', 0)
+        mem_count = len(rag_metadata.get('dialog_memory_ids', []))
+        summary_count = len(rag_metadata.get('dialog_summary_ids', []))
+        snippet_count = len(rag_metadata.get('dialog_snippet_ids', []))
+        
+        # Log summary
+        logger.info(f"Dialog response with RAG: user={telegram_id}, mode={rag_mode}, "
+                   f"kb_chunks={kb_count}, moments={moments_count}, "
+                   f"memories={mem_count}, summaries={summary_count}, snippets={snippet_count}, "
+                   f"semantic_retries={retry_count}")
+        
+        # Log details if RAG was used
+        if rag_metadata.get('retrieval_used'):
+            moment_ids = rag_metadata.get('moment_ids', [])
+            kb_ids = rag_metadata.get('kb_chunk_ids', [])
+            if moment_ids:
+                moment_scores = rag_metadata.get('moment_scores', [])
+                logger.debug(f"RAG moments used: ids={moment_ids[:5]}, scores={moment_scores[:5]}")
+            if kb_ids:
+                kb_scores = rag_metadata.get('kb_scores', [])
+                logger.debug(f"RAG KB chunks used: ids={kb_ids[:5]}, scores={kb_scores[:5]}")
+        else:
+            logger.debug(f"RAG: No retrieval used for user {telegram_id} (mode={rag_mode})")
 
         return response
 
