@@ -2,54 +2,74 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1194 (Regression Testing)
+- **Last Session**: 1195 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1194 Summary
+## Session 1195 Summary
 Performed comprehensive regression testing via browser automation to verify system health.
 
 ### Docker Containers Status:
-- bot: Up 4+ hours (running)
-- admin: Up 4+ hours (healthy)
-- postgres_dev: Up 28+ hours (healthy)
-- postgres: Up 28+ hours (healthy)
+- admin: Running on port 18088 (healthy)
+- postgres: Running (healthy)
+- bot: Running
 
 ### Regression Features Verified:
 
-1. **Dashboard Overview** - VERIFIED
-   - Database: CONNECTED (13 MB)
-   - Bot: RUNNING with 7 pending notifications
-   - OpenAI: CONFIGURED
-   - Stats: 11 users, 23 moments, 8 moments this week
-   - Recent Activity showing bot questions and admin messages
+1. **Feature #21 - Configure notification interval** - VERIFIED
+   - User andreiandreev62 has interval set to 6h
+   - Active hours: 08:00:00 - 23:00:00
+   - Notifications enabled, working correctly
 
-2. **Feature #133 - Knowledge Base Page** - VERIFIED
-   - Stats cards: Total Items, Indexed, Pending, Chunks
-   - Upload form with Title, Category, Tags fields
-   - File upload supporting TXT, PDF, MD formats
-   - Status filter dropdown (All, Indexed, Pending, Error)
-   - Table with proper columns for KB items
+2. **Feature #79 - Notification opt-out** - VERIFIED
+   - Settings accessible through user details modal
+   - Notification toggle visible and functional
 
-3. **Users Page** - VERIFIED
-   - 11 users displayed with full data
-   - Gender detection working (male/female icons)
-   - CSV export button available
-   - Search, filter (language, status), and sort options
-   - View button opens user details modal
+3. **Feature #140 - User blocking functionality** - VERIFIED
+   - Block User button visible in Admin Actions
+   - User management fully functional
 
-4. **Feature #74 - Moments Page** - VERIFIED
-   - 23 total moments from 3 unique users
-   - Topics Cloud showing 50+ extracted topics
-   - Voice transcriptions working (marked as "voice")
-   - Mood scores with categorization (Very Positive, Positive, Neutral, Negative)
-   - Average mood: 0.56
-   - Filter by user, date range, mood
-   - CSV export button available
+### Dashboard Overview - VERIFIED:
+- Database: CONNECTED (13 MB)
+- Bot: RUNNING with 7 pending notifications
+- OpenAI: CONFIGURED
+- Stats: 11 users, 23 moments, 8 moments this week
+
+### Users Page - VERIFIED:
+- 11 users displayed with full data
+- Gender detection working (male/female icons)
+- CSV export button available
+- Search, filter, sort options working
+- View button opens detailed user modal with:
+  - Basic info (Telegram ID, username, name, gender, language)
+  - Settings (timezone, active hours, notification interval)
+  - Statistics (moments, streaks, response rate)
+  - Social profile (LinkedIn, interests, bio)
+  - Vector memory status
+  - Recent moments
+  - Admin actions (block user)
+  - Direct message sending
+
+### Moments Page - VERIFIED:
+- 23 total moments from 3 unique users
+- Topics Cloud showing 50+ extracted topics
+- Voice transcriptions working (marked as "voice")
+- Mood scores with categorization (Very Positive, Positive, Neutral, Negative)
+- Average mood: 0.56
+- Filter by user, date range, mood
+- CSV export button available
+
+### Knowledge Base Page - VERIFIED:
+- Stats cards: Total Items, Indexed, Pending, Chunks
+- Upload form with Title, Category, Tags fields
+- File upload supporting TXT, PDF, MD formats
+- Status filter dropdown (All, Indexed, Pending, Error)
+- Table with proper columns for KB items
 
 ### System Health:
 - No JavaScript console errors detected
 - All navigation links working
 - All API endpoints responding correctly
+- Screenshot saved: regression-test-session-1195.png
 
 ---
 
