@@ -17,7 +17,7 @@ import time
 import json
 from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from openai import AsyncOpenAI
 from sqlalchemy import select, and_, text
@@ -44,6 +44,8 @@ GARBAGE_PATTERNS_COMPILED = [re.compile(p, re.IGNORECASE) for p in GARBAGE_PATTE
 
 # Memory types
 MEMORY_KINDS = ['fact', 'preference', 'person', 'project', 'plan', 'constraint', 'achievement', 'event']
+RAW_DIALOG_KIND = "dialog_raw"  # Raw user message stored as vector memory
+DIALOG_SUMMARY_KIND = "dialog_summary"  # Compressed summary of multiple messages
 
 # Similarity threshold for deduplication
 DEDUP_SIMILARITY_THRESHOLD = 0.92
@@ -51,6 +53,11 @@ DEDUP_SIMILARITY_THRESHOLD = 0.92
 # Retrieval configuration
 MEMORY_TOP_K = 5
 MEMORY_SIMILARITY_THRESHOLD = 0.40
+
+# Summary compression configuration
+SUMMARY_BATCH_SIZE = 12  # Number of messages to compress into one summary
+SUMMARY_MIN_MESSAGES = 8  # Minimum messages required to trigger summary
+SUMMARY_MAX_AGE_HOURS = 24  # Create summary if oldest unsummarized message is older than this
 
 
 @dataclass
@@ -119,6 +126,10 @@ class ConversationMemoryService:
 
         # Hash the normalized text
         return hashlib.sha256(normalized.encode('utf-8')).hexdigest()[:32]
+
+    @staticmethod
+    def _is_user_message(message_type: str) -> bool:
+        return message_type in ("free_dialog", "user_response")
 
     async def classify_and_extract(
         self,
@@ -308,6 +319,45 @@ If message is just greeting/pleasantry/question with no personal facts, return:
             logger.info(f"Stored memory #{conv_memory.id} for user {user_id}: {memory.content[:50]}...")
             return conv_memory.id
 
+    async def store_raw_memory(
+        self,
+        user_id: int,
+        conversation: Conversation,
+        embedding: List[float],
+    ) -> Optional[int]:
+        """
+        Store raw user message as vector memory for long-term dialog recall.
+        """
+        fingerprint = self.compute_fingerprint(conversation.content)
+
+        if await self.check_duplicate(user_id, fingerprint, embedding):
+            logger.debug(f"Skipping duplicate raw memory: {conversation.content[:50]}...")
+            return None
+
+        async with get_session() as session:
+            conv_memory = ConversationMemory(
+                user_id=user_id,
+                source_conversation_ids=[conversation.id],
+                content=conversation.content,
+                embedding=embedding,
+                kind=RAW_DIALOG_KIND,
+                importance=0.5,
+                fingerprint=fingerprint,
+                memory_metadata={
+                    "source": "dialog_raw",
+                    "message_type": conversation.message_type,
+                },
+            )
+            session.add(conv_memory)
+            await session.commit()
+            await session.refresh(conv_memory)
+
+            logger.info(
+                f"Stored raw dialog memory #{conv_memory.id} for user {user_id}: "
+                f"{conversation.content[:50]}..."
+            )
+            return conv_memory.id
+
     async def process_conversation(
         self,
         user_id: int,
@@ -318,12 +368,21 @@ If message is just greeting/pleasantry/question with no personal facts, return:
         Returns number of memories stored.
         """
         # Skip non-user messages
-        if conversation.message_type not in ('free_dialog', 'user_response'):
+        if not self._is_user_message(conversation.message_type):
             return 0
+
+        stored_count = 0
 
         # Skip garbage
         if self.is_garbage_message(conversation.content):
             return 0
+
+        # Store raw dialog memory (full user message) for long-term recall
+        raw_embedding = await self.embedding_service.create_embedding(conversation.content)
+        if raw_embedding:
+            raw_id = await self.store_raw_memory(user_id, conversation, raw_embedding)
+            if raw_id:
+                stored_count += 1
 
         # Extract memories
         memories = await self.classify_and_extract(
@@ -335,7 +394,6 @@ If message is just greeting/pleasantry/question with no personal facts, return:
             return 0
 
         # Store each memory
-        stored_count = 0
         for memory in memories:
             # Create embedding
             embedding = await self.embedding_service.create_embedding(memory.content)
@@ -473,6 +531,7 @@ If message is just greeting/pleasantry/question with no personal facts, return:
         query_embedding: List[float],
         limit: int = MEMORY_TOP_K,
         threshold: float = MEMORY_SIMILARITY_THRESHOLD,
+        kinds: Optional[List[str]] = None,
     ) -> List[RetrievedMemory]:
         """
         Search user's memories with vector similarity.
@@ -491,6 +550,12 @@ If message is just greeting/pleasantry/question with no personal facts, return:
             embedding_literal = "'" + "[" + ",".join(f"{x:.10g}" for x in query_embedding) + "]'::vector"
             fetch_limit = limit * 2  # Get extra to filter by threshold
 
+            kind_filter = ""
+            params = {"user_id": user.id, "limit": fetch_limit}
+            if kinds:
+                kind_filter = "AND kind = ANY(:kinds)"
+                params["kinds"] = kinds
+
             result = await session.execute(
                 text(f"""
                     SELECT
@@ -502,13 +567,11 @@ If message is just greeting/pleasantry/question with no personal facts, return:
                     FROM conversation_memories
                     WHERE user_id = :user_id
                     AND embedding IS NOT NULL
+                    {kind_filter}
                     ORDER BY embedding <=> {embedding_literal}
                     LIMIT :limit
                 """),
-                {
-                    "user_id": user.id,
-                    "limit": fetch_limit,
-                }
+                params
             )
             rows = result.fetchall()
 
@@ -565,3 +628,293 @@ If message is just greeting/pleasantry/question with no personal facts, return:
 
             logger.info(f"Deleted {len(deleted_ids)} memories for user {telegram_id}")
             return len(deleted_ids)
+
+    async def get_unsummarized_raw_memories(
+        self,
+        user_id: int,
+    ) -> Tuple[List[ConversationMemory], datetime]:
+        """
+        Get raw dialog memories that haven't been summarized yet.
+        Returns tuple of (memories, oldest_memory_time).
+        """
+        async with get_session() as session:
+            # Get raw dialog memories not yet included in any summary
+            result = await session.execute(
+                text("""
+                    SELECT cm.*
+                    FROM conversation_memories cm
+                    WHERE cm.user_id = :user_id
+                    AND cm.kind = :raw_kind
+                    AND NOT EXISTS (
+                        SELECT 1 FROM conversation_memories s
+                        WHERE s.user_id = :user_id
+                        AND s.kind = :summary_kind
+                        AND cm.id = ANY(s.source_conversation_ids)
+                    )
+                    ORDER BY cm.created_at ASC
+                """),
+                {
+                    "user_id": user_id,
+                    "raw_kind": RAW_DIALOG_KIND,
+                    "summary_kind": DIALOG_SUMMARY_KIND,
+                }
+            )
+            rows = result.fetchall()
+
+            if not rows:
+                return [], datetime.utcnow()
+
+            # Map to ConversationMemory objects
+            memories = []
+            oldest_time = datetime.utcnow()
+
+            for row in rows:
+                mem = ConversationMemory(
+                    id=row.id,
+                    user_id=row.user_id,
+                    content=row.content,
+                    kind=row.kind,
+                    created_at=row.created_at,
+                    source_conversation_ids=row.source_conversation_ids,
+                )
+                memories.append(mem)
+                if row.created_at < oldest_time:
+                    oldest_time = row.created_at
+
+            return memories, oldest_time
+
+    async def should_create_summary(
+        self,
+        user_id: int,
+    ) -> Tuple[bool, List[ConversationMemory]]:
+        """
+        Check if we should create a summary for this user.
+        Returns (should_create, memories_to_summarize).
+
+        Triggers:
+        1. At least SUMMARY_MIN_MESSAGES raw memories exist
+        2. Either have SUMMARY_BATCH_SIZE messages OR oldest is > SUMMARY_MAX_AGE_HOURS old
+        """
+        memories, oldest_time = await self.get_unsummarized_raw_memories(user_id)
+
+        if len(memories) < SUMMARY_MIN_MESSAGES:
+            return False, []
+
+        # Check if we have enough messages
+        if len(memories) >= SUMMARY_BATCH_SIZE:
+            # Take the first SUMMARY_BATCH_SIZE messages
+            return True, memories[:SUMMARY_BATCH_SIZE]
+
+        # Check if oldest message is old enough
+        age_hours = (datetime.utcnow() - oldest_time).total_seconds() / 3600
+        if age_hours >= SUMMARY_MAX_AGE_HOURS:
+            return True, memories
+
+        return False, []
+
+    async def generate_summary_text(
+        self,
+        memories: List[ConversationMemory],
+    ) -> Optional[str]:
+        """
+        Use LLM to generate a compressed summary of multiple user messages.
+        """
+        if not memories:
+            return None
+
+        start_time = time.time()
+        success = True
+        error_msg = None
+        input_tokens = 0
+        output_tokens = 0
+
+        try:
+            # Build message content from memories
+            messages_text = "\n".join([
+                f"- {m.content}" for m in memories
+            ])
+
+            response = await self.client.chat.completions.create(
+                model=self.analysis_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """You compress multiple user messages into a concise summary.
+
+TASK: Create a summary that captures:
+1. Key facts mentioned by the user
+2. Topics they discussed
+3. Any preferences, plans, or achievements mentioned
+4. People or projects mentioned
+5. Emotional themes (positive moments, concerns, etc.)
+
+RULES:
+1. Keep the summary concise (3-5 sentences)
+2. Write in third person: "The user mentioned...", "They talked about..."
+3. Preserve important details and names
+4. Don't add interpretations or assumptions
+5. Focus on information useful for future conversation context
+
+OUTPUT: A single paragraph summarizing the user's messages."""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Summarize these user messages:\n\n{messages_text}"
+                    }
+                ],
+                max_tokens=300,
+                temperature=0,
+            )
+
+            if response.usage:
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
+
+            summary = response.choices[0].message.content.strip()
+            logger.info(f"Generated summary from {len(memories)} messages: {summary[:100]}...")
+            return summary
+
+        except Exception as e:
+            logger.error(f"Summary generation failed: {e}")
+            success = False
+            error_msg = str(e)
+            return None
+
+        finally:
+            duration_ms = int((time.time() - start_time) * 1000)
+            await APIUsageService.log_usage(
+                api_provider="openai",
+                model=self.analysis_model,
+                operation_type="dialog_summary_generation",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                duration_ms=duration_ms,
+                success=success,
+                error_message=error_msg,
+            )
+
+    async def store_summary(
+        self,
+        user_id: int,
+        summary_text: str,
+        source_memory_ids: List[int],
+        embedding: List[float],
+    ) -> Optional[int]:
+        """
+        Store a dialog summary in the database.
+        """
+        fingerprint = self.compute_fingerprint(summary_text)
+
+        async with get_session() as session:
+            conv_memory = ConversationMemory(
+                user_id=user_id,
+                source_conversation_ids=source_memory_ids,
+                content=summary_text,
+                embedding=embedding,
+                kind=DIALOG_SUMMARY_KIND,
+                importance=1.5,  # Higher importance than raw messages
+                fingerprint=fingerprint,
+                memory_metadata={
+                    "source": "dialog_summary",
+                    "summarized_count": len(source_memory_ids),
+                },
+            )
+            session.add(conv_memory)
+            await session.commit()
+            await session.refresh(conv_memory)
+
+            logger.info(
+                f"Stored dialog summary #{conv_memory.id} for user {user_id}, "
+                f"summarized {len(source_memory_ids)} raw memories"
+            )
+            return conv_memory.id
+
+    async def create_user_summary(
+        self,
+        telegram_id: int,
+    ) -> Optional[int]:
+        """
+        Create a dialog summary for a user if conditions are met.
+        Returns the summary ID if created, None otherwise.
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+            if not user:
+                return None
+
+        # Check if we should create a summary
+        should_create, memories = await self.should_create_summary(user.id)
+        if not should_create:
+            logger.debug(f"No summary needed for user {telegram_id}")
+            return None
+
+        # Generate summary text
+        summary_text = await self.generate_summary_text(memories)
+        if not summary_text:
+            return None
+
+        # Create embedding for summary
+        embedding = await self.embedding_service.create_embedding(summary_text)
+        if not embedding:
+            logger.error(f"Failed to create embedding for summary")
+            return None
+
+        # Store summary
+        source_ids = [m.id for m in memories]
+        summary_id = await self.store_summary(user.id, summary_text, source_ids, embedding)
+
+        return summary_id
+
+    async def create_summaries_for_all_users(self) -> Dict[str, int]:
+        """
+        Create dialog summaries for all users who need them.
+        Returns dict with stats: users_processed, summaries_created.
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(User).where(User.onboarding_completed == True)
+            )
+            users = result.scalars().all()
+
+        total_users = 0
+        total_summaries = 0
+
+        for user in users:
+            try:
+                summary_id = await self.create_user_summary(user.telegram_id)
+                if summary_id:
+                    total_summaries += 1
+                    total_users += 1
+            except Exception as e:
+                logger.error(f"Failed to create summary for user {user.telegram_id}: {e}")
+
+        logger.info(
+            f"Summary creation complete: {total_users} users, "
+            f"{total_summaries} summaries created"
+        )
+        return {
+            "users_processed": total_users,
+            "summaries_created": total_summaries,
+        }
+
+    async def get_user_summary_count(self, telegram_id: int) -> int:
+        """Get count of stored summaries for a user."""
+        async with get_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+            if not user:
+                return 0
+
+            result = await session.execute(
+                text("""
+                    SELECT COUNT(*) FROM conversation_memories
+                    WHERE user_id = :user_id AND kind = :summary_kind
+                """),
+                {"user_id": user.id, "summary_kind": DIALOG_SUMMARY_KIND}
+            )
+            return result.scalar() or 0
