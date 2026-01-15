@@ -172,15 +172,23 @@ def _fallback_dialog_reply(user_message: str, address: str = "ты") -> str:
             f"Хочешь, {address} я напишу воодушевляющий текст в стиле «коротко и мощно» или «мягко и тепло»?"
         )
 
-    # Generic fallback
+    # Generic fallback - use more varied responses
+    # Add timestamp-based variation to avoid exact repeats
+    import time
+    time_seed = str(int(time.time()) % 1000)  # Last 3 digits of timestamp
+    varied_text = f"{text}_{time_seed}"
+    
     return _stable_choice(
-        text,
+        varied_text,
         [
             f"Поняла, {address}. Давай по делу: что именно {address} хочешь получить — совет, текст, список идей или просто поддержку? "
             f"Если опишешь в двух фразах контекст, я отвечу точнее.",
             f"Ок, {address}. Я с тобой. Скажи, какая сейчас главная мысль/вопрос — и я помогу это разложить по полочкам в 4–5 предложениях.",
             f"Слышу, {address}. Давай сделаем это проще: {address} хочешь, чтобы я (а) объяснил(а), (б) предложил(а) варианты, "
             f"или (в) написал(а) вдохновляющий текст? Выбери один пункт.",
+            f"Понял(а), {address}. Сейчас у меня временные ограничения, но я здесь. "
+            f"Опиши кратко, что тебе нужно — и я постараюсь помочь максимально конкретно.",
+            f"Слышу тебя, {address}. Давай сфокусируемся: что для тебя сейчас самое важное в этом вопросе?",
         ],
     )
 
@@ -282,19 +290,39 @@ class PersonalizationService:
         if not candidate:
             return candidate
 
-        recent = await self._get_recent_bot_replies(telegram_id, limit=8)
+        recent = await self._get_recent_bot_replies(telegram_id, limit=10)
         if not recent:
             return candidate
 
         recent_norms = {_normalize_for_dedupe(x) for x in recent if x}
+        # Check both exact match and semantic similarity
         if _normalize_for_dedupe(candidate) not in recent_norms and not _near_duplicate(candidate, recent):
             return candidate
 
+        # If exact duplicate, try alternatives first
         if alternatives:
             alt = _pick_first_nonrepeating(alternatives, recent_norms)
-            if alt:
+            if alt and not _near_duplicate(alt, recent):
                 return alt
 
+        # If still duplicate, try to vary the fallback by using different seed
+        # Use recent message count and timestamp as additional seed to vary selection
+        import time
+        time_seed = str(int(time.time()) % 1000)
+        fallback_seed = f"{seed_text}_{len(recent)}_{time_seed}"
+        varied_candidate = _stable_choice(
+            fallback_seed,
+            [
+                candidate,
+                f"{candidate} {_append_nonrepeating_suffix(seed_text or candidate)}",
+            ]
+        )
+
+        # If varied candidate is unique, return it
+        if _normalize_for_dedupe(varied_candidate) not in recent_norms and not _near_duplicate(varied_candidate, recent):
+            return varied_candidate
+
+        # If still duplicate, force suffix
         suffix = _append_nonrepeating_suffix(seed_text or candidate)
         expanded = f"{candidate} {suffix}".strip()
         if _normalize_for_dedupe(expanded) not in recent_norms:
@@ -436,7 +464,11 @@ Do NOT ask questions. Use 0-2 emojis max.
                 "Это правда хороший штрих дня. Держись за него как за маленький маячок — он работает.",
                 "Ценно, что ты это заметил(а). Такие вещи помогают собрать день в нормальное состояние.",
             ]
-            candidate = _stable_choice(moment_content, fallback_options)
+            # Use timestamp to vary selection when API is down
+            import time
+            time_seed = str(int(time.time()) % 1000)
+            varied_seed = f"{moment_content}_{time_seed}"
+            candidate = _stable_choice(varied_seed, fallback_options)
             candidate = await self._avoid_repetition(
                 telegram_id=telegram_id,
                 candidate=candidate,
