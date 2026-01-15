@@ -2,46 +2,44 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1189 (Regression Testing)
+- **Last Session**: 1190 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1189 Summary
+## Session 1190 Summary
 Performed comprehensive regression testing via browser automation to verify system health.
 
 ### Docker Containers Status:
 - bot: Up 3+ hours (running)
-- admin: Up 3+ hours (healthy)
+- admin: Up 4+ hours (healthy)
 - postgres_dev: Up 28+ hours (healthy)
 - postgres: Up 28+ hours (healthy)
 
 ### Regression Features Verified:
 
-1. **Feature #33 - Inactive user re-engagement - week** - VERIFIED
-   - Notifications page shows scheduled notifications for multiple users
-   - 7 pending notifications queued
-   - Sent notifications properly tracked with timestamps
-   - Filters by user, status, date range working
+1. **Feature #36 - Database connection error handling** - VERIFIED
+   - System status shows HEALTHY
+   - Database CONNECTED (13 MB)
+   - Bot RUNNING with 7 pending notifications
+   - OpenAI CONFIGURED
 
-2. **Feature #32 - Inactive user re-engagement - 1 day** - VERIFIED
-   - User details shows last active timestamps
-   - Users page shows "Last Active" column with relative times
-   - Active hours settings visible per user
+2. **Feature #167 - Gender detection** - VERIFIED
+   - User details showing correct gender (👨 M / 👩 F)
+   - Gender correctly inferred from names (Andrei → Male, Tatlana → Female, Svetlana → Female)
+   - Social profile with LinkedIn integration working
 
-3. **Feature #73 - Loading state during API calls** - VERIFIED
-   - Moments page loads with statistics (23 total, 0.56 avg mood)
-   - Voice transcriptions stored and displayed correctly
-   - Topics cloud showing extracted topics
-   - All API calls returning proper data
+3. **Feature #149 - Bot running** - VERIFIED
+   - Bot container running successfully
+   - Notifications being scheduled and sent
+   - Users receiving scheduled questions
 
-### Additional Pages Verified:
+### Pages Verified:
 - **Dashboard**: All stats correct (11 users, 23 moments, 7 pending notifications)
 - **System Health**: HEALTHY, Database CONNECTED (13 MB), Bot RUNNING, OpenAI CONFIGURED
 - **Users**: 11 users with full details (gender, language, timezone, streaks, moments count)
 - **User Details Modal**: Complete profile with statistics, social profile, vector memory, recent moments, admin actions
-- **Dialogs**: 53 messages for andreiandreev62, message type filter, search, export (CSV/JSON)
-- **Free Dialog Mode**: Multi-language support verified (EN, RU, ES, DE responses)
-- **Moments**: 23 total with topics, mood scores, voice transcriptions
-- **Analytics**: User funnel, retention cohorts, registration chart, activity heatmap, language distribution
+- **Moments**: 23 total with topics cloud, mood scores, voice transcriptions working
+- **Analytics**: User funnel (11→9→3→2), retention cohorts, registration chart, activity heatmap, language distribution (55% EN, 36% RU, 9% UK)
+- **Notifications**: 7 pending, many sent, pagination working, filters functional
 
 ### Console Status:
 - No JavaScript errors detected
