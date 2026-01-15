@@ -2,34 +2,31 @@
 
 ## Current Status: 185/185 features complete (100%)
 
-## Last Session: Session 967 (January 15, 2026)
+## Last Session: Session 968 (January 15, 2026)
 
 ### What was done:
 - Ran comprehensive regression testing on core features
 - Verified System Logs page (0 errors, 0 warnings, 62 total logs)
 - Verified Users page with all extended fields (language, gender, timezone)
 - Verified User Details modal (profile, statistics, social profile, vector memory)
-- Verified Moments page with special characters (emojis, Unicode, multiple languages)
-- Confirmed Topics Cloud with multilingual content
-- All Docker containers healthy
+- Verified Dialogs page with user-specific filtering (Feature 181)
+- Confirmed all Docker containers healthy and running
+- Screenshot captured for documentation
 
 ### Regression Tests Verified:
-1. Feature 122 (SystemLog model) - PASSED
+1. Feature 181 (User dialogs filtering) - PASSED
+   - Clicking on specific user shows ONLY their dialogs (not all users)
+   - andreiandreev62: 44 messages correctly displayed
+   - test_user_2: 2 messages correctly displayed
+   - Filtering working correctly between different users
+
+2. Feature 122 (SystemLog model) - PASSED
    - 0 Errors (24h), 0 Warnings (24h), 2 Info (24h), 62 Total Logs
    - Filters working: level (ERROR/WARNING/INFO/DEBUG), source (admin/api/bot/scheduler/openai)
    - Date range filters and pagination working
 
-2. Feature 119 (User model fields) - PASSED
-   - All extended fields visible: language, gender, timezone, detected_language
-   - User details showing: Address Form, Active Hours, Notification Interval
-   - Statistics section with moments, streaks, response rate
-   - Social Profile with LinkedIn, Interests, Bio
-   - Vector Memory section with indexing status
-
-3. Feature 69 (Special characters in messages) - PASSED
-   - Emojis preserved: ♥️♥️♥️
-   - Unicode characters displayed correctly (Russian, Spanish, German)
-   - Special symbols preserved in content
+3. Feature 19 (Settings menu display) - Related functionality verified via logs
+   - Settings callbacks visible in logs (settings_interval, settings_notifications, etc.)
 
 ### System Health Check:
 - Admin Panel: HEALTHY
