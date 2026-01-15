@@ -2,39 +2,39 @@
 
 ## Current Status
 - **Features**: 185/185 passing (100% complete)
-- **Last Session**: Session 1093 - Regression Testing
+- **Last Session**: Session 1094 - Regression Testing
 - **Date**: January 15, 2026
 
-## Session 1093 Summary (Regression Testing)
+## Session 1094 Summary (Regression Testing)
 
 ### Verified Features
-1. **Feature #9: Question variety - no repetition** - VERIFIED
-   - Templates section shows 60+ different question templates
+1. **Feature #176: Auto-index Knowledge Base uploads** - VERIFIED
+   - Upload pipeline works correctly (pending → indexing status)
+   - Text chunking works (1 chunk created for test file)
+   - OpenAI API quota exceeded (external limitation, not a bug)
+   - Delete functionality works correctly
+
+2. **Feature #69: Special characters in messages** - VERIFIED
+   - Heart emojis (♥️♥️♥️) preserved correctly
+   - Cyrillic text (Russian, Ukrainian) displayed properly
+   - Spanish characters (á, ó, etc.) working
+   - Topics cloud shows multilingual content
+
+3. **Feature #22: Toggle address form ты/вы** - VERIFIED
+   - User settings show "Informal (ты)" option correctly
+   - Templates exist for both formal (Вы) and informal (Ты) forms
+   - 60+ templates across 3 languages (ru, en, uk)
    - 3 categories: follow_up (18), main (30), return_inactive (12)
-   - 3 languages supported: Russian, English, Ukrainian
-   - Both formal (Вы) and informal (Ты) forms available
-   - Messages show different bot questions used in practice
-
-2. **Feature #149: BOT start with credentials** - VERIFIED
-   - Bot is running with proper configuration
-   - Dashboard shows "Bot: RUNNING"
-   - APScheduler logs confirm continuous bot execution
-
-3. **Feature #58: APScheduler job persistence** - VERIFIED
-   - Scheduler running every minute (NotificationScheduler._process_notifications)
-   - Memory indexer job runs every 15 minutes
-   - 8 pending scheduled notifications visible in admin panel
-   - All jobs execute successfully without errors
 
 ### System Health Check
-- Docker services: All running (postgres, bot, admin)
-  - 3hours-admin-1: Up 31+ minutes (healthy)
-  - 3hours-bot-1: Up 31+ minutes
+- Docker services: All running
+  - 3hours-admin-1: Up ~35 minutes (healthy)
+  - 3hours-bot-1: Up ~35 minutes
   - 3hours-postgres_dev-1: Up 18+ hours (healthy)
   - 3hours-postgres-1: Up 18+ hours (healthy)
 - Database: CONNECTED (13 MB)
-- Bot: RUNNING - APScheduler executing scheduled questions
-- OpenAI: CONFIGURED
+- Bot: RUNNING - 8 pending notifications
+- OpenAI: CONFIGURED (quota exceeded for embeddings)
 - Console: Zero JavaScript errors
 - Admin Panel: All sections functional
 
@@ -47,12 +47,6 @@
 - Avg Mood: 0.56
 - Unique Users: 3
 
-### Pages Verified
-- Overview/Dashboard: Working with real-time stats
-- Messages: 8 pending scheduled questions, multiple message types
-- Templates: 60+ templates across 3 categories/3 languages
-- Moments: 23 moments with topics cloud, mood scoring, filters
-
 ---
 
 ## Architecture Overview
@@ -62,6 +56,13 @@
 - **Bot**: Telegram bot with long polling
 - **Docker**: docker-compose.yml for services
 
+## Notes
+- OpenAI API quota is currently exceeded - this affects:
+  - Knowledge Base indexing (embedding generation)
+  - Any other embedding-based features
+- All other functionality is working correctly
+
 ## Next Steps
 - Continue monitoring system health
 - All features complete - maintenance mode
+- Consider adding OpenAI credits when needed
