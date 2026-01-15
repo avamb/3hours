@@ -2,111 +2,72 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1138 (Regression Testing)
+- **Last Session**: 1139 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1138 Summary
+## Session 1139 Summary
 Performed comprehensive regression testing to verify all systems are working properly.
 
 ### Regression Features Tested:
-- Feature #11: History view - list moments ✓
-- Feature #153: Personalization (social media profiles) ✓
-- Feature #45: Response time tracking ✓
+- Feature #155: Language of first message (sends welcome in user's Telegram language)
+- Feature #41: Conversation history saving (all conversations saved to database)
+- Feature #128: Social profile parsing (LinkedIn, interests, bio extraction)
 
 ### Verification Results:
 
-1. **Admin Panel Dashboard** - VERIFIED ✓
+1. **Admin Panel Dashboard** - VERIFIED
    - Status: HEALTHY
    - Database: CONNECTED (13 MB)
-   - Bot: RUNNING with 8 pending notifications
+   - Bot: RUNNING with 7 pending notifications
    - OpenAI: CONFIGURED
    - Statistics: 11 Users, 23 Moments
 
-2. **Moments Page (Feature #11)** - VERIFIED ✓
-   - 23 Total Moments, 8 This Week
-   - Average Mood: 0.56
-   - 3 Unique Users
-   - Topics Cloud displaying extracted topics
-   - Voice and text messages properly categorized
-   - Mood analysis working correctly
+2. **Dialogs Page (Feature #41)** - VERIFIED
+   - 53 messages for test user with all types properly categorized:
+     - user_response, bot_question, bot_reply
+     - free_dialog, admin_message, admin_feedback_response
+   - Timestamps and content displayed correctly
+   - Search and filter functionality working
 
-3. **Analytics Page** - VERIFIED ✓
-   - User Funnel: 11 registered → 9 onboarded → 3 first moment → 2 regular use
+3. **User Details (Feature #128 & #155)** - VERIFIED
+   - Social Profile section showing:
+     - LinkedIn link parsed from user messages
+     - Interests extracted: "technologies, web development, digital projects..."
+     - Bio parsed from LinkedIn profile
+   - User language_code stored and used for localization
+   - Statistics: 16 moments, 53 questions sent, 30% response rate
+
+4. **Analytics Page** - VERIFIED
+   - User Funnel: 11 registered -> 9 onboarded -> 3 first moment -> 2 regular use
    - Retention by Cohorts table working
    - User Registrations chart (30-day view)
    - Activity Heatmap displaying patterns
    - Language Distribution: 55% English, 36% Russian, 9% Ukrainian
 
-4. **User Details (Feature #45 & #153)** - VERIFIED ✓
-   - Statistics: Total Moments, Streaks, Questions Sent/Answered, Response Rate (30%)
-   - Social Profile: LinkedIn link, Interests, Bio parsed correctly
-   - Vector Memory status displayed
-   - Recent Moments with text/voice types
-
-5. **Health Endpoint** - VERIFIED ✓
-   - GET /health returns {"status":"ok","service":"admin","timestamp":"..."}
-
-6. **Bot Container** - VERIFIED ✓
-   - Telegram polling active for @Ai_HappyBot
-   - APScheduler running notification jobs every minute
-   - Successfully sending scheduled questions to users
-
-7. **Console Errors** - NONE ✓
-   - No JavaScript errors detected in browser
-
----
-
-## Session 1137 Summary
-Performed comprehensive regression testing to verify all systems are working properly.
-
-### Verification Results:
-
-1. **Admin Panel Dashboard** - VERIFIED ✓
-   - Status: HEALTHY
-   - Database: CONNECTED (13 MB)
-   - Bot: RUNNING with 8 pending notifications
-   - OpenAI: CONFIGURED
-   - Statistics: 11 Users, 23 Moments
-   - Recent Activity: Shows bot questions and admin messages
-
-2. **Analytics Page (Feature #136)** - VERIFIED ✓
-   - User Funnel: 11 registered → 9 onboarded → 3 first moment → 2 regular use
-   - Retention by Cohorts table working
-   - User Registrations chart (30-day view) - 11 new users
-   - Activity Heatmap displaying patterns correctly
-   - Language Distribution: 55% English, 36% Russian, 9% Ukrainian
-
-3. **Users Page** - VERIFIED ✓
-   - All 11 users displayed with proper data
-   - Filters working (language, status, sort)
-   - User details: ID, Telegram ID, Username, Name, Gender, Language, Timezone, Moments, Streak, Last Active
-   - Export CSV and Refresh buttons functional
-
-4. **Moments Page** - VERIFIED ✓
+5. **Moments Page** - VERIFIED
    - 23 Total Moments, 8 This Week
    - Average Mood: 0.56
    - 3 Unique Users
-   - Topics Cloud displaying extracted topics
+   - Topics Cloud with extracted topics (multilingual)
    - Voice and text messages properly categorized
-   - Mood analysis working (Very Positive, Positive, Neutral, Negative)
+   - Mood analysis: Very Positive, Positive, Neutral, Negative
 
-5. **Health Endpoint (Feature #113)** - VERIFIED ✓
-   - Endpoint: GET /health returns {"status":"ok","service":"admin","timestamp":"..."}
-   - Docker healthcheck configured and working
-
-6. **Bot Container** - VERIFIED ✓
-   - Database connection initialized
-   - Migrations completed successfully
-   - APScheduler running with all jobs:
+6. **Bot Container** - VERIFIED
+   - Telegram polling active for @Ai_HappyBot
+   - APScheduler running all jobs:
      - NotificationScheduler._process_notifications (every minute)
      - NotificationScheduler._schedule_user_notifications
      - NotificationScheduler._check_summary_delivery
-     - index_conversation_memories
+     - index_conversation_memories (every 15 min)
      - create_dialog_summaries
-   - Telegram polling active for @Ai_HappyBot
-   - Successfully sending scheduled questions to users
+   - Successfully sending scheduled questions
 
-7. **Console Errors** - NONE ✓
+7. **Code Verification (Feature #155)** - VERIFIED
+   - get_localized_welcome_text() function handles en/uk/ru languages
+   - All keyboards localized with language_code parameter
+   - Onboarding respects user's Telegram language setting
+
+8. **Console Errors** - NONE
    - No JavaScript errors detected in browser
 
 ### Docker Services Running:
@@ -114,6 +75,21 @@ Performed comprehensive regression testing to verify all systems are working pro
 - 3hours-bot-1 - Telegram bot (running with scheduler)
 - 3hours-postgres_dev-1 - Development PostgreSQL (healthy)
 - 3hours-postgres-1 - Production PostgreSQL (healthy)
+
+---
+
+## Session 1138 Summary
+Performed comprehensive regression testing to verify all systems are working properly.
+
+### Regression Features Tested:
+- Feature #11: History view - list moments
+- Feature #153: Personalization (social media profiles)
+- Feature #45: Response time tracking
+
+### Verification Results:
+All features verified working correctly with no issues found.
+
+---
 
 ## Architecture Overview
 - **Backend**: Python 3.11+ with aiogram 3.x (Telegram bot framework)
