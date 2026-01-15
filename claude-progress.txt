@@ -2,25 +2,29 @@
 
 ## Current Status: 185/185 features complete (100%)
 
-## Last Session: Session 989 (January 15, 2026)
+## Last Session: Session 990 (January 15, 2026)
 
 ### What was done:
 - Ran comprehensive regression testing on 3 randomly selected features
-- Verified Feature #39: Moment topics extraction - PASSED
-  - Topics Cloud showing extracted topics: "университет (2)", "парк (2)", "работа (2)"
-  - Individual moments have correct topic extraction
-  - 23 total moments with mood scores and topics working correctly
-- Verified Feature #155: Language of first message - PASSED
-  - /start command uses user.language_code from Telegram
-  - Welcome messages localized in English, Ukrainian, and Russian
-  - Users table shows different language preferences correctly stored
-- Verified Feature #151: Forbidden words/symbols - PASSED
-  - text_filters.py implements filtering of religious and LGBT symbols
-  - FORBIDDEN_EMOJIS set contains religious symbols and LGBT flags
-  - apply_all_filters() function removes forbidden content from bot responses
+- Verified Feature #106: First message scheduling - PASSED
+  - Notifications page showing 8 pending notifications for today
+  - Scheduled times respecting user active hours (9:00 AM, 10:00 AM)
+  - Previous notifications properly marked as Sent
+- Verified Feature #59: Concurrent message handling - PASSED
+  - APScheduler processing notifications every minute
+  - Memory indexing job running every 15 minutes
+  - All jobs executing successfully with no errors in logs
+- Verified Feature #13: History search functionality - PASSED
+  - Moments page showing 23 total moments, 8 this week
+  - User filtering working correctly (tested with MarinaBakanova)
+  - Topics cloud displaying extracted topics
+  - Mood scores and source types displayed correctly
 - Screenshots saved:
-  - regression-test-989-moments-topics.png
-  - regression-test-989-settings.png
+  - regression-test-990-dashboard.png
+  - regression-test-990-moments.png
+  - regression-test-990-moments-filtered.png
+  - regression-test-990-users.png
+  - regression-test-990-notifications.png
 - No console errors detected
 - All Docker containers healthy
 
