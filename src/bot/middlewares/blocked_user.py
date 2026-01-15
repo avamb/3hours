@@ -44,6 +44,8 @@ class BlockedUserMiddleware(BaseMiddleware):
                     if row is True:
                         logger.info(f"Blocked user {telegram_id} tried to interact with bot")
                         return None
+                    elif row is False:
+                        logger.debug(f"User {telegram_id} is not blocked, allowing request")
             except Exception as e:
                 # If we can't check, allow the request (fail open for user experience)
                 logger.warning(f"Failed to check blocked status for {telegram_id}: {e}")
