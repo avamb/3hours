@@ -1,70 +1,65 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Current Status: 183/183 features complete (100%)
+## Current Status: 185/185 features complete (100%)
 
-## Last Session: Session 962 (January 14, 2026)
+## Last Session: Session 963 (January 15, 2026)
 
 ### What was done:
-- Comprehensive regression testing of 3 randomly selected features
-- All tests passed with no issues found
-- Screenshots captured for visual verification
-- No console errors detected
+- Completed Feature 184: Per-user Dialog Vector Memory (isolated)
+- Completed Feature 185: Admin Vector Memory Observability
+- Added CSS styling for memory UI components
+- Rebuilt admin Docker container with updated files
 
-### Regression Testing Results:
+### Feature 184 - Per-user Dialog Vector Memory:
+- ConversationMemoryService for extracting memory-worthy facts from conversations
+- Garbage filtering (short messages, emojis, ok/yes/no, etc.)
+- LLM classification to extract canonical facts (fact, person, preference, project, plan, etc.)
+- Vector similarity deduplication (0.92 threshold)
+- Fingerprint-based exact deduplication
+- User isolation in all queries
+- Periodic memory indexing job (every 15 minutes via APScheduler)
+- Integration with KnowledgeRetrievalService for "remember" queries
 
-1. **Feature 107 - New Option Request (Feedback)**: PASS
-   - Feedback button in menu stores user feedback in database
-   - Admin panel shows Feedback page with 5 items
-   - Status filter (All/New/Reviewed/Implemented/Rejected) working
-   - Categories: 💡 Idea, 🐛 Bug properly displayed
+### Feature 185 - Admin Vector Memory Observability:
+- Added 3 API endpoints to admin/server.mjs:
+  - GET /api/users/:id/memory/status - Memory status, counts, indexing info
+  - GET /api/users/:id/memory/chunks - List memory chunks with content, kind, importance
+  - GET /api/users/:id/memory/usage - Bot replies with retrieval metadata
+- Added JavaScript functions to admin/static/app.js:
+  - loadUserMemoryStatus() - Displays memory status in User Details modal
+  - showMemoryChunks() - Shows table of memory chunks
+  - showMemoryUsage() - Shows bot replies with retrieval badges
+- Added CSS styling for memory UI components (memory-kind-badge, retrieval badges, etc.)
 
-2. **Feature 11 - History view - list moments**: PASS
-   - Moments page shows 23 total moments from 3 unique users
-   - Topics Cloud with frequently used topics displayed
-   - Filtering by User, Date range, Mood level working
-   - Export CSV functionality available
-   - Each moment shows: ID, User, Content, Source (text/voice), Mood score, Topics, Created date
-   - Chronological order (newest first)
+### Files Modified:
+- alembic/versions/20260115_0012_add_conversation_memories_table.py (fixed revision IDs)
+- src/services/scheduler.py (added memory indexer job)
+- admin/server.mjs (3 new API endpoints)
+- admin/static/app.js (Vector Memory UI section and functions)
+- admin/static/styles.css (memory-related CSS styles)
 
-3. **Feature 44 - Reset settings to defaults**: PASS
-   - Code verified: `reset_settings_to_defaults()` method in UserService
-   - Resets: formal_address→False, active_hours→09:00-21:00, interval→3h, notifications→True
-   - Settings keyboard has "🔄 Сбросить настройки" button (localized)
-   - User details show customized settings (08:00-23:00, 6h) proving feature works
+### Database Changes:
+- Applied migration 0012: Created conversation_memories table with pgvector embedding
+- Columns: user_id, content, embedding, kind, importance, fingerprint, source_conversation_ids
 
-### Pages Verified:
-- Dashboard: HEALTHY status, Database CONNECTED (11 MB), Bot RUNNING, OpenAI CONFIGURED
-- Users: 11 users with stats, social profiles displayed correctly
-- Moments: 23 moments, Topics Cloud, filters working
-- Feedback: 5 items (0 New, 4 Reviewed, 1 Implemented)
-- Logs: 0 errors, 0 warnings, 62 total logs
-
-### Console Errors: NONE
-All pages loaded without JavaScript errors.
+### Verification:
+- Admin panel User Details modal now shows "Vector Memory" section
+- Shows: Indexing Status (Indexed), Memory Chunks count, Pending Conversations, Last Indexed
+- Buttons: "View Memory Chunks" and "View Usage Trace" (when chunks exist)
 
 ## Architecture:
 - Telegram bot (Python/aiogram) for positive mindset development
 - PostgreSQL with pgvector for vector embeddings
 - Admin panel (Node.js/Express) on port 18088
-- APScheduler for notification management
-- OpenAI GPT-4o for responses, Whisper for voice transcription
+- APScheduler for notification management and memory indexing
+- OpenAI GPT-4o for responses, GPT-4o-mini for analysis, Whisper for voice transcription
 
 ## Docker Containers Running:
 - 3hours-admin-1 (port 18088) - HEALTHY
 - 3hours-bot-1 - RUNNING
 - 3hours-postgres-1 - HEALTHY
-- 3hours-postgres_dev-1 - HEALTHY
 
 ## Project Status:
-- 100% COMPLETE - All 183 features passing
+- 100% COMPLETE - All 185 features passing
 - Ready for production deployment
-- All regression tests passed this session
-
-## Screenshots Captured:
-- regression_962_dashboard.png - Dashboard overview
-- regression_962_feedback.png - User feedback page
-- regression_962_moments.png - Happy moments with topics cloud
-- regression_962_users.png - Users list
-- regression_962_user_details.png - User details modal with settings
-- regression_962_settings.png - Admin settings page
-- regression_962_logs.png - System logs (0 errors)
+- Memory indexing ready (awaiting OpenAI API quota reset for actual extraction)

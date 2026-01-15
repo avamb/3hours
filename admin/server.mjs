@@ -1128,6 +1128,197 @@ const routes = {
         }
     },
 
+    // User Memory Status - Vector memory observability
+    'GET /api/users/:id/memory/status': async (req, res, params) => {
+        const userId = parseInt(params.id);
+
+        const client = await pool.connect();
+        try {
+            // Get user info and indexing status
+            const userResult = await client.query(`
+                SELECT id, telegram_id, last_memory_indexed_conversation_id
+                FROM users WHERE id = $1
+            `, [userId]);
+
+            if (userResult.rows.length === 0) {
+                sendJson(res, { detail: 'User not found' }, 404);
+                return;
+            }
+
+            const user = userResult.rows[0];
+
+            // Count memories
+            const memoriesResult = await client.query(`
+                SELECT COUNT(*) as total,
+                       COUNT(CASE WHEN kind = 'fact' THEN 1 END) as facts,
+                       COUNT(CASE WHEN kind = 'preference' THEN 1 END) as preferences,
+                       COUNT(CASE WHEN kind = 'person' THEN 1 END) as people,
+                       COUNT(CASE WHEN kind = 'project' THEN 1 END) as projects,
+                       COUNT(CASE WHEN kind = 'plan' THEN 1 END) as plans,
+                       COUNT(CASE WHEN kind = 'achievement' THEN 1 END) as achievements,
+                       COUNT(CASE WHEN kind = 'event' THEN 1 END) as events,
+                       AVG(importance) as avg_importance,
+                       MAX(created_at) as last_indexed_at
+                FROM conversation_memories WHERE user_id = $1
+            `, [userId]);
+
+            // Count pending conversations
+            const pendingResult = await client.query(`
+                SELECT COUNT(*) as pending
+                FROM conversations
+                WHERE user_id = $1
+                AND message_type IN ('free_dialog', 'user_response')
+                AND id > $2
+            `, [userId, user.last_memory_indexed_conversation_id]);
+
+            // Get total user conversations
+            const totalConvsResult = await client.query(`
+                SELECT COUNT(*) as total
+                FROM conversations
+                WHERE user_id = $1
+                AND message_type IN ('free_dialog', 'user_response')
+            `, [userId]);
+
+            const mem = memoriesResult.rows[0];
+            const pending = parseInt(pendingResult.rows[0].pending);
+            const totalConvs = parseInt(totalConvsResult.rows[0].total);
+
+            sendJson(res, {
+                user_id: userId,
+                telegram_id: user.telegram_id?.toString(),
+                memories_count: parseInt(mem.total),
+                pending_conversations: pending,
+                total_conversations: totalConvs,
+                last_indexed_at: mem.last_indexed_at?.toISOString(),
+                avg_importance: mem.avg_importance ? parseFloat(mem.avg_importance).toFixed(2) : null,
+                kinds_breakdown: {
+                    fact: parseInt(mem.facts),
+                    preference: parseInt(mem.preferences),
+                    person: parseInt(mem.people),
+                    project: parseInt(mem.projects),
+                    plan: parseInt(mem.plans),
+                    achievement: parseInt(mem.achievements),
+                    event: parseInt(mem.events),
+                },
+                indexing_status: pending === 0 ? 'indexed' : (pending > 10 ? 'pending' : 'partial'),
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // User Memory Chunks - List memory chunks for a user
+    'GET /api/users/:id/memory/chunks': async (req, res, params) => {
+        const userId = parseInt(params.id);
+        const query = parseQuery(req.url);
+        const limit = Math.min(parseInt(query.limit) || 20, 100);
+        const offset = parseInt(query.offset) || 0;
+        const kind = query.kind;
+
+        const client = await pool.connect();
+        try {
+            let whereClause = 'WHERE user_id = $1';
+            const queryParams = [userId, limit, offset];
+
+            if (kind && kind !== 'all') {
+                whereClause += ' AND kind = $4';
+                queryParams.push(kind);
+            }
+
+            const result = await client.query(`
+                SELECT id, content, kind, importance, fingerprint,
+                       source_conversation_ids, metadata, created_at, updated_at
+                FROM conversation_memories
+                ${whereClause}
+                ORDER BY created_at DESC
+                LIMIT $2 OFFSET $3
+            `, queryParams);
+
+            const countResult = await client.query(`
+                SELECT COUNT(*) FROM conversation_memories ${whereClause}
+            `, kind && kind !== 'all' ? [userId, kind] : [userId]);
+
+            sendJson(res, {
+                chunks: result.rows.map(row => ({
+                    id: row.id,
+                    content: row.content,
+                    kind: row.kind,
+                    importance: row.importance,
+                    fingerprint: row.fingerprint,
+                    source_conversation_ids: row.source_conversation_ids,
+                    metadata: row.metadata,
+                    created_at: row.created_at?.toISOString(),
+                    updated_at: row.updated_at?.toISOString(),
+                })),
+                total: parseInt(countResult.rows[0].count),
+            });
+        } finally {
+            client.release();
+        }
+    },
+
+    // User Memory Usage - Show bot replies that used memory retrieval
+    'GET /api/users/:id/memory/usage': async (req, res, params) => {
+        const userId = parseInt(params.id);
+        const query = parseQuery(req.url);
+        const limit = Math.min(parseInt(query.limit) || 20, 50);
+        const offset = parseInt(query.offset) || 0;
+
+        const client = await pool.connect();
+        try {
+            // Find bot_reply messages with retrieval metadata
+            const result = await client.query(`
+                SELECT id, content, metadata, created_at
+                FROM conversations
+                WHERE user_id = $1
+                AND message_type = 'bot_reply'
+                AND metadata IS NOT NULL
+                AND (
+                    metadata->>'retrieval_used' = 'true'
+                    OR metadata->'moment_ids' IS NOT NULL
+                    OR metadata->'kb_chunk_ids' IS NOT NULL
+                    OR metadata->'dialog_memory_ids' IS NOT NULL
+                )
+                ORDER BY created_at DESC
+                LIMIT $2 OFFSET $3
+            `, [userId, limit, offset]);
+
+            const countResult = await client.query(`
+                SELECT COUNT(*)
+                FROM conversations
+                WHERE user_id = $1
+                AND message_type = 'bot_reply'
+                AND metadata IS NOT NULL
+                AND (
+                    metadata->>'retrieval_used' = 'true'
+                    OR metadata->'moment_ids' IS NOT NULL
+                    OR metadata->'kb_chunk_ids' IS NOT NULL
+                    OR metadata->'dialog_memory_ids' IS NOT NULL
+                )
+            `, [userId]);
+
+            sendJson(res, {
+                usage: result.rows.map(row => ({
+                    id: row.id,
+                    content_preview: row.content?.substring(0, 200),
+                    retrieval_used: row.metadata?.retrieval_used,
+                    moments_count: row.metadata?.moments_count || (row.metadata?.moment_ids?.length ?? 0),
+                    kb_chunks_count: row.metadata?.kb_chunks_count || (row.metadata?.kb_chunk_ids?.length ?? 0),
+                    dialog_memory_count: row.metadata?.dialog_memory_count || (row.metadata?.dialog_memory_ids?.length ?? 0),
+                    moment_ids: row.metadata?.moment_ids,
+                    kb_chunk_ids: row.metadata?.kb_chunk_ids,
+                    dialog_memory_ids: row.metadata?.dialog_memory_ids,
+                    query_type: row.metadata?.query_type,
+                    is_remember_query: row.metadata?.is_remember_query,
+                    created_at: row.created_at?.toISOString(),
+                })),
+                total: parseInt(countResult.rows[0].count),
+            });
+        } finally {
+            client.release();
+        }
+    },
+
     // Conversations
     'GET /api/conversations': async (req, res) => {
         const query = parseQuery(req.url);

@@ -22,6 +22,7 @@ from src.db.database import get_session
 from src.db.models import User, ScheduledNotification, QuestionTemplate
 from src.bot.keyboards.inline import get_question_keyboard
 from src.services.conversation_log_service import ConversationLogService
+from src.services.memory_indexer_job import index_conversation_memories
 
 logger = logging.getLogger(__name__)
 
@@ -159,6 +160,15 @@ class NotificationScheduler:
             self._check_summary_delivery,
             trigger=IntervalTrigger(hours=1),
             id="summary_delivery_check",
+            replace_existing=True,
+        )
+
+        # Index conversation memories every 15 minutes
+        # Extracts memory-worthy facts from user conversations
+        self.scheduler.add_job(
+            index_conversation_memories,
+            trigger=IntervalTrigger(minutes=15),
+            id="memory_indexer",
             replace_existing=True,
         )
 

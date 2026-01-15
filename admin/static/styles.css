@@ -2237,6 +2237,190 @@ body {
     padding: 8px 12px;
 }
 
+/* Vector Memory Styles */
+.memory-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.memory-section h4 {
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.memory-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.memory-stat {
+    background: var(--bg-color);
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.memory-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.memory-stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.memory-kind-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-right: 4px;
+    margin-bottom: 4px;
+}
+
+.memory-kind-badge.kind-fact { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+.memory-kind-badge.kind-preference { background: rgba(139, 92, 246, 0.1); color: #7c3aed; }
+.memory-kind-badge.kind-person { background: rgba(236, 72, 153, 0.1); color: #db2777; }
+.memory-kind-badge.kind-project { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+.memory-kind-badge.kind-plan { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.memory-kind-badge.kind-constraint { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+.memory-kind-badge.kind-achievement { background: rgba(52, 211, 153, 0.1); color: #10b981; }
+.memory-kind-badge.kind-event { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+
+.memory-kinds-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.memory-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.memory-indexing-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.memory-indexing-status.up-to-date {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.memory-indexing-status.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+}
+
+.memory-indexing-status.needs-indexing {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+/* Memory chunks table */
+.memory-chunks-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.memory-chunks-table th,
+.memory-chunks-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.memory-chunks-table th {
+    background: var(--bg-color);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.memory-content-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.memory-importance {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.memory-importance.high {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.memory-importance.medium {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+}
+
+.memory-importance.low {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+/* Memory usage badges */
+.retrieval-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.retrieval-badge.moments {
+    background: rgba(139, 92, 246, 0.1);
+    color: #7c3aed;
+}
+
+.retrieval-badge.kb {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+.retrieval-badge.memory {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.retrieval-badge .badge-count {
+    font-weight: 700;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     #dashboard-screen {
