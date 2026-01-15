@@ -2,68 +2,48 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1142 (Regression Testing)
+- **Last Session**: 1143 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1142 Summary
+## Session 1143 Summary
 Performed comprehensive regression testing to verify all systems are working properly.
 
 ### Regression Features Tested:
-- Feature #9: Question variety - no repetition
-- Feature #97: User stats update on moment creation
-- Feature #118: New specification updates
+- Feature #146: Display system status in admin dashboard
+- Feature #81: Language change setting
+- Feature #177: Timezone settings message during onboarding
 
 ### Verification Results:
 
-1. **Admin Panel Dashboard** - VERIFIED
+1. **Admin Panel Dashboard (Feature #146)** - VERIFIED ✅
    - Status: HEALTHY
    - Database: CONNECTED (13 MB)
    - Bot: RUNNING with 7 pending notifications
    - OpenAI: CONFIGURED
-   - Statistics: 11 Users, 23 Moments
+   - Statistics: 11 Users, 23 Moments, 8 Moments This Week
 
-2. **Users Page (Feature #97)** - VERIFIED
-   - 11 Total Users with proper stats tracking
-   - andreiandreev62: 16 moments, streak: 1 (last active 3d ago)
-   - llTeIegramll: 2 moments, streak: 1
-   - MarinaBakanova: 5 moments, streak: 1
-   - Search, filters, and Export CSV working
-   - Gender icons and language codes displayed correctly
+2. **Users Page (Feature #81 - Language settings)** - VERIFIED ✅
+   - 11 Total Users with proper language settings
+   - Language filter dropdown works (All, Russian, English, Ukrainian)
+   - User details show full settings including language, timezone, address form
+   - Different users have different languages: en, ru, uk
 
-3. **Moments Page** - VERIFIED
-   - 23 Total Moments, 8 This Week
-   - Average Mood: 0.56
-   - 3 Unique Users
-   - Voice messages properly transcribed in Russian (Moments #19, #20)
-   - Topics Cloud with multilingual topics
-   - Filters for users, dates, moods working
-   - Export CSV functionality available
+3. **Timezone Settings Message (Feature #177)** - VERIFIED ✅
+   - Onboarding confirmation messages include timezone reminder
+   - All three languages (ru, en, uk) have the timezone message
+   - Both formal (Вы) and informal (Ты) versions include the reminder
+   - Message: "Please set up your timezone and message frequency in Settings"
 
-4. **Templates Page (Feature #9)** - VERIFIED
+4. **Templates Page** - VERIFIED ✅
    - 30 main question templates
-   - 18 follow_up templates
+   - 18 follow_up templates  
    - 12 return_inactive templates
    - Multiple languages (ru, en, uk)
-   - Both formal (Вы) and informal (Ты) versions
+   - Both formal and informal versions
    - {name} placeholder personalization working
    - Create, Edit, Delete functionality available
 
-5. **Expenses Page** - VERIFIED
-   - Total Requests: 37
-   - Total Tokens: 5,747
-   - Total Cost: $0.0137
-   - By Model: gpt-4o (6), gpt-4o-mini (24), text-embedding-3-small (5), whisper-1 (2)
-   - By Operation: moment_response, free_dialog, topic_extraction, mood_analysis, mood_detection, embedding, transcription, memory_extraction
-   - Recent API Calls table with timestamps, duration, status
-
-6. **Bot Scheduler** - VERIFIED (from logs)
-   - APScheduler running every minute
-   - NotificationScheduler._process_notifications active
-   - index_conversation_memories every 15 min
-   - Successfully sending scheduled questions
-   - Memory indexing: "0 users, 0 conversations, 0 memories stored" (expected - no new conversations)
-
-7. **Console Errors** - NONE
+5. **Console Errors** - NONE ✅
    - No JavaScript errors in browser
 
 ### Docker Services Running:
@@ -71,10 +51,6 @@ Performed comprehensive regression testing to verify all systems are working pro
 - 3hours-bot-1 - Telegram bot (running)
 - 3hours-postgres_dev-1 - Development PostgreSQL (healthy)
 - 3hours-postgres-1 - Production PostgreSQL (healthy)
-
-### Notes:
-- Some memory_extraction errors from 13h ago in Expenses page (transient network issues, not affecting functionality)
-- One expected error in logs: "chat not found" for user 398266049 (user blocked bot - normal behavior)
 
 ---
 
