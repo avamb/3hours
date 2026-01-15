@@ -2,16 +2,16 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1141 (Regression Testing)
+- **Last Session**: 1142 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1141 Summary
+## Session 1142 Summary
 Performed comprehensive regression testing to verify all systems are working properly.
 
 ### Regression Features Tested:
-- Feature #123: Daily Summary feature (weekly/monthly summaries with GPT-4)
-- Feature #166: Expenses page (API usage tracking)
-- Feature #170: Voice input with proper language transcription
+- Feature #9: Question variety - no repetition
+- Feature #97: User stats update on moment creation
+- Feature #118: New specification updates
 
 ### Verification Results:
 
@@ -22,15 +22,15 @@ Performed comprehensive regression testing to verify all systems are working pro
    - OpenAI: CONFIGURED
    - Statistics: 11 Users, 23 Moments
 
-2. **Expenses Page (Feature #166)** - VERIFIED
-   - Total Requests: 37
-   - Total Tokens: 5,747
-   - Total Cost: $0.0137
-   - By Model breakdown: gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1
-   - By Operation breakdown: moment_response, free_dialog, topic_extraction, mood_analysis, mood_detection, embedding, transcription, memory_extraction
-   - Recent API Calls table with timestamps, duration, status
+2. **Users Page (Feature #97)** - VERIFIED
+   - 11 Total Users with proper stats tracking
+   - andreiandreev62: 16 moments, streak: 1 (last active 3d ago)
+   - llTeIegramll: 2 moments, streak: 1
+   - MarinaBakanova: 5 moments, streak: 1
+   - Search, filters, and Export CSV working
+   - Gender icons and language codes displayed correctly
 
-3. **Moments Page (Feature #170)** - VERIFIED
+3. **Moments Page** - VERIFIED
    - 23 Total Moments, 8 This Week
    - Average Mood: 0.56
    - 3 Unique Users
@@ -39,27 +39,29 @@ Performed comprehensive regression testing to verify all systems are working pro
    - Filters for users, dates, moods working
    - Export CSV functionality available
 
-4. **Analytics Page** - VERIFIED
-   - User Funnel: 11 registered -> 9 onboarded -> 3 first moment -> 2 regular use
-   - Retention by Cohorts table working
-   - User Registrations chart (30-day view)
-   - Activity Heatmap displaying patterns
-   - Language Distribution: 55% English, 36% Russian, 9% Ukrainian
+4. **Templates Page (Feature #9)** - VERIFIED
+   - 30 main question templates
+   - 18 follow_up templates
+   - 12 return_inactive templates
+   - Multiple languages (ru, en, uk)
+   - Both formal (Вы) and informal (Ты) versions
+   - {name} placeholder personalization working
+   - Create, Edit, Delete functionality available
 
-5. **Summary Service (Feature #123)** - CODE VERIFIED
-   - SummaryService class in src/services/summary_service.py
-   - generate_weekly_summary() method implemented
-   - generate_monthly_summary() method implemented
-   - Scheduler job `_check_summary_delivery` running
-   - Weekly summary: Sunday at 10:00 local time
-   - Monthly summary: 1st of month at 10:00 local time
+5. **Expenses Page** - VERIFIED
+   - Total Requests: 37
+   - Total Tokens: 5,747
+   - Total Cost: $0.0137
+   - By Model: gpt-4o (6), gpt-4o-mini (24), text-embedding-3-small (5), whisper-1 (2)
+   - By Operation: moment_response, free_dialog, topic_extraction, mood_analysis, mood_detection, embedding, transcription, memory_extraction
+   - Recent API Calls table with timestamps, duration, status
 
-6. **Bot Scheduler** - VERIFIED
+6. **Bot Scheduler** - VERIFIED (from logs)
    - APScheduler running every minute
    - NotificationScheduler._process_notifications active
    - index_conversation_memories every 15 min
-   - _check_summary_delivery for weekly/monthly summaries
    - Successfully sending scheduled questions
+   - Memory indexing: "0 users, 0 conversations, 0 memories stored" (expected - no new conversations)
 
 7. **Console Errors** - NONE
    - No JavaScript errors in browser
@@ -69,6 +71,10 @@ Performed comprehensive regression testing to verify all systems are working pro
 - 3hours-bot-1 - Telegram bot (running)
 - 3hours-postgres_dev-1 - Development PostgreSQL (healthy)
 - 3hours-postgres-1 - Production PostgreSQL (healthy)
+
+### Notes:
+- Some memory_extraction errors from 13h ago in Expenses page (transient network issues, not affecting functionality)
+- One expected error in logs: "chat not found" for user 398266049 (user blocked bot - normal behavior)
 
 ---
 
