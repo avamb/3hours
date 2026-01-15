@@ -81,3 +81,40 @@ async def full_reindex_memories() -> dict:
             "memories_stored": 0,
             "error": str(e),
         }
+
+
+async def create_dialog_summaries() -> dict:
+    """
+    Create dialog summaries for all users who need them.
+
+    This function compresses multiple raw dialog memories into semantic summaries.
+    Should be called periodically (e.g., every hour or once per day).
+
+    Summaries are created when:
+    - User has at least SUMMARY_MIN_MESSAGES (8) unsummarized raw memories
+    - AND either has SUMMARY_BATCH_SIZE (12) messages OR oldest is > 24 hours old
+
+    Returns:
+        Dict with stats: users_processed, summaries_created
+    """
+    logger.info("Starting dialog summary creation job")
+
+    try:
+        memory_service = ConversationMemoryService()
+        stats = await memory_service.create_summaries_for_all_users()
+
+        logger.info(
+            f"Dialog summary creation complete: "
+            f"{stats['users_processed']} users, "
+            f"{stats['summaries_created']} summaries created"
+        )
+
+        return stats
+
+    except Exception as e:
+        logger.error(f"Dialog summary creation job failed: {e}")
+        return {
+            "users_processed": 0,
+            "summaries_created": 0,
+            "error": str(e),
+        }
