@@ -1,29 +1,28 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Session 1004 - January 15, 2026
+## Session 1005 - January 15, 2026
 
 ### Status: ALL 185 FEATURES PASSING (100%)
 
 ### Regression Testing Completed
 Verified the following randomly selected features:
 
-1. Feature 21: Configure notification interval - VERIFIED
-   - User details modal shows Notification Interval setting (6h)
-   - Active Hours displayed (08:00:00 - 23:00:00)
-   - Notifications status shown (Enabled)
-   - All user settings properly stored and displayed
+1. Feature 167: Gender detection - VERIFIED
+   - Users table shows gender column with 👨 M / 👩 F indicators
+   - Gender correctly determined from names (Andrei→M, Svetlana→F, Yitzhak→M, etc.)
+   - Unknown genders shown as "-"
 
-2. Feature 110: Dokploy-ready compose cleanup - VERIFIED
-   - No container_name defined in any service
-   - No external PostgreSQL port mapping (5432:5432)
-   - Services communicate via compose network names (postgres)
-   - Traefik labels configured for production routing
+2. Feature 31: Personalized question generation - VERIFIED
+   - 60 templates across 3 languages (ru, en, uk)
+   - Formal/informal addressing options (Ты/Вы)
+   - {name} placeholder for personalization
+   - Categories: main (30), follow_up (18), return_inactive (12)
 
-3. Feature 133: Knowledge Base page in admin panel - VERIFIED
-   - Statistics cards (Total, Indexed, Pending, Chunks)
-   - Upload form with Title, Category, Tags, File upload
-   - Status filter dropdown (All, Indexed, Pending, Error)
-   - Table with proper columns (ID, Title, Type, Category, Status, etc.)
+3. Feature 141: Send direct message to user from admin - VERIFIED
+   - Message input in user detail modal
+   - Confirmation dialog before sending
+   - Success notification "Message sent successfully!"
+   - Message logged in Recent Activity with timestamp
 
 ### System Health Check
 - Admin panel: HEALTHY (http://localhost:18088)
@@ -46,10 +45,7 @@ Verified the following randomly selected features:
 - 3hours-postgres-1: Production PostgreSQL (healthy)
 
 ### Screenshots Captured
-- regression_dashboard_1004.png - Dashboard overview
-- regression_kb_page_1004.png - Knowledge Base page
-- regression_user_details_1004.png - User details modal with settings
-- regression_settings_1004.png - Settings page
+- regression_templates_1005.png - Templates page with personalization options
 
 ### Next Session
 - All 185 features are passing (100%)
@@ -57,5 +53,5 @@ Verified the following randomly selected features:
 - Monitor system health
 
 ### Git Status
-- Branch: master
+- Branch: dev
 - All changes committed
