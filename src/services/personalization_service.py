@@ -915,6 +915,7 @@ Remember: you're not a psychologist and don't give professional advice. You're j
             # Step 3: Build context-enriched prompt
             rag_content_block = self.rag_service.build_context_prompt(rag_context)
             anti_repetition_block = self.rag_service.build_anti_repetition_instruction(rag_context)
+            anti_hallucination_block = self.rag_service.build_anti_hallucination_instruction(rag_context)
 
             # Step 4: Build RAG-specific instructions based on query type
             rag_instruction = self._get_rag_instruction(rag_context)
@@ -981,6 +982,8 @@ Remember: you're not a psychologist and don't give professional advice. You're j
 {FORBIDDEN_SYMBOLS_RULE_RU}
 
 {rag_content_block}
+
+{anti_hallucination_block}
 
 {anti_repetition_block}"""
 
@@ -1095,8 +1098,35 @@ Remember: you're not a psychologist and don't give professional advice. You're j
         """
         has_moments = bool(rag_context.moments)
         has_kb = bool(rag_context.kb_chunks)
+        has_dialog_memory = bool(rag_context.dialog_memories or rag_context.dialog_summaries or rag_context.dialog_snippets)
 
-        if rag_context.query_type == 'A':
+        if rag_context.query_type == 'R':
+            # Remember query - user is asking about past conversations
+            if has_dialog_memory:
+                return """
+=== RAG MODE: REMEMBER ===
+The user is asking about something from past conversations. You MUST use the conversation history provided below.
+Reference specific facts, topics, or moments from "FACTS USER TOLD YOU", "CONVERSATION SUMMARIES", and "RELEVANT USER MESSAGES" sections.
+If the information is not in those sections, say: "I don't see that in our conversation history" (EN) or "Я не вижу этого в нашей истории разговоров" (RU).
+NEVER say "I can't recall" or "I don't remember" - always reference checking the history.
+
+(Русский): Пользователь спрашивает о прошлых разговорах. ОБЯЗАТЕЛЬНО используй историю разговоров ниже.
+Ссылайся на конкретные факты, темы или моменты из разделов "ФАКТЫ, КОТОРЫЕ ТЫ РАССКАЗАЛ", "СВОДКИ РАЗГОВОРОВ" и "РЕЛЕВАНТНЫЕ СООБЩЕНИЯ".
+Если информации нет в этих разделах, скажи: "Я не вижу этого в нашей истории разговоров".
+НИКОГДА не говори "я не помню" или "я не могу вспомнить" — всегда ссылайся на проверку истории."""
+            else:
+                return """
+=== RAG MODE: REMEMBER (no history) ===
+The user is asking about past conversations, but you have no stored conversation history.
+Say: "I don't see that in our conversation history. Could you tell me about it again?" (EN)
+or "Я не вижу этого в нашей истории разговоров. Можешь рассказать об этом снова?" (RU)
+NEVER say "I can't recall" or "I don't remember".
+
+(Русский): Пользователь спрашивает о прошлых разговорах, но у тебя нет сохранённой истории.
+Скажи: "Я не вижу этого в нашей истории разговоров. Можешь рассказать об этом снова?"
+НИКОГДА не говори "я не помню" или "я не могу вспомнить"."""
+
+        elif rag_context.query_type == 'A':
             # Personal/emotional query
             if has_moments:
                 return """

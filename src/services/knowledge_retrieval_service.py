@@ -742,7 +742,8 @@ Reply with ONLY a single letter: A, B, or C."""
 === ANTI-HALLUCINATION RULE ===
 The user is asking about something they told you before.
 ONLY use facts from "FACTS USER TOLD YOU", "CONVERSATION SUMMARIES", "RELEVANT USER MESSAGES", and "USER'S PERSONAL HISTORY" sections above.
-If the information is not in those sections, say you don't have that information stored.
+If the information is not in those sections, say: "I don't see that in our conversation history. Could you tell me about it again?" (EN) or "Я не вижу этого в нашей истории разговоров. Можешь рассказать об этом снова?" (RU)
+NEVER say "I can't recall" or "I don't remember" - always reference checking the history.
 DO NOT invent or assume facts the user didn't tell you.
 """
         else:
