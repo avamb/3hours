@@ -2,16 +2,16 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1148 (Regression Testing)
+- **Last Session**: 1149 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1148 Summary
+## Session 1149 Summary
 Performed comprehensive regression testing to verify all systems are working properly.
 
 ### Regression Features Selected:
-- Feature #83: Supportive but not pushy tone
-- Feature #100: Onboarding time under 1 minute
-- Feature #97: User stats update on moment creation
+- Feature #103: Follow-up question handling
+- Feature #93: Error retry mechanism
+- Feature #187: Editable prompt layers in admin with DB-backed storage
 
 ### Verification Results:
 
@@ -47,13 +47,19 @@ Performed comprehensive regression testing to verify all systems are working pro
    - Activity Heatmap (day/hour grid)
    - Language Distribution: English 55%, Russian 36%, Ukrainian 9%
 
-5. **Expenses Page** - VERIFIED ✅
+5. **Prompts Page (Feature #187)** - VERIFIED ✅
+   - Available prompts list: language_instruction, prompt_protection, dialog_system_main, dialog_system_main_ru
+   - Edit form with Content textarea and Notes field
+   - Save New Version and Reset to Default buttons
+   - Version History with Activate button for rollback
+
+6. **Expenses Page** - VERIFIED ✅
    - Total stats: 37 Requests, 5,747 Tokens, $0.0137 Total Cost
    - By Model breakdown: gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1
    - By Operation breakdown: moment_response, free_dialog, etc.
    - Recent API Calls log with status indicators
 
-6. **Bot Services** - VERIFIED ✅
+7. **Bot Services** - VERIFIED ✅
    - NotificationScheduler running every minute
    - Memory indexer job running every 15 minutes
    - All jobs executing successfully
