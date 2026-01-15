@@ -2,59 +2,40 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1159 (Regression Testing)
+- **Last Session**: 1160 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1159 Summary
+## Session 1160 Summary
 Performed regression testing to verify all systems are working properly.
 
 ### Regression Features Verified:
-- Feature #106: First message / Scheduled notifications - VERIFIED ✅
-- Feature #128: Social profile parsing - VERIFIED ✅
-- Feature #147: Check all projects - VERIFIED ✅
+- Feature #146: Display system status in admin dashboard - VERIFIED
+- Feature #181: User dialog filtering bug fix - VERIFIED
+- Feature #175: Bug checking verification - VERIFIED
 
 ### Verification Results:
 
-1. **Admin Panel Dashboard** - VERIFIED ✅
+1. **Admin Panel Dashboard (Feature #146)** - VERIFIED
    - System Health: HEALTHY
    - Database: CONNECTED (13 MB)
    - Bot: RUNNING with 8 pending notifications
    - OpenAI: CONFIGURED
    - 11 Total Users, 1 Active (7 days), 23 Total Moments
 
-2. **Scheduled Notifications (Feature #106)** - VERIFIED ✅
-   - 8 pending notifications scheduled for today
-   - Notifications being sent on schedule
-   - NotificationScheduler running every minute
-   - Memory indexer job running every 15 minutes
+2. **User Dialog Filtering (Feature #181)** - VERIFIED
+   - Dialogs page shows user list with message counts
+   - Clicking on andreiandreev62 shows only their 53 messages
+   - Clicking on test_user_2 shows only their 2 messages
+   - User-specific dialog filtering working correctly
 
-3. **Social Profile Parsing (Feature #128)** - VERIFIED ✅
-   - LinkedIn profile link displayed
-   - Interests extracted: технологии, веб-разработка, цифровые проекты, etc.
-   - Bio parsed and displayed
-   - User details modal showing all social profile data
-
-4. **Users Page** - VERIFIED ✅
-   - 11 users with search and filters
-   - User details modal with comprehensive information
-   - Statistics: Moments, Streak, Response Rate
-   - Admin actions: Block User, Send Direct Message
-
-5. **Moments Page** - VERIFIED ✅
-   - 23 Total Moments, 8 This Week, 0.56 Avg Mood, 3 Unique Users
-   - Topics Cloud with multi-language topics
-   - Mood scores calculated (Very Positive, Positive, Neutral, Negative)
-   - Voice and text moments properly labeled
-   - Filters for user, date range, and mood
-
-6. **System Logs** - VERIFIED ✅
+3. **System Logs (Feature #175)** - VERIFIED
    - 0 Errors (24h)
    - 0 Warnings (24h)
    - 8 Info (24h)
    - 68 Total Logs
    - No console errors in browser
 
-7. **Bot Services** - VERIFIED ✅
+4. **Bot Services** - VERIFIED
    - NotificationScheduler running every minute
    - Memory indexer job running every 15 minutes
    - All APScheduler jobs executing successfully
