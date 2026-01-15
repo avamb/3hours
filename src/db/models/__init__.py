@@ -10,6 +10,7 @@ from src.db.models.feedback import Feedback
 from src.db.models.system_log import SystemLog
 from src.db.models.social_profile import SocialProfile
 from src.db.models.api_usage import APIUsage
+from src.db.models.prompt_template import PromptTemplate
 
 __all__ = [
     "User",
@@ -23,4 +24,5 @@ __all__ = [
     "SystemLog",
     "SocialProfile",
     "APIUsage",
+    "PromptTemplate",
 ]
