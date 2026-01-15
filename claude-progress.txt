@@ -2,46 +2,50 @@
 
 ## Current Status: 185/185 features complete (100%)
 
-## Last Session: Session 984 (January 15, 2026)
+## Last Session: Session 985 (January 15, 2026)
 
 ### What was done:
 - Ran comprehensive regression testing on 3 randomly selected features
-- Verified Feature #82: Warm and friendly tone - PASSED
-  - Bot questions use warm language with emojis (🌟, 😄, 🌻, 💫)
-  - Diverse question formulations observed
-  - No cold or robotic responses
-- Verified Feature #6: Text message recording - PASSED
-  - 23 total moments saved from multiple users
-  - Both text and voice messages properly recorded
-  - Source type correctly tracked (text/voice)
-  - Mood scores analyzed and displayed (Very Positive, Positive, Neutral, Negative)
-  - Topics extracted and displayed as tags
-  - Embeddings working (evidenced by topic extraction)
-- Verified Feature #9: Question variety - no repetition - PASSED
-  - Multiple different question formulations observed:
-    - "Чему ты улыбнулся сегодня? 😄"
-    - "Что хорошего ты заметил сегодня? 🌻"
-    - "Что хорошего произошло сегодня? 🌟"
-    - "Какой момент сегодня был особенным? 💫"
-    - "Что приятного случилось? 😊"
-    - "Что тебя сегодня вдохновило? 🌈"
-    - "Расскажи о маленькой радости дня! 💝"
-  - No consecutive repetition of questions
-- Verified User Details modal showing all settings:
-  - Notification interval (6h), Active hours (08:00:00 - 23:00:00)
-  - Address form (ты/вы), Language, Timezone
-  - Statistics: Total moments, Streak, Questions sent/answered, Response rate
-  - Social profile and Vector Memory sections
-- Verified Dialogs page with 45 messages conversation history
-  - Multilingual support: Russian, English, Spanish, German
-  - Bot adapts language based on user input
+- Verified Feature #141: Send direct message to user from admin - PASSED
+  - Navigated to Users page, clicked View on user andreiandreev62
+  - User Details modal displayed correctly with all sections:
+    - Basic info (Telegram ID, Username, Name, Gender, Language, Timezone)
+    - Settings (Active Hours, Notification Interval, Address Form)
+    - Statistics (Total Moments: 16, Current Streak: 1, Questions Sent: 51, Response Rate: 31%)
+    - Social Profile (LinkedIn, Interests, Bio)
+    - Vector Memory section (Indexing Status, Memory Chunks, Pending Conversations)
+    - Recent Moments (5 shown with source type and date)
+  - Send Direct Message section working:
+    - Typed test message: "REGRESSION_TEST_985_VERIFY - Testing admin direct message feature"
+    - Confirmation dialog appeared: "Are you sure you want to send this message to the user?"
+    - Success dialog appeared: "Message sent successfully!"
+    - Message logged in conversations table
+- Verified Feature #108: Admin messages (scheduled messages visibility) - PASSED
+  - Messages tab showing all message types:
+    - 8 pending scheduled questions for various users
+    - Admin messages visible with "Sent" status
+    - Bot questions with actual content (e.g., "Chemu ty ulybnulsya segodnya?")
+    - Bot replies and free dialog messages
+  - Filter dropdown working (All Types, User Response, Bot Question, etc.)
+  - Pagination working (pages 1, 2, 3)
+  - Test message from this session visible in list
+- Verified Feature #11: History view - list moments - PASSED
+  - Moments page displaying correctly with:
+    - Stats cards: 23 Total Moments, 8 This Week, 0.56 Avg Mood, 3 Unique Users
+    - Topics Cloud with extracted topics in Russian/English
+    - User filter, date range pickers, mood filter
+    - Export CSV and Refresh buttons
+    - Full moments table with: ID, User, Content, Source (text/voice), Mood, Topics, Created
+    - 23 moments displayed in chronological order
+    - Voice messages properly distinguished from text
+    - Mood scores color-coded (Very Positive green, Neutral yellow, Negative red)
 - No console errors detected
-- All Docker containers healthy and running
+- Screenshot saved: regression-test-985-moments.png
 
 ### System Health Check:
 - Admin Panel: HEALTHY (port 18088)
 - Bot Container: RUNNING
-- PostgreSQL: HEALTHY
+- PostgreSQL: HEALTHY (both postgres and postgres_dev containers)
 - Database Size: 13 MB
 - Total Users: 11
 - Total Moments: 23
@@ -59,9 +63,11 @@
 - 3hours-admin-1 (port 18088) - HEALTHY
 - 3hours-bot-1 - RUNNING
 - 3hours-postgres-1 - HEALTHY
+- 3hours-postgres_dev-1 - HEALTHY
 
 ## Project Status:
 - 100% COMPLETE - All 185 features passing
 - Ready for production deployment
 - Memory indexing running (every 15 minutes)
 - No issues found during regression testing
+- All core functionality verified working
