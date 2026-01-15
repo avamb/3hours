@@ -30,7 +30,13 @@ from src.db.database import get_session
 from src.db.models import User, Moment, Conversation
 from src.services.embedding_service import EmbeddingService
 from src.services.api_usage_service import APIUsageService
-from src.services.conversation_memory_service import ConversationMemoryService, RetrievedMemory
+from src.services.conversation_memory_service import (
+    ConversationMemoryService,
+    RetrievedMemory,
+    RAW_DIALOG_KIND,
+    DIALOG_SUMMARY_KIND,
+    MEMORY_KINDS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +44,9 @@ logger = logging.getLogger(__name__)
 # Configuration constants
 MOMENTS_TOP_K = 4
 KB_TOP_K = 5
-DIALOG_MEMORY_TOP_K = 5  # New: for dialog memories
+DIALOG_MEMORY_TOP_K = 5  # Extracted facts from dialog
+DIALOG_SNIPPETS_TOP_K = 6  # Raw user messages for long-term recall
+DIALOG_SUMMARIES_TOP_K = 3  # Compressed summaries of dialog history
 SIMILARITY_THRESHOLD = 0.40  # Below this, don't include source (lowered for Russian text)
 MAX_CONTEXT_CHARS = 4500  # ~1200-1500 tokens
 RECENCY_BOOST_DAYS = 7  # Moments within this period get boosted
@@ -87,6 +95,7 @@ class RAGContext:
     query_type: str  # 'A', 'B', 'C', 'R'
     moments: List[RetrievedMoment]
     kb_chunks: List[RetrievedChunk]
+    dialog_snippets: List[RetrievedMemory]
     moment_ids: List[int]
     moment_scores: List[float]
     kb_chunk_ids: List[int]
@@ -94,10 +103,16 @@ class RAGContext:
     kb_scores: List[float]
     recent_fingerprints: List[str]
     recent_responses: List[str]  # Short excerpts for anti-repetition
-    # New fields for dialog memory
+    # Fields for dialog memory
     dialog_memories: List[RetrievedMemory] = field(default_factory=list)
     dialog_memory_ids: List[int] = field(default_factory=list)
     dialog_memory_scores: List[float] = field(default_factory=list)
+    dialog_snippet_ids: List[int] = field(default_factory=list)
+    dialog_snippet_scores: List[float] = field(default_factory=list)
+    # New fields for dialog summaries (compressed memory)
+    dialog_summaries: List[RetrievedMemory] = field(default_factory=list)
+    dialog_summary_ids: List[int] = field(default_factory=list)
+    dialog_summary_scores: List[float] = field(default_factory=list)
     is_remember_query: bool = False  # Anti-hallucination flag
 
 
@@ -197,13 +212,49 @@ Reply with ONLY a single letter: A, B, or C."""
         limit: int = DIALOG_MEMORY_TOP_K,
     ) -> List[RetrievedMemory]:
         """
-        Search user's dialog memories with vector similarity.
+        Search user's extracted dialog memories (facts, people, preferences) with vector similarity.
         Uses ConversationMemoryService for user-isolated retrieval.
         """
         return await self.memory_service.search_memories(
             telegram_id=telegram_id,
             query_embedding=query_embedding,
             limit=limit,
+            kinds=MEMORY_KINDS,
+        )
+
+    async def search_dialog_snippets(
+        self,
+        telegram_id: int,
+        query_embedding: List[float],
+        limit: int = DIALOG_SNIPPETS_TOP_K,
+    ) -> List[RetrievedMemory]:
+        """
+        Search user's raw dialog messages with vector similarity.
+        These are full user messages stored for long-term recall.
+        """
+        return await self.memory_service.search_memories(
+            telegram_id=telegram_id,
+            query_embedding=query_embedding,
+            limit=limit,
+            kinds=[RAW_DIALOG_KIND],
+        )
+
+    async def search_dialog_summaries(
+        self,
+        telegram_id: int,
+        query_embedding: List[float],
+        limit: int = DIALOG_SUMMARIES_TOP_K,
+    ) -> List[RetrievedMemory]:
+        """
+        Search user's dialog summaries with vector similarity.
+        Summaries are compressed representations of multiple messages and
+        should be prioritized over raw snippets for context efficiency.
+        """
+        return await self.memory_service.search_memories(
+            telegram_id=telegram_id,
+            query_embedding=query_embedding,
+            limit=limit,
+            kinds=[DIALOG_SUMMARY_KIND],
         )
 
     async def search_moments(
@@ -429,6 +480,7 @@ Reply with ONLY a single letter: A, B, or C."""
                 query_type=query_type,
                 moments=[],
                 kb_chunks=[],
+                dialog_snippets=[],
                 moment_ids=[],
                 moment_scores=[],
                 kb_chunk_ids=[],
@@ -439,34 +491,56 @@ Reply with ONLY a single letter: A, B, or C."""
                 dialog_memories=[],
                 dialog_memory_ids=[],
                 dialog_memory_scores=[],
+                dialog_snippet_ids=[],
+                dialog_snippet_scores=[],
+                dialog_summaries=[],
+                dialog_summary_ids=[],
+                dialog_summary_scores=[],
                 is_remember_query=is_remember,
             )
 
         # Step 3: Search based on query type
+        # Always search for summaries first - they're higher quality and more efficient
         moments = []
         kb_chunks = []
         dialog_memories = []
+        dialog_snippets = []
+        dialog_summaries = []
 
         if query_type == 'R':
-            # Remember query - dialog memory + moments only, NO KB (anti-hallucination)
+            # Remember query - dialog memory + summaries + snippets + moments, NO KB (anti-hallucination)
             dialog_memories = await self.search_dialog_memories(telegram_id, query_embedding)
+            dialog_summaries = await self.search_dialog_summaries(telegram_id, query_embedding)
+            dialog_snippets = await self.search_dialog_snippets(telegram_id, query_embedding)
             moments = await self.search_moments(telegram_id, query_embedding)
             # DO NOT search KB for remember queries - prevents hallucination
         elif query_type == 'A':
-            # Personal/emotional - dialog memory + moments required, KB optional
+            # Personal/emotional - dialog memory + summaries + moments required, KB optional
             dialog_memories = await self.search_dialog_memories(telegram_id, query_embedding, limit=3)
+            dialog_summaries = await self.search_dialog_summaries(telegram_id, query_embedding, limit=2)
+            # Reduce raw snippets if summaries are available (compression saves tokens)
+            snippet_limit = 2 if dialog_summaries else 4
+            dialog_snippets = await self.search_dialog_snippets(telegram_id, query_embedding, limit=snippet_limit)
             moments = await self.search_moments(telegram_id, query_embedding)
             kb_chunks = await self.search_knowledge_base(query_embedding, limit=3)
         elif query_type == 'B':
-            # Seeking advice - KB required, dialog memory + moments optional
+            # Seeking advice - KB required, dialog memory + summaries + moments optional
             kb_chunks = await self.search_knowledge_base(query_embedding)
             dialog_memories = await self.search_dialog_memories(telegram_id, query_embedding, limit=2)
+            dialog_summaries = await self.search_dialog_summaries(telegram_id, query_embedding, limit=2)
+            dialog_snippets = await self.search_dialog_snippets(telegram_id, query_embedding, limit=2)
             moments = await self.search_moments(telegram_id, query_embedding, limit=2)
         else:
             # General - try all, prefer KB
             kb_chunks = await self.search_knowledge_base(query_embedding, limit=4)
             dialog_memories = await self.search_dialog_memories(telegram_id, query_embedding, limit=2)
+            dialog_summaries = await self.search_dialog_summaries(telegram_id, query_embedding, limit=2)
+            dialog_snippets = await self.search_dialog_snippets(telegram_id, query_embedding, limit=2)
             moments = await self.search_moments(telegram_id, query_embedding, limit=2)
+
+        # Log summary usage
+        if dialog_summaries:
+            logger.info(f"Using {len(dialog_summaries)} dialog summaries for user {telegram_id}")
 
         # Step 4: Get anti-repetition data
         fingerprints, excerpts = await self.get_recent_fingerprints(telegram_id)
@@ -475,30 +549,49 @@ Reply with ONLY a single letter: A, B, or C."""
         total_chars = (
             sum(len(m.content) for m in moments) +
             sum(len(c.content) for c in kb_chunks) +
-            sum(len(d.content) for d in dialog_memories)
+            sum(len(d.content) for d in dialog_memories) +
+            sum(len(s.content) for s in dialog_snippets) +
+            sum(len(s.content) for s in dialog_summaries)
         )
         if total_chars > MAX_CONTEXT_CHARS:
             # Prioritize based on query type
             if query_type in ('A', 'R'):
-                # Keep dialog memories and moments, truncate KB
+                # Keep dialog memories, summaries, and moments; truncate KB and raw snippets
                 kb_chars = sum(len(c.content) for c in kb_chunks)
-                while kb_chars > MAX_CONTEXT_CHARS // 4 and kb_chunks:
+                while kb_chars > MAX_CONTEXT_CHARS // 5 and kb_chunks:
                     kb_chunks.pop()
                     kb_chars = sum(len(c.content) for c in kb_chunks)
+                # If summaries exist, reduce raw snippets (redundant)
+                if dialog_summaries:
+                    while len(dialog_snippets) > 2 and dialog_snippets:
+                        dialog_snippets.pop()
             elif query_type == 'B':
-                # Keep KB, truncate dialog memories and moments
-                mem_chars = sum(len(m.content) for m in moments) + sum(len(d.content) for d in dialog_memories)
-                while mem_chars > MAX_CONTEXT_CHARS // 4 and (moments or dialog_memories):
-                    if moments:
+                # Keep KB, truncate dialog memories, summaries, and moments
+                mem_chars = (
+                    sum(len(m.content) for m in moments) +
+                    sum(len(d.content) for d in dialog_memories) +
+                    sum(len(s.content) for s in dialog_snippets) +
+                    sum(len(s.content) for s in dialog_summaries)
+                )
+                while mem_chars > MAX_CONTEXT_CHARS // 4 and (moments or dialog_memories or dialog_snippets):
+                    if dialog_snippets:
+                        dialog_snippets.pop()
+                    elif moments:
                         moments.pop()
                     elif dialog_memories:
                         dialog_memories.pop()
-                    mem_chars = sum(len(m.content) for m in moments) + sum(len(d.content) for d in dialog_memories)
+                    mem_chars = (
+                        sum(len(m.content) for m in moments) +
+                        sum(len(d.content) for d in dialog_memories) +
+                        sum(len(s.content) for s in dialog_snippets) +
+                        sum(len(s.content) for s in dialog_summaries)
+                    )
 
         return RAGContext(
             query_type=query_type,
             moments=moments,
             kb_chunks=kb_chunks,
+            dialog_snippets=dialog_snippets,
             moment_ids=[m.id for m in moments],
             moment_scores=[m.boosted_score for m in moments],
             kb_chunk_ids=[c.id for c in kb_chunks],
@@ -509,6 +602,11 @@ Reply with ONLY a single letter: A, B, or C."""
             dialog_memories=dialog_memories,
             dialog_memory_ids=[d.id for d in dialog_memories],
             dialog_memory_scores=[d.similarity for d in dialog_memories],
+            dialog_snippet_ids=[s.id for s in dialog_snippets],
+            dialog_snippet_scores=[s.similarity for s in dialog_snippets],
+            dialog_summaries=dialog_summaries,
+            dialog_summary_ids=[s.id for s in dialog_summaries],
+            dialog_summary_scores=[s.similarity for s in dialog_summaries],
             is_remember_query=is_remember,
         )
 
@@ -536,6 +634,7 @@ Reply with ONLY a single letter: A, B, or C."""
     def build_context_prompt(self, context: RAGContext) -> str:
         """
         Build the context section of the prompt from RAG results.
+        Summaries are prioritized over raw snippets for better context efficiency.
         """
         parts = []
 
@@ -545,6 +644,22 @@ Reply with ONLY a single letter: A, B, or C."""
             for i, d in enumerate(context.dialog_memories, 1):
                 # Truncate very long facts
                 content = d.content[:300] + "..." if len(d.content) > 300 else d.content
+                parts.append(f"{i}. {content}")
+            parts.append("")
+
+        # Dialog summaries section (compressed conversation history - HIGH priority)
+        if context.dialog_summaries:
+            parts.append("=== CONVERSATION SUMMARIES (compressed dialog history) ===")
+            for i, s in enumerate(context.dialog_summaries, 1):
+                content = s.content[:500] + "..." if len(s.content) > 500 else s.content
+                parts.append(f"{i}. {content}")
+            parts.append("")
+
+        # Raw dialog snippets (only if no summaries or few summaries available)
+        if context.dialog_snippets:
+            parts.append("=== RELEVANT USER MESSAGES (semantic recall) ===")
+            for i, s in enumerate(context.dialog_snippets, 1):
+                content = s.content[:300] + "..." if len(s.content) > 300 else s.content
                 parts.append(f"{i}. {content}")
             parts.append("")
 
@@ -579,13 +694,16 @@ Reply with ONLY a single letter: A, B, or C."""
         if not context.is_remember_query:
             return ""
 
-        has_memories = bool(context.dialog_memories or context.moments)
+        has_memories = bool(
+            context.dialog_memories or context.dialog_summaries or
+            context.dialog_snippets or context.moments
+        )
 
         if has_memories:
             return """
 === ANTI-HALLUCINATION RULE ===
 The user is asking about something they told you before.
-ONLY use facts from "FACTS USER TOLD YOU" and "USER'S PERSONAL HISTORY" sections above.
+ONLY use facts from "FACTS USER TOLD YOU", "CONVERSATION SUMMARIES", "RELEVANT USER MESSAGES", and "USER'S PERSONAL HISTORY" sections above.
 If the information is not in those sections, say you don't have that information stored.
 DO NOT invent or assume facts the user didn't tell you.
 """
@@ -637,10 +755,19 @@ Generate a fresh, unique response. Same meaning is OK, but different wording req
             "kb_scores": [round(s, 4) for s in context.kb_scores],
             "dialog_memory_ids": context.dialog_memory_ids,
             "dialog_memory_scores": [round(s, 4) for s in context.dialog_memory_scores],
+            "dialog_snippet_ids": context.dialog_snippet_ids,
+            "dialog_snippet_scores": [round(s, 4) for s in context.dialog_snippet_scores],
+            "dialog_summary_ids": context.dialog_summary_ids,
+            "dialog_summary_scores": [round(s, 4) for s in context.dialog_summary_scores],
             "answer_fingerprint": self.compute_fingerprint(response_text),
-            "retrieval_used": bool(context.moments or context.kb_chunks or context.dialog_memories),
+            "retrieval_used": bool(
+                context.moments or context.kb_chunks or context.dialog_memories or
+                context.dialog_snippets or context.dialog_summaries
+            ),
             "moments_count": len(context.moments),
             "kb_chunks_count": len(context.kb_chunks),
             "dialog_memories_count": len(context.dialog_memories),
+            "dialog_snippets_count": len(context.dialog_snippets),
+            "dialog_summaries_count": len(context.dialog_summaries),
             "is_remember_query": context.is_remember_query,
         }
