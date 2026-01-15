@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import pg from 'pg';
 import OpenAI from 'openai';
+import { createPromptRoutes } from './prompt_routes.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -4506,6 +4507,10 @@ const routes = {
         }
     },
 };
+
+// Add prompt management routes
+const promptRoutes = createPromptRoutes(pool, sendJson, parseBody);
+Object.assign(routes, promptRoutes);
 
 // Helper function to calculate next send time within user's active hours
 function calculateNextSendTime(timezone, activeStart, activeEnd, nowUtc, withinHours, deadline) {

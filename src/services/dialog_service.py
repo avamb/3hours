@@ -12,6 +12,7 @@ from src.db.database import get_session
 from src.db.models import User, Conversation
 from src.services.personalization_service import PersonalizationService
 from src.services.semantic_antirepeat_service import get_semantic_antirepeat_service
+from src.services.immediate_indexer import trigger_immediate_indexing, should_index_immediately
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +130,7 @@ class DialogService:
         content: str,
         metadata: dict = None,
     ) -> None:
-        """Save a conversation message to database"""
+        """Save a conversation message to database with immediate indexing for user messages"""
         async with get_session() as session:
             # Get user
             result = await session.execute(
@@ -149,6 +150,11 @@ class DialogService:
             )
             session.add(conversation)
             await session.commit()
+            await session.refresh(conversation)  # Get the ID
+
+            # Trigger immediate indexing for user messages (fire-and-forget)
+            if await should_index_immediately(message_type, content):
+                await trigger_immediate_indexing(user.id, conversation)
 
     async def _get_dialog_context(
         self,

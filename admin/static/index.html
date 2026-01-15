@@ -47,6 +47,7 @@
                 <li><a href="#" data-page="users" class="nav-link">Users</a></li>
                 <li><a href="#" data-page="moments" class="nav-link">Moments</a></li>
                 <li><a href="#" data-page="knowledge" class="nav-link">Knowledge Base</a></li>
+                <li><a href="#" data-page="prompts" class="nav-link">Prompts</a></li>
                 <li><a href="#" data-page="templates" class="nav-link">Templates</a></li>
                 <li><a href="#" data-page="campaigns" class="nav-link">Campaigns</a></li>
                 <li><a href="#" data-page="dialogs" class="nav-link">Dialogs</a></li>
@@ -384,6 +385,53 @@
                     </table>
                 </div>
                 <div class="pagination" id="knowledge-pagination"></div>
+            </div>
+
+            <!-- Prompts Page -->
+            <div id="page-prompts" class="page">
+                <h2>System Prompts</h2>
+                <p class="page-description">Manage AI system prompts with versioning and rollback capability.</p>
+
+                <div class="prompts-container">
+                    <div class="prompts-list">
+                        <h3>Available Prompts</h3>
+                        <div id="prompts-list-content">
+                            <p>Loading prompts...</p>
+                        </div>
+                    </div>
+
+                    <div class="prompts-editor">
+                        <div id="prompts-editor-placeholder">
+                            <p>Select a prompt from the list to edit</p>
+                        </div>
+                        <div id="prompts-editor-content" style="display: none;">
+                            <h3 id="prompts-editor-title">Edit Prompt</h3>
+                            <div class="form-group">
+                                <label>Prompt Key</label>
+                                <input type="text" id="prompt-key" readonly class="readonly-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Content</label>
+                                <textarea id="prompt-content" rows="15" placeholder="Enter prompt content..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes (optional)</label>
+                                <input type="text" id="prompt-notes" placeholder="Describe this change...">
+                            </div>
+                            <div class="button-group">
+                                <button id="save-prompt-btn" class="btn btn-primary">Save New Version</button>
+                                <button id="reset-prompt-btn" class="btn btn-secondary">Reset to Default</button>
+                            </div>
+
+                            <div class="versions-section">
+                                <h4>Version History</h4>
+                                <div id="prompts-versions">
+                                    <p>No versions yet</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Templates Page -->
