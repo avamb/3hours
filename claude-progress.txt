@@ -2,56 +2,50 @@
 
 ## Current Status
 - **Features**: 189/189 passing (100% complete)
-- **Last Session**: 1173 (Regression Testing)
+- **Last Session**: 1174 (Regression Testing)
 - **Date**: 2026-01-15
 
-## Session 1173 Summary
+## Session 1174 Summary
 Performed comprehensive regression testing via browser automation to verify system health.
 
 ### Regression Features Verified:
 
-1. **Feature 160: Sorting (Newest First)** - VERIFIED ✅
-   - Users page: Sorted by ID descending (11, 10, 9... 1)
-   - Moments page: Sorted by ID descending (23, 22, 21... 1)
-   - Dropdown sort options all functional
-
-2. **Feature 149: Bot Running** - VERIFIED ✅
-   - Bot container running (3hours-bot-1)
-   - APScheduler notification job running every minute
-   - Note: TelegramConflictError due to shared token with prod (expected behavior)
-
-3. **Dashboard Overview** - VERIFIED ✅
+1. **Dashboard Overview** - VERIFIED ✅
    - Database: CONNECTED (13 MB)
    - Bot: RUNNING (8 pending notifications)
    - OpenAI: CONFIGURED
    - Stats: 11 Users, 23 Moments, 1 Active (7 days), 8 Moments This Week
+   - Recent Activity showing correctly
 
-4. **Users Page** - VERIFIED ✅
+2. **Users Page** - VERIFIED ✅
    - 11 users with all columns (Gender, Language, Timezone, Moments, Streak)
    - Search, filter, sort, export functionality available
+   - All user details displaying correctly
 
-5. **Moments Page** - VERIFIED ✅
+3. **Moments Page** - VERIFIED ✅
    - 23 Total Moments, 8 This Week, 0.56 Avg Mood, 3 Unique Users
-   - Topics Cloud displaying correctly
+   - Topics Cloud displaying correctly with topic counts
    - Voice and text sources shown
+   - Mood indicators (Very Positive, Positive, Neutral, Negative) working
 
-6. **Analytics Page** - VERIFIED ✅
+4. **Analytics Page** - VERIFIED ✅
    - User Funnel: 11 Registered → 9 Onboarded → 3 First Moment → 2 Regular Use
    - Retention by Cohorts table working
    - User Registrations chart (30-day view)
    - Activity Heatmap functional
    - Language Distribution: English 55%, Russian 36%, Ukrainian 9%
 
-7. **Settings Page** - VERIFIED ✅
-   - Database Backup button available
-   - Health Check: HEALTHY
-   - Database Status: CONNECTED
+5. **Knowledge Base Page** - VERIFIED ✅
+   - Upload form available (Title, Category, Tags, File)
+   - Status filter working
+   - Empty state displays correctly
 
 ### System Health:
 - Docker containers: bot (Up), admin (healthy), postgres_dev (healthy), postgres (healthy)
 - No console errors detected
 - All navigation links working
 - UI rendering correctly
+- APScheduler notification job running every minute
 
 ### Known Issue (Not a Bug):
 - Bot shows TelegramConflictError because dev and prod share same TELEGRAM_BOT_TOKEN
