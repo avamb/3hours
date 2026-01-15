@@ -2,31 +2,30 @@
 
 ## Current Status
 - **Features**: 185/185 passing (100% complete)
-- **Last Session**: Session 1084 - Regression Testing
+- **Last Session**: Session 1085 - Regression Testing
 - **Date**: January 15, 2026
 
-## Session 1084 Summary (Regression Testing)
+## Session 1085 Summary (Regression Testing)
 
 ### Verified Features
-1. **Feature #154: Expenses (Token Cost Tracking)** - VERIFIED ✅
-   - Total Requests: 37
-   - Total Tokens: 5,747
-   - Total Cost: $0.0137
-   - Breakdown by Model (gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1)
-   - Breakdown by Operation (moment_response, free_dialog, topic_extraction, etc.)
-   - Recent API calls with status and duration tracking
+1. **Feature #42: Question templates by language** - VERIFIED
+   - Templates available in 3 languages: Russian (ru), English (en), Ukrainian (uk)
+   - Both formal and informal variants
+   - 3 categories: main, follow_up, return_inactive
+   - All templates active and properly formatted
 
-2. **Feature #152: Timezone Settings** - VERIFIED ✅
-   - Timezone column displayed in Users table
-   - User details modal shows Timezone setting (UTC)
-   - Active Hours stored per-user (08:00:00 - 23:00:00)
-   - Notification interval configurable (6h)
+2. **Feature #58: APScheduler job persistence** - VERIFIED
+   - 8 pending notifications scheduled for today (1/15/2026)
+   - Multiple users have notifications scheduled at 9:00 AM and 10:00 AM
+   - Sent notifications from previous days confirm scheduler persistence
+   - Bot restarts don't interrupt scheduling
 
-3. **Feature #25: Exit Free Dialog Mode** - VERIFIED ✅
-   - Free dialog messages stored in database
-   - Filter by "Free Dialog" message type works
-   - User conversations show transitions between free dialog and normal mode
-   - Multiple languages supported (EN, ES, DE, RU)
+3. **Feature #125: Monthly Summary feature** - VERIFIED
+   - Full implementation in src/services/summary_service.py
+   - generate_monthly_summary() method generates inspiring summaries
+   - Includes statistics, themes, memorable moments, motivating conclusion
+   - API usage logging for cost tracking
+   - Uses GPT-4 for personalized content generation
 
 ### System Health Check
 - Docker services: All running (postgres, bot, admin)
@@ -42,14 +41,13 @@
 - Total Moments: 23
 - Moments This Week: 8
 
----
-
-## Session 1083 Summary (Regression Testing)
-
-### Verified Features
-1. **Feature #143: Export dialogs to CSV/JSON** - VERIFIED ✅
-2. **Feature #115: Timezone-aware scheduling** - VERIFIED ✅
-3. **Feature #14: History pagination** - VERIFIED ✅
+### Admin Panel Sections Verified
+- Overview: Dashboard with health status and recent activity
+- Users: 11 users with gender, language, timezone tracking
+- Templates: Multi-language templates with formal/informal variants
+- Notifications: Scheduled notifications with pending/sent status
+- Analytics: User funnel, retention cohorts, activity heatmap
+- Messages: All message types filterable
 
 ---
 
