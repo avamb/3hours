@@ -8,6 +8,7 @@ import random
 import re
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
@@ -267,6 +268,35 @@ class NotificationScheduler:
                 stats_service = StatsService()
                 await stats_service.increment_questions_sent(user.id)
 
+            except TelegramBadRequest as e:
+                error_message = str(e).lower()
+                
+                # Handle "bot was blocked by the user" - mark user as blocked
+                if "bot was blocked by the user" in error_message:
+                    async with get_session() as session:
+                        result = await session.execute(
+                            select(User).where(User.id == user.id)
+                        )
+                        db_user = result.scalar_one_or_none()
+                        if db_user and not db_user.is_blocked:
+                            db_user.is_blocked = True
+                            await session.commit()
+                            logger.info(f"Marked user {user.telegram_id} as blocked (auto-detected)")
+                    # Don't log as ERROR - this is expected behavior
+                    logger.debug(f"User {user.telegram_id} blocked the bot")
+                
+                # Handle "bot can't initiate conversation" - this is normal for new users
+                elif "can't initiate conversation" in error_message:
+                    # This is normal - user hasn't started conversation yet
+                    logger.debug(f"User {user.telegram_id} hasn't started conversation yet")
+                
+                # Other Telegram API errors
+                else:
+                    logger.warning(f"Telegram API error for user {user.telegram_id}: {e}")
+            
+            except TelegramAPIError as e:
+                logger.warning(f"Telegram API error for user {user.telegram_id}: {e}")
+            
             except Exception as e:
                 logger.error(f"Failed to send message to {user.telegram_id}: {e}")
 
