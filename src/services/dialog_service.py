@@ -11,8 +11,12 @@ from sqlalchemy import select, and_
 from src.db.database import get_session
 from src.db.models import User, Conversation
 from src.services.personalization_service import PersonalizationService
+from src.services.semantic_antirepeat_service import get_semantic_antirepeat_service
 
 logger = logging.getLogger(__name__)
+
+# Maximum retry attempts for semantic anti-repeat
+MAX_SEMANTIC_RETRY_ATTEMPTS = 2
 
 
 class DialogService:
@@ -22,6 +26,7 @@ class DialogService:
 
     def __init__(self):
         self.personalization_service = PersonalizationService()
+        self.semantic_antirepeat = get_semantic_antirepeat_service()
         # In-memory state for active dialog sessions
         self._active_dialogs: dict[int, bool] = {}  # telegram_id -> is_active
 
@@ -54,7 +59,7 @@ class DialogService:
         """
         Process a message in free dialog mode with Hybrid RAG.
 
-        Uses Knowledge Base + User Memory + Anti-repetition for better responses.
+        Uses Knowledge Base + User Memory + Semantic Anti-Repeat for better responses.
 
         Args:
             telegram_id: User's Telegram ID
@@ -80,6 +85,28 @@ class DialogService:
             context=context,
         )
 
+        # Apply semantic anti-repeat check with retries
+        retry_count = 0
+        while retry_count < MAX_SEMANTIC_RETRY_ATTEMPTS:
+            is_repetitive = await self.semantic_antirepeat.is_repetitive(
+                telegram_id=telegram_id,
+                new_response=response,
+            )
+
+            if not is_repetitive:
+                break
+
+            retry_count += 1
+            logger.warning(f"Repetitive response detected (attempt {retry_count}/{MAX_SEMANTIC_RETRY_ATTEMPTS})")
+
+            if retry_count < MAX_SEMANTIC_RETRY_ATTEMPTS:
+                # Regenerate response
+                response, rag_metadata = await self.personalization_service.generate_dialog_response_with_rag(
+                    telegram_id=telegram_id,
+                    message=message,
+                    context=context,
+                )
+
         # Save bot response with RAG metadata
         await self._save_conversation(
             telegram_id=telegram_id,
@@ -90,7 +117,8 @@ class DialogService:
 
         logger.info(f"Dialog response with RAG: mode={rag_metadata.get('rag_mode')}, "
                     f"kb_chunks={rag_metadata.get('kb_chunks_count', 0)}, "
-                    f"moments={rag_metadata.get('moments_count', 0)}")
+                    f"moments={rag_metadata.get('moments_count', 0)}, "
+                    f"semantic_retries={retry_count}")
 
         return response
 
