@@ -1,38 +1,47 @@
 # MINDSETHAPPYBOT Progress Notes
 
-## Session 998 - January 15, 2026
+## Session 999 - January 15, 2026
 
 ### Status: ALL 185 FEATURES PASSING (100%)
 
 ### Regression Testing Completed
 Verified the following randomly selected features:
 
-1. Feature 154: Expenses (Cost Control) - VERIFIED
-   - API Expenses page shows total requests (37), tokens (5,747), cost ($0.0137)
-   - Breakdown by Model: gpt-4o, gpt-4o-mini, text-embedding-3-small, whisper-1
-   - Breakdown by Operation: moment_response, free_dialog, topic_extraction, etc.
-   - Recent API Calls table with timestamps, tokens, cost, duration, status
+1. Feature 86: Moment display formatting - VERIFIED
+   - Moments displayed in table format with ID, User, Content, Source, Mood, Topics, Created columns
+   - Dates clearly shown (relative "3d ago" or absolute dates)
+   - Content is readable with truncation for long text
+   - Good visual separation between moments
+   - Topics shown as clickable tags
+   - Mood color-coded (Very Positive, Positive, Neutral, Negative)
+   - Topics cloud at top provides visual summary
 
-2. Feature 180: User Timezone Info - VERIFIED
-   - Users table shows Timezone column for all users
-   - User details modal displays timezone information (UTC)
-   - Complete user profile with settings, statistics, social profile
+2. Feature 167: User gender detection - VERIFIED
+   - Gender column in Users table shows detected gender
+   - Male users: 👨 M (Andrei, Yitzhak, Anthony, Георгий)
+   - Female users: 👩 F (Tatlana, Svetlana, Valeria, MarinaBakanova)
+   - Undetermined: "-" for ambiguous names
+   - Detection based on first name, last name, or Telegram login
 
-3. Feature 71: Back Navigation - VERIFIED
-   - Admin panel navigation works correctly
-   - All menu links functional (Overview, Users, Moments, etc.)
-   - Modal dialogs close properly with × button
+3. Feature 119: Database - Summary settings in User model - VERIFIED
+   - daily_summary_enabled (boolean, default true) ✅
+   - weekly_summary_enabled (boolean, default true) ✅
+   - monthly_summary_enabled (boolean, default true) ✅
+   - detected_language (varchar) ✅
+   - is_blocked (boolean, default false) ✅
+   - last_name (varchar) ✅
+   - gender (varchar, default 'unknown') ✅
 
 ### System Health Check
 - Admin panel: HEALTHY (http://localhost:18088)
 - Database: CONNECTED (13 MB)
-- Bot: RUNNING (8 pending notifications)
+- Bot: RUNNING (all scheduled jobs executing successfully)
 - OpenAI: CONFIGURED
 - No console errors detected
 
 ### Statistics
 - 11 Total Users
-- 23 Total Moments  
+- 23 Total Moments
 - 8 Moments This Week
 - 1 Active User (7 days)
 
@@ -43,8 +52,7 @@ Verified the following randomly selected features:
 - 3hours-postgres-1: Production PostgreSQL (healthy)
 
 ### Screenshots Captured
-- regression_test_998_dashboard.png - Dashboard overview
-- regression_test_998_settings.png - Settings page
+- regression_test_999_user_details.png - User details modal
 
 ### Next Session
 - All 185 features are passing (100%)
