@@ -12,7 +12,7 @@ from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 
 try:
     from zoneinfo import ZoneInfo
@@ -20,7 +20,7 @@ except ImportError:
     from backports.zoneinfo import ZoneInfo
 
 from src.db.database import get_session
-from src.db.models import User, ScheduledNotification, QuestionTemplate
+from src.db.models import User, ScheduledNotification, QuestionTemplate, Conversation
 from src.bot.keyboards.inline import get_question_keyboard
 from src.services.conversation_log_service import ConversationLogService
 from src.services.memory_indexer_job import index_conversation_memories, create_dialog_summaries
@@ -161,6 +161,15 @@ class NotificationScheduler:
             self._check_summary_delivery,
             trigger=IntervalTrigger(hours=1),
             id="summary_delivery_check",
+            replace_existing=True,
+        )
+
+        # Fallback check for missed summaries: Monday morning and Sunday evening
+        # Checks if weekly summary was missed and sends it if needed
+        self.scheduler.add_job(
+            self._check_missed_summaries,
+            trigger=IntervalTrigger(hours=1),
+            id="missed_summaries_check",
             replace_existing=True,
         )
 
@@ -624,6 +633,176 @@ class NotificationScheduler:
 
             if weekly_count > 0 or monthly_count > 0:
                 logger.info(f"Summary delivery check: {weekly_count} weekly, {monthly_count} monthly summaries sent")
+
+    async def _was_weekly_summary_sent_this_week(self, user: User, session) -> bool:
+        """
+        Check if weekly summary was already sent to user this week.
+        Looks for summary messages in conversations table.
+        """
+        # Calculate week start (last Sunday at 00:00)
+        user_local_now = get_user_local_now(user.timezone)
+        days_since_sunday = user_local_now.weekday()  # 0=Monday, 6=Sunday
+        week_start = user_local_now - timedelta(days=days_since_sunday)
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start_utc = convert_to_utc(week_start, user.timezone)
+
+        # Check if there's a summary message this week
+        # Summary messages are typically stored with specific metadata or content pattern
+        result = await session.execute(
+            select(Conversation)
+            .where(Conversation.user_id == user.id)
+            .where(Conversation.created_at >= week_start_utc)
+            .where(
+                # Look for summary-like content (contains week/month summary keywords)
+                or_(
+                    Conversation.content.ilike('%неделю%'),
+                    Conversation.content.ilike('%недели%'),
+                    Conversation.content.ilike('%week%'),
+                    Conversation.content.ilike('%summary%'),
+                    Conversation.content.ilike('%саммари%')
+                )
+            )
+            .order_by(Conversation.created_at.desc())
+            .limit(1)
+        )
+        summary_message = result.scalar_one_or_none()
+        
+        return summary_message is not None
+
+    async def _check_missed_summaries(self) -> None:
+        """
+        Fallback check for missed weekly/monthly summaries.
+        
+        Checks:
+        - Monday morning: if weekly summary wasn't sent on Sunday, send it
+        - Sunday evening (after 18:00): if summary wasn't sent during active hours, send it
+        - 2nd of month: if monthly summary wasn't sent on 1st, send it
+        """
+        logger.debug("Checking for missed summaries...")
+
+        from src.services.summary_service import SummaryService
+        summary_service = SummaryService()
+
+        async with get_session() as session:
+            # Get all users with notifications enabled and onboarding completed (exclude blocked)
+            result = await session.execute(
+                select(User).where(
+                    and_(
+                        User.notifications_enabled == True,
+                        User.onboarding_completed == True,
+                        User.is_blocked == False,
+                    )
+                )
+            )
+            users = result.scalars().all()
+
+            weekly_fallback_count = 0
+            monthly_fallback_count = 0
+
+            for user in users:
+                try:
+                    # Get user's local time
+                    user_local_now = get_user_local_now(user.timezone)
+                    local_hour = user_local_now.hour
+                    local_day_of_week = user_local_now.weekday()  # 0=Monday, 6=Sunday
+                    local_day_of_month = user_local_now.day
+
+                    # Weekly summary fallback checks
+                    if local_day_of_week == 0:  # Monday
+                        # Monday morning (6:00-12:00): check if weekly summary was missed
+                        if 6 <= local_hour < 12:
+                            was_sent = await self._was_weekly_summary_sent_this_week(user, session)
+                            if not was_sent:
+                                logger.info(
+                                    f"Fallback: Weekly summary was not sent to user {user.telegram_id} on Sunday, "
+                                    f"sending on Monday morning (local time: {user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                                )
+                                summary = await summary_service.generate_weekly_summary(user.telegram_id)
+                                if summary:
+                                    await self.bot.send_message(
+                                        chat_id=user.telegram_id,
+                                        text=summary,
+                                    )
+                                    weekly_fallback_count += 1
+                                    logger.info(
+                                        f"Fallback: Sent weekly summary to user {user.telegram_id} "
+                                        f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                                    )
+                                else:
+                                    logger.info(f"Fallback: No weekly summary generated for user {user.telegram_id} (no moments in last 7 days)")
+
+                    elif local_day_of_week == 6:  # Sunday
+                        # Sunday evening (after 18:00): check if summary wasn't sent during active hours
+                        if local_hour >= 18:
+                            was_sent = await self._was_weekly_summary_sent_this_week(user, session)
+                            if not was_sent:
+                                # Check if user is within active hours now
+                                if is_within_active_hours(user):
+                                    logger.info(
+                                        f"Fallback: Weekly summary was not sent to user {user.telegram_id} during active hours, "
+                                        f"sending on Sunday evening (local time: {user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                                    )
+                                    summary = await summary_service.generate_weekly_summary(user.telegram_id)
+                                    if summary:
+                                        await self.bot.send_message(
+                                            chat_id=user.telegram_id,
+                                            text=summary,
+                                        )
+                                        weekly_fallback_count += 1
+                                        logger.info(
+                                            f"Fallback: Sent weekly summary to user {user.telegram_id} "
+                                            f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                                        )
+                                    else:
+                                        logger.info(f"Fallback: No weekly summary generated for user {user.telegram_id} (no moments in last 7 days)")
+
+                    # Monthly summary fallback: 2nd of month, morning
+                    if local_day_of_month == 2 and 6 <= local_hour < 12:
+                        # Check if monthly summary was sent on 1st
+                        # Calculate 1st of month start
+                        month_start = user_local_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                        month_start_utc = convert_to_utc(month_start, user.timezone)
+                        
+                        result = await session.execute(
+                            select(Conversation)
+                            .where(Conversation.user_id == user.id)
+                            .where(Conversation.created_at >= month_start_utc)
+                            .where(
+                                or_(
+                                    Conversation.content.ilike('%месяц%'),
+                                    Conversation.content.ilike('%месяца%'),
+                                    Conversation.content.ilike('%month%')
+                                )
+                            )
+                            .limit(1)
+                        )
+                        monthly_summary = result.scalar_one_or_none()
+                        
+                        if not monthly_summary:
+                            logger.info(
+                                f"Fallback: Monthly summary was not sent to user {user.telegram_id} on 1st, "
+                                f"sending on 2nd morning (local time: {user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                            )
+                            summary = await summary_service.generate_monthly_summary(user.telegram_id)
+                            if summary:
+                                await self.bot.send_message(
+                                    chat_id=user.telegram_id,
+                                    text=summary,
+                                )
+                                monthly_fallback_count += 1
+                                logger.info(
+                                    f"Fallback: Sent monthly summary to user {user.telegram_id} "
+                                    f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                                )
+
+                except Exception as e:
+                    logger.error(f"Failed to send fallback summary to {user.telegram_id}: {e}")
+
+            if weekly_fallback_count > 0 or monthly_fallback_count > 0:
+                logger.info(
+                    f"Missed summaries check: {weekly_fallback_count} weekly, "
+                    f"{monthly_fallback_count} monthly summaries sent as fallback"
+                )
 
     async def _send_weekly_summaries(self) -> None:
         """
