@@ -479,7 +479,7 @@ class NotificationScheduler:
 
         Only sends if user is within their active hours.
         """
-        logger.debug("Checking for summary delivery...")
+        logger.info("Checking for summary delivery...")
 
         from src.services.summary_service import SummaryService
         summary_service = SummaryService()
@@ -512,6 +512,7 @@ class NotificationScheduler:
                     is_delivery_hour = local_hour == 10
 
                     if not is_delivery_hour:
+                        logger.debug(f"User {user.telegram_id} local time is {local_hour}:00, not delivery hour (10:00)")
                         continue
 
                     # Check if within active hours
@@ -523,6 +524,7 @@ class NotificationScheduler:
 
                     # Weekly summary: Sunday (weekday() == 6)
                     if local_day_of_week == 6:
+                        logger.info(f"Generating weekly summary for user {user.telegram_id} (Sunday 10:00 local)")
                         summary = await summary_service.generate_weekly_summary(user.telegram_id)
                         if summary:
                             await self.bot.send_message(
@@ -534,6 +536,8 @@ class NotificationScheduler:
                                 f"Sent weekly summary to user {user.telegram_id} "
                                 f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')})"
                             )
+                        else:
+                            logger.info(f"No weekly summary generated for user {user.telegram_id} (no moments in last 7 days)")
 
                     # Monthly summary: 1st of month
                     if local_day_of_month == 1:
