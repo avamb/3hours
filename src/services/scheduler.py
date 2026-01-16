@@ -474,9 +474,10 @@ class NotificationScheduler:
         Check which users should receive weekly/monthly summaries based on their local timezone.
 
         This runs hourly and checks each user's local time:
-        - Weekly summary: Sunday at 10:00 local time
-        - Monthly summary: 1st of month at 10:00 local time
+        - Weekly summary: Sunday, not earlier than 10:00, at the start of user's active hours
+        - Monthly summary: 1st of month, not earlier than 10:00, at the start of user's active hours
 
+        If user's active hours start at 12:00, summary will be sent at 12:00 (not 10:00).
         Only sends if user is within their active hours.
         """
         logger.info("Checking for summary delivery...")
@@ -505,26 +506,51 @@ class NotificationScheduler:
                     # Get user's local time
                     user_local_now = get_user_local_now(user.timezone)
                     local_hour = user_local_now.hour
+                    local_minute = user_local_now.minute
                     local_day_of_week = user_local_now.weekday()  # 0=Monday, 6=Sunday
                     local_day_of_month = user_local_now.day
 
-                    # Check if it's around 10:00 local time (between 10:00 and 10:59)
-                    is_delivery_hour = local_hour == 10
-
-                    if not is_delivery_hour:
-                        logger.debug(f"User {user.telegram_id} local time is {local_hour}:00, not delivery hour (10:00)")
-                        continue
-
-                    # Check if within active hours
-                    if not is_within_active_hours(user):
-                        logger.debug(
-                            f"User {user.telegram_id} at 10:00 local but outside active hours, skipping"
-                        )
-                        continue
-
                     # Weekly summary: Sunday (weekday() == 6)
                     if local_day_of_week == 6:
-                        logger.info(f"Generating weekly summary for user {user.telegram_id} (Sunday 10:00 local)")
+                        # Check if it's at least 10:00 local time
+                        is_after_10am = local_hour > 10 or (local_hour == 10 and local_minute >= 0)
+                        
+                        if not is_after_10am:
+                            logger.debug(f"User {user.telegram_id} local time is {local_hour}:{local_minute:02d}, before 10:00, skipping weekly summary")
+                            continue
+
+                        # Check if within active hours
+                        if not is_within_active_hours(user):
+                            logger.debug(
+                                f"User {user.telegram_id} on Sunday after 10:00 but outside active hours "
+                                f"({user.active_hours_start}-{user.active_hours_end}), skipping weekly summary"
+                            )
+                            continue
+
+                        # Check if we're at the start of active hours
+                        # This ensures we send once when active hours start, not every hour
+                        active_hours_start_hour = user.active_hours_start.hour
+                        active_hours_start_minute = user.active_hours_start.minute
+                        
+                        # Send if we're exactly at the start of active hours (within first hour)
+                        is_at_active_start = (
+                            local_hour == active_hours_start_hour and 
+                            local_minute >= active_hours_start_minute and
+                            local_minute < active_hours_start_minute + 60
+                        )
+                        
+                        # Only send if we're at the start of active hours (to avoid sending every hour)
+                        if not is_at_active_start:
+                            logger.debug(
+                                f"User {user.telegram_id} on Sunday, active hours start at {active_hours_start_hour}:{active_hours_start_minute:02d}, "
+                                f"current time {local_hour}:{local_minute:02d}, not at start, skipping"
+                            )
+                            continue
+
+                        logger.info(
+                            f"Generating weekly summary for user {user.telegram_id} "
+                            f"(Sunday, local time {local_hour}:{local_minute:02d}, active hours start: {active_hours_start_hour}:{active_hours_start_minute:02d})"
+                        )
                         summary = await summary_service.generate_weekly_summary(user.telegram_id)
                         if summary:
                             await self.bot.send_message(
@@ -534,13 +560,50 @@ class NotificationScheduler:
                             weekly_count += 1
                             logger.info(
                                 f"Sent weekly summary to user {user.telegram_id} "
-                                f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                                f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')}, "
+                                f"active_hours={user.active_hours_start}-{user.active_hours_end})"
                             )
                         else:
                             logger.info(f"No weekly summary generated for user {user.telegram_id} (no moments in last 7 days)")
 
                     # Monthly summary: 1st of month
                     if local_day_of_month == 1:
+                        # Check if it's at least 10:00 local time
+                        is_after_10am = local_hour > 10 or (local_hour == 10 and local_minute >= 0)
+                        
+                        if not is_after_10am:
+                            logger.debug(f"User {user.telegram_id} local time is {local_hour}:{local_minute:02d}, before 10:00, skipping monthly summary")
+                            continue
+
+                        # Check if within active hours
+                        if not is_within_active_hours(user):
+                            logger.debug(
+                                f"User {user.telegram_id} on 1st of month after 10:00 but outside active hours "
+                                f"({user.active_hours_start}-{user.active_hours_end}), skipping monthly summary"
+                            )
+                            continue
+
+                        # Check if we're at the start of active hours
+                        active_hours_start_hour = user.active_hours_start.hour
+                        active_hours_start_minute = user.active_hours_start.minute
+                        
+                        is_at_active_start = (
+                            local_hour == active_hours_start_hour and 
+                            local_minute >= active_hours_start_minute and
+                            local_minute < active_hours_start_minute + 60
+                        )
+                        
+                        if not is_at_active_start:
+                            logger.debug(
+                                f"User {user.telegram_id} on 1st of month, active hours start at {active_hours_start_hour}:{active_hours_start_minute:02d}, "
+                                f"current time {local_hour}:{local_minute:02d}, not at start, skipping"
+                            )
+                            continue
+
+                        logger.info(
+                            f"Generating monthly summary for user {user.telegram_id} "
+                            f"(1st of month, local time {local_hour}:{local_minute:02d}, active hours start: {active_hours_start_hour}:{active_hours_start_minute:02d})"
+                        )
                         summary = await summary_service.generate_monthly_summary(user.telegram_id)
                         if summary:
                             await self.bot.send_message(
@@ -550,8 +613,11 @@ class NotificationScheduler:
                             monthly_count += 1
                             logger.info(
                                 f"Sent monthly summary to user {user.telegram_id} "
-                                f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')})"
+                                f"(tz={user.timezone}, local_time={user_local_now.strftime('%Y-%m-%d %H:%M')}, "
+                                f"active_hours={user.active_hours_start}-{user.active_hours_end})"
                             )
+                        else:
+                            logger.info(f"No monthly summary generated for user {user.telegram_id} (no moments in last month)")
 
                 except Exception as e:
                     logger.error(f"Failed to send summary to {user.telegram_id}: {e}")
