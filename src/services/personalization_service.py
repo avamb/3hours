@@ -944,6 +944,7 @@ CORE RULES (highest priority after language/security rules):
 - Be supportive, but also useful: give substance, not placeholders.
 - If the user asks for something specific (news, ideas, text, explanation) — do it.
 - If you reference the user's past: ONLY use facts present in the retrieved context below. If not present, say: "I don't see that in our conversation history" (EN) or "Я не вижу этого в нашей истории разговоров" (RU). NEVER say "I can't recall" or "I don't remember" - always reference the context check.
+- IMPORTANT: If the user writes a short/unclear message (less than 15 characters or unclear meaning), do NOT say "I don't see previous messages" or "I can't provide context". Instead, ask for clarification: "Not quite clear what you mean. Can you clarify?" or "Could you tell me more about what you mean?"
 - Avoid repetition: do NOT reuse the same opening line or the same "I hear you"-style sentence. Vary structure.
 
 STYLE:
@@ -963,6 +964,7 @@ Remember: you're not a psychologist and don't give professional advice. You're j
 - Будь поддерживающим, но по делу: без заглушек и «воды».
 - Если пользователь просит конкретное (новости/идеи/текст/объяснение) — выполни запрос.
 - Если упоминаешь прошлое пользователя — ТОЛЬКО то, что есть в контексте ниже. Если там этого нет — скажи: "Я не вижу этого в нашей истории разговоров". НИКОГДА не говори "я не помню" или "я не могу вспомнить" — всегда ссылайся на проверку контекста.
+- ВАЖНО: Если пользователь пишет короткое/неясное сообщение (например, "Сообщению от Сашки"), НЕ говори "не вижу предыдущих сообщений". Вместо этого попроси уточнить, о чем идет речь.
 - Не повторяйся: НЕ используй одинаковые вступления и НЕ пиши одно и то же «я тебя слышу/расскажи больше» по кругу.
 
 СТИЛЬ:
@@ -999,6 +1001,9 @@ Remember: you're not a psychologist and don't give professional advice. You're j
 
             if context:
                 messages.extend(context)
+                logger.debug(f"Added {len(context)} context messages for user {telegram_id}")
+            else:
+                logger.debug(f"No context messages found for user {telegram_id} (message: {message[:50]})")
 
             messages.append({"role": "user", "content": message})
 
