@@ -1,0 +1,29 @@
+# PATCH FOR: src/bot/handlers/commands.py
+# Add this at the top of the file (after other imports):
+
+from src.utils.localization_config import detect_language_from_telegram
+
+# FIND the start_command function and REPLACE the user creation part:
+
+# OLD CODE (around line 30-50):
+# user = await user_service.create_user(
+#     telegram_id=telegram_id,
+#     username=message.from_user.username,
+#     first_name=message.from_user.first_name,
+#     last_name=message.from_user.last_name,
+# )
+
+# NEW CODE (with auto-detection):
+# Detect language from Telegram profile
+detected_lang = detect_language_from_telegram(message.from_user)
+logger.info(f"🌍 Auto-detected language: {detected_lang} for user {telegram_id}")
+
+user = await user_service.create_user(
+    telegram_id=telegram_id,
+    username=message.from_user.username,
+    first_name=message.from_user.first_name,
+    last_name=message.from_user.last_name,
+    language_code=detected_lang,  # ← AUTO-DETECTION FROM TELEGRAM!
+)
+
+# This ensures new users get their interface in their native language automatically!
