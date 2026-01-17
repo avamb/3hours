@@ -371,6 +371,9 @@ class PersonalizationService:
             address = "вы" if (user and user.formal_address) else "ты"
             gender = user.gender if user else "unknown"
             gender_instruction = get_gender_instruction(gender)
+            
+            # Load prompt protection (from DB or use default)
+            prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
             # Build language instruction - use override if provided
             if override_language:
@@ -598,6 +601,9 @@ Do NOT ask questions. Use 0-2 emojis max.
             address = "вы" if (user and user.formal_address) else "ты"
             gender = user.gender if user else "unknown"
             gender_instruction = get_gender_instruction(gender)
+            
+            # Load prompt protection (from DB or use default)
+            prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
             # Format past moments
             past_moments_text = "\n".join([
@@ -707,6 +713,9 @@ User's past good moments / Прошлые хорошие моменты поль
             address = "вы" if (user and user.formal_address) else "ты"
             gender = user.gender if user else "unknown"
             gender_instruction = get_gender_instruction(gender)
+            
+            # Load prompt protection (from DB or use default)
+            prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
             response = await self.client.chat.completions.create(
                 model=self.model,
@@ -800,6 +809,9 @@ Reply briefly (2-3 sentences), warmly and with empathy.
             address = "вы" if (user and user.formal_address) else "ты"
             gender = user.gender if user else "unknown"
             gender_instruction = get_gender_instruction(gender)
+            
+            # Load prompt protection (from DB or use default)
+            prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
             messages = [
                 {
