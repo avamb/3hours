@@ -26,6 +26,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY alembic.ini .
 COPY alembic/ ./alembic/
+COPY knowledge_base/ ./knowledge_base/
+COPY scripts/ ./scripts/
 
 # Copy entrypoint script and fix Windows line endings
 COPY docker/entrypoint.sh /entrypoint.sh
