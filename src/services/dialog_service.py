@@ -199,15 +199,16 @@ class DialogService:
             if not user:
                 return []
 
-            # Get recent conversations (last hour)
-            one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+            # Get recent conversations (last 24 hours for better context)
+            # Extended from 1 hour to 24 hours to avoid empty context after restarts
+            one_day_ago = datetime.utcnow() - timedelta(hours=24)
 
             result = await session.execute(
                 select(Conversation)
                 .where(
                     and_(
                         Conversation.user_id == user.id,
-                        Conversation.created_at >= one_hour_ago,
+                        Conversation.created_at >= one_day_ago,
                         Conversation.message_type.in_(["free_dialog", "bot_reply"]),
                     )
                 )

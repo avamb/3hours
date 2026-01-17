@@ -29,30 +29,52 @@ class LoggingMiddleware(BaseMiddleware):
         try:
             if isinstance(event, Message):
                 user = event.from_user
+                chat = event.chat
                 if event.text:
-                    msg = f"Message from {user.id} (@{user.username}): {event.text[:200]}"
+                    # Log both user_id and chat_id to distinguish private vs group messages
+                    msg = f"Message from user {user.id} (@{user.username}) in chat {chat.id} ({chat.type}): {event.text[:200]}"
                     logger.info(f"LoggingMiddleware: {msg}")  # Добавляем логирование в stdout
                     asyncio.create_task(_system_logs.log(
                         level="INFO",
                         source="bot.message",
                         message=msg,
-                        details={"telegram_id": user.id, "username": user.username, "kind": "text"},
+                        details={
+                            "telegram_id": user.id,
+                            "username": user.username,
+                            "chat_id": chat.id,
+                            "chat_type": chat.type,
+                            "kind": "text"
+                        },
                     ))
                 elif event.voice:
-                    msg = f"Voice message from {user.id} (@{user.username})"
+                    chat = event.chat
+                    msg = f"Voice message from user {user.id} (@{user.username}) in chat {chat.id} ({chat.type})"
                     asyncio.create_task(_system_logs.log(
                         level="INFO",
                         source="bot.message",
                         message=msg,
-                        details={"telegram_id": user.id, "username": user.username, "kind": "voice"},
+                        details={
+                            "telegram_id": user.id,
+                            "username": user.username,
+                            "chat_id": chat.id,
+                            "chat_type": chat.type,
+                            "kind": "voice"
+                        },
                     ))
                 else:
-                    msg = f"Other message from {user.id} (@{user.username})"
+                    chat = event.chat
+                    msg = f"Other message from user {user.id} (@{user.username}) in chat {chat.id} ({chat.type})"
                     asyncio.create_task(_system_logs.log(
                         level="INFO",
                         source="bot.message",
                         message=msg,
-                        details={"telegram_id": user.id, "username": user.username, "kind": "other"},
+                        details={
+                            "telegram_id": user.id,
+                            "username": user.username,
+                            "chat_id": chat.id,
+                            "chat_type": chat.type,
+                            "kind": "other"
+                        },
                     ))
 
             elif isinstance(event, CallbackQuery):
