@@ -97,15 +97,16 @@ def is_within_active_hours(user: 'User') -> bool:
     return result
 
 # Default question templates for Russian
+# Base question templates (gender-neutral or will be adapted)
 DEFAULT_QUESTIONS_INFORMAL = [
     "Что хорошего произошло сегодня? 🌟",
-    "Расскажи, чему ты порадовался? ✨",
+    "Расскажи, чему ты порадовался? ✨",  # Will be adapted: порадовался/порадовалась
     "Что приятного случилось? 😊",
     "Какой момент сегодня был особенным? 💫",
     "Что тебя сегодня вдохновило? 🌈",
     "Расскажи о маленькой радости дня! 💝",
-    "Что хорошего ты заметил сегодня? 🌻",
-    "Чему ты улыбнулся сегодня? 😄",
+    "Что хорошего ты заметил сегодня? 🌻",  # Will be adapted: заметил/заметила
+    "Чему ты улыбнулся сегодня? 😄",  # Will be adapted: улыбнулся/улыбнулась
 ]
 
 DEFAULT_QUESTIONS_FORMAL = [
@@ -118,6 +119,47 @@ DEFAULT_QUESTIONS_FORMAL = [
     "Что хорошего Вы заметили сегодня? 🌻",
     "Чему Вы улыбнулись сегодня? 😄",
 ]
+
+
+def adapt_question_for_gender(question: str, gender: str, formal: bool = False) -> str:
+    """
+    Adapt question text to match user's gender for Russian language.
+    
+    Args:
+        question: Original question text
+        gender: 'male', 'female', or 'unknown'
+        formal: Whether using formal address (Вы vs ты)
+    
+    Returns:
+        Question adapted for gender (if Russian and gender is known)
+    """
+    if gender == 'unknown' or gender not in ['male', 'female']:
+        return question
+    
+    # Only adapt Russian questions
+    if not any(cyrillic in question for cyrillic in 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'):
+        return question
+    
+    adapted = question
+    
+    if not formal:
+        # Informal "ты" questions - adapt verb endings
+        if gender == 'female':
+            # Replace masculine verb endings with feminine
+            replacements = [
+                (r'\bты\s+заметил\b', 'ты заметила'),
+                (r'\bты\s+улыбнулся\b', 'ты улыбнулась'),
+                (r'\bты\s+порадовался\b', 'ты порадовалась'),
+                (r'\bты\s+поделился\b', 'ты поделилась'),
+                (r'\bты\s+сделал\b', 'ты сделала'),
+                (r'\bты\s+почувствовал\b', 'ты почувствовала'),
+                (r'\bты\s+узнал\b', 'ты узнала'),
+                (r'\bты\s+вспомнил\b', 'ты вспомнила'),
+            ]
+            for pattern, replacement in replacements:
+                adapted = re.sub(pattern, replacement, adapted, flags=re.IGNORECASE)
+    
+    return adapted
 
 
 class NotificationScheduler:
@@ -310,7 +352,7 @@ class NotificationScheduler:
                 logger.error(f"Failed to send message to {user.telegram_id}: {e}")
 
     def _get_question(self, user: User) -> str:
-        """Get a random question that wasn't used last time"""
+        """Get a random question that wasn't used last time, adapted for user's gender"""
         questions = (
             DEFAULT_QUESTIONS_FORMAL if user.formal_address else DEFAULT_QUESTIONS_INFORMAL
         )
@@ -323,6 +365,11 @@ class NotificationScheduler:
             available = questions
 
         question = random.choice(available)
+        
+        # Adapt question for user's gender (for Russian language)
+        gender = user.gender if user.gender else "unknown"
+        question = adapt_question_for_gender(question, gender, user.formal_address)
+        
         self._last_questions[user.id] = question
 
         return question

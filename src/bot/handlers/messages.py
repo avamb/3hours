@@ -294,7 +294,10 @@ async def handle_text_message(message: Message) -> None:
     - Could be feedback input
     - Could be any other text input
     """
-    logger.info(f"Received text message from user {message.from_user.id}: {message.text[:100]}")
+    logger.info(
+        f"Received text message from user {message.from_user.id} "
+        f"in chat {message.chat.id} ({message.chat.type}): {message.text[:100]}"
+    )
     text = message.text.strip()
 
     # Check if text is empty or whitespace only

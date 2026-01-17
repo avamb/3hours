@@ -221,15 +221,22 @@ The user is male. Use masculine forms in Russian:
     elif gender == 'female':
         return """
 ГЕНДЕРНЫЕ ПРАВИЛА / GENDER RULES:
-Пользователь — женщина. Используй женский род в глаголах и прилагательных:
-- "ты поделилась" (не "поделился")
-- "ты сделала" (не "сделал")
-- "ты молодец" или "ты хорошая" (не "хороший")
+Пользователь — женщина. ОБЯЗАТЕЛЬНО используй женский род в глаголах и прилагательных:
+- "ты поделилась" (НЕ "поделился")
+- "ты сделала" (НЕ "сделал")
+- "ты заметила" (НЕ "заметила")
+- "ты улыбнулась" (НЕ "улыбнулся")
+- "ты порадовалась" (НЕ "порадовался")
+- "ты молодец" или "ты хорошая" (НЕ "хороший")
 - "рада за тебя" если говоришь от первого лица
+- "Спасибо, что поделилась" (НЕ "поделился")
+
+КРИТИЧЕСКИ ВАЖНО: Всегда проверяй окончания глаголов в прошедшем времени. Они ДОЛЖНЫ быть женского рода (-ла, -лась, -лась).
 
 The user is female. Use feminine forms in Russian:
 - Use feminine verb endings (-ла, not -л)
-- Use feminine adjective endings"""
+- Use feminine adjective endings
+- CRITICAL: Always check past tense verb endings - they MUST be feminine"""
     else:
         return """
 ГЕНДЕРНЫЕ ПРАВИЛА / GENDER RULES:
@@ -364,6 +371,9 @@ class PersonalizationService:
             address = "вы" if (user and user.formal_address) else "ты"
             gender = user.gender if user else "unknown"
             gender_instruction = get_gender_instruction(gender)
+            
+            # Load prompt protection (from DB or use default)
+            prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
             # Build language instruction - use override if provided
             if override_language:
@@ -591,6 +601,9 @@ Do NOT ask questions. Use 0-2 emojis max.
             address = "вы" if (user and user.formal_address) else "ты"
             gender = user.gender if user else "unknown"
             gender_instruction = get_gender_instruction(gender)
+            
+            # Load prompt protection (from DB or use default)
+            prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
             # Format past moments
             past_moments_text = "\n".join([
@@ -700,6 +713,9 @@ User's past good moments / Прошлые хорошие моменты поль
             address = "вы" if (user and user.formal_address) else "ты"
             gender = user.gender if user else "unknown"
             gender_instruction = get_gender_instruction(gender)
+            
+            # Load prompt protection (from DB or use default)
+            prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
             response = await self.client.chat.completions.create(
                 model=self.model,
@@ -793,6 +809,9 @@ Reply briefly (2-3 sentences), warmly and with empathy.
             address = "вы" if (user and user.formal_address) else "ты"
             gender = user.gender if user else "unknown"
             gender_instruction = get_gender_instruction(gender)
+            
+            # Load prompt protection (from DB or use default)
+            prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
             messages = [
                 {
@@ -944,6 +963,7 @@ CORE RULES (highest priority after language/security rules):
 - Be supportive, but also useful: give substance, not placeholders.
 - If the user asks for something specific (news, ideas, text, explanation) — do it.
 - If you reference the user's past: ONLY use facts present in the retrieved context below. If not present, say: "I don't see that in our conversation history" (EN) or "Я не вижу этого в нашей истории разговоров" (RU). NEVER say "I can't recall" or "I don't remember" - always reference the context check.
+- IMPORTANT: If the user writes a short/unclear message (less than 15 characters or unclear meaning like "Message from Sasha"), do NOT say "I don't see previous messages" or "I can't provide context". Instead, ask for clarification: "Not quite clear what you mean. Can you clarify?" (EN) or "Не совсем понятно, о чем идет речь. Можешь уточнить?" (RU)
 - Avoid repetition: do NOT reuse the same opening line or the same "I hear you"-style sentence. Vary structure.
 
 STYLE:
@@ -963,6 +983,7 @@ Remember: you're not a psychologist and don't give professional advice. You're j
 - Будь поддерживающим, но по делу: без заглушек и «воды».
 - Если пользователь просит конкретное (новости/идеи/текст/объяснение) — выполни запрос.
 - Если упоминаешь прошлое пользователя — ТОЛЬКО то, что есть в контексте ниже. Если там этого нет — скажи: "Я не вижу этого в нашей истории разговоров". НИКОГДА не говори "я не помню" или "я не могу вспомнить" — всегда ссылайся на проверку контекста.
+- ВАЖНО: Если пользователь пишет короткое/неясное сообщение (менее 15 символов или непонятное по смыслу, например "Сообщению от Сашки"), НЕ говори "не вижу предыдущих сообщений" или "не могу предоставить контекст". Вместо этого попроси уточнить: "Не совсем понятно, о чем идет речь. Можешь уточнить?" или "Расскажи подробнее, что ты имеешь в виду?"
 - Не повторяйся: НЕ используй одинаковые вступления и НЕ пиши одно и то же «я тебя слышу/расскажи больше» по кругу.
 
 СТИЛЬ:
@@ -999,6 +1020,9 @@ Remember: you're not a psychologist and don't give professional advice. You're j
 
             if context:
                 messages.extend(context)
+                logger.debug(f"Added {len(context)} context messages for user {telegram_id}")
+            else:
+                logger.debug(f"No context messages found for user {telegram_id} (message: {message[:50]})")
 
             messages.append({"role": "user", "content": message})
 
