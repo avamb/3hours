@@ -197,7 +197,36 @@ If message is just greeting/pleasantry/question with no personal facts, return:
                 output_tokens = response.usage.completion_tokens
 
             result_text = response.choices[0].message.content.strip()
-            result = json.loads(result_text)
+            
+            # Try to extract JSON from text if it's wrapped in markdown or has extra text
+            json_text = result_text
+            if "```json" in result_text:
+                # Extract JSON from markdown code block
+                start = result_text.find("```json") + 7
+                end = result_text.find("```", start)
+                if end != -1:
+                    json_text = result_text[start:end].strip()
+            elif "```" in result_text:
+                # Extract from generic code block
+                start = result_text.find("```") + 3
+                end = result_text.find("```", start)
+                if end != -1:
+                    json_text = result_text[start:end].strip()
+            elif "{" in result_text and "}" in result_text:
+                # Extract JSON object from text
+                start = result_text.find("{")
+                end = result_text.rfind("}") + 1
+                if start != -1 and end > start:
+                    json_text = result_text[start:end]
+            
+            try:
+                result = json.loads(json_text)
+            except json.JSONDecodeError as json_err:
+                # Log the problematic JSON for debugging
+                logger.error(f"JSON parse error in memory extraction: {json_err}")
+                logger.debug(f"Original response text: {result_text[:500]}")
+                logger.debug(f"Extracted JSON text: {json_text[:500]}")
+                raise json_err
 
             if not result.get("keep", False):
                 return []
@@ -216,6 +245,12 @@ If message is just greeting/pleasantry/question with no personal facts, return:
             logger.debug(f"Extracted {len(memories)} memories from message: {content[:50]}...")
             return memories
 
+        except json.JSONDecodeError as e:
+            logger.error(f"Memory extraction failed: JSON decode error: {e}")
+            logger.debug(f"Failed to parse JSON from response. Original text: {result_text[:500] if 'result_text' in locals() else 'N/A'}")
+            success = False
+            error_msg = str(e)
+            return []
         except Exception as e:
             logger.error(f"Memory extraction failed: {e}")
             success = False
