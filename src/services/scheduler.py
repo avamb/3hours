@@ -583,35 +583,30 @@ class NotificationScheduler:
                             )
                             continue
 
-                        # Check if we're at the start of active hours
-                        # This ensures we send once when active hours start, not every hour
-                        active_hours_start_hour = user.active_hours_start.hour
-                        active_hours_start_minute = user.active_hours_start.minute
-                        
-                        # Send if we're exactly at the start of active hours (within first hour)
-                        is_at_active_start = (
-                            local_hour == active_hours_start_hour and 
-                            local_minute >= active_hours_start_minute and
-                            local_minute < active_hours_start_minute + 60
-                        )
-                        
-                        # Only send if we're at the start of active hours (to avoid sending every hour)
-                        if not is_at_active_start:
+                        # Check if weekly summary was already sent this week
+                        was_sent = await self._was_weekly_summary_sent_this_week(user, session)
+                        if was_sent:
                             logger.debug(
-                                f"User {user.telegram_id} on Sunday, active hours start at {active_hours_start_hour}:{active_hours_start_minute:02d}, "
-                                f"current time {local_hour}:{local_minute:02d}, not at start, skipping"
+                                f"User {user.telegram_id} already received weekly summary this week, skipping"
                             )
                             continue
 
                         logger.info(
                             f"Generating weekly summary for user {user.telegram_id} "
-                            f"(Sunday, local time {local_hour}:{local_minute:02d}, active hours start: {active_hours_start_hour}:{active_hours_start_minute:02d})"
+                            f"(Sunday, local time {local_hour}:{local_minute:02d})"
                         )
                         summary = await summary_service.generate_weekly_summary(user.telegram_id)
                         if summary:
                             await self.bot.send_message(
                                 chat_id=user.telegram_id,
                                 text=summary,
+                            )
+                            # Log summary to conversation history
+                            await self._conversation_log.log(
+                                telegram_id=user.telegram_id,
+                                message_type="bot_reply",
+                                content=summary,
+                                metadata={"source": "weekly_summary"},
                             )
                             weekly_count += 1
                             logger.info(
@@ -666,6 +661,13 @@ class NotificationScheduler:
                                 chat_id=user.telegram_id,
                                 text=summary,
                             )
+                            # Log summary to conversation history
+                            await self._conversation_log.log(
+                                telegram_id=user.telegram_id,
+                                message_type="bot_reply",
+                                content=summary,
+                                metadata={"source": "monthly_summary"},
+                            )
                             monthly_count += 1
                             logger.info(
                                 f"Sent monthly summary to user {user.telegram_id} "
@@ -687,8 +689,9 @@ class NotificationScheduler:
         Looks for summary messages in conversations table.
         """
         # Calculate week start (last Sunday at 00:00)
+        # weekday() returns 0=Monday, 1=Tuesday, ..., 6=Sunday
         user_local_now = get_user_local_now(user.timezone)
-        days_since_sunday = user_local_now.weekday()  # 0=Monday, 6=Sunday
+        days_since_sunday = (user_local_now.weekday() + 1) % 7  # Convert: 0=Monday -> 1, 6=Sunday -> 0
         week_start = user_local_now - timedelta(days=days_since_sunday)
         week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start_utc = convert_to_utc(week_start, user.timezone)
@@ -770,6 +773,13 @@ class NotificationScheduler:
                                         chat_id=user.telegram_id,
                                         text=summary,
                                     )
+                                    # Log summary to conversation history
+                                    await self._conversation_log.log(
+                                        telegram_id=user.telegram_id,
+                                        message_type="bot_reply",
+                                        content=summary,
+                                        metadata={"source": "weekly_summary_fallback"},
+                                    )
                                     weekly_fallback_count += 1
                                     logger.info(
                                         f"Fallback: Sent weekly summary to user {user.telegram_id} "
@@ -794,6 +804,13 @@ class NotificationScheduler:
                                         await self.bot.send_message(
                                             chat_id=user.telegram_id,
                                             text=summary,
+                                        )
+                                        # Log summary to conversation history
+                                        await self._conversation_log.log(
+                                            telegram_id=user.telegram_id,
+                                            message_type="bot_reply",
+                                            content=summary,
+                                            metadata={"source": "weekly_summary_fallback"},
                                         )
                                         weekly_fallback_count += 1
                                         logger.info(
