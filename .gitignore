@@ -79,6 +79,26 @@ Thumbs.db
 *.temp
 tmp/
 temp/
+.cache/
+
+# Scratch/debug/test artifacts (CLAUDE.md rules)
+*_test
+*test_report*
+*debug*
+*scratch*
+*dump*
+*export*.json
+*-progress.txt
+bot-data.json
+
+# Utility/fix scripts (temporary development helpers)
+fix-*.mjs
+fix-*.js
+update-*.mjs
+update-*.js
+add_*.js
+insert_*.py
+*-functions.js
 
 # Docker
 docker-compose.override.yml
@@ -88,6 +108,7 @@ backup.sql
 *backup*.sql
 *.dump
 *.sql.gz
+temp_*.sql
 
 # Local knowledge base test packs (never commit)
 kb_test_pack/
@@ -103,10 +124,13 @@ assistant.db
 # Node.js
 node_modules/
 app/node_modules/
+admin/node_modules/
+**/node_modules/
 
 # Frontend build / backups
 *.bak
 *.bak2
+*.backup
 
 admin/static_old/
 alembic/versions_archive/
