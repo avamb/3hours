@@ -273,6 +273,52 @@ class NotificationScheduler:
 
             await session.commit()
 
+    async def _delete_previous_pending_prompt(self, user: User) -> None:
+        """
+        Delete the previous unanswered scheduled prompt to prevent message accumulation.
+
+        This ensures only ONE pending scheduled prompt exists in the chat at any time.
+        If deletion fails (message too old, already deleted, or permissions issue),
+        we log the error but continue with sending the new prompt.
+        """
+        # Check if user has a pending prompt message_id stored
+        pending_message_id = getattr(user, 'last_pending_prompt_message_id', None)
+
+        if not pending_message_id:
+            return
+
+        try:
+            await self.bot.delete_message(
+                chat_id=user.telegram_id,
+                message_id=pending_message_id
+            )
+            logger.info(
+                f"Deleted previous pending prompt (message_id={pending_message_id}) "
+                f"for user {user.telegram_id}"
+            )
+        except TelegramBadRequest as e:
+            error_msg = str(e).lower()
+            if "message to delete not found" in error_msg:
+                logger.debug(
+                    f"Previous prompt already deleted or not found "
+                    f"(message_id={pending_message_id}) for user {user.telegram_id}"
+                )
+            elif "message can't be deleted" in error_msg:
+                logger.debug(
+                    f"Previous prompt too old to delete "
+                    f"(message_id={pending_message_id}) for user {user.telegram_id}"
+                )
+            else:
+                logger.warning(
+                    f"Failed to delete previous prompt (message_id={pending_message_id}) "
+                    f"for user {user.telegram_id}: {e}"
+                )
+        except Exception as e:
+            logger.warning(
+                f"Unexpected error deleting previous prompt "
+                f"(message_id={pending_message_id}) for user {user.telegram_id}: {e}"
+            )
+
     async def _send_notification(self, notification: ScheduledNotification) -> None:
         """Send a single notification to user"""
         async with get_session() as session:
@@ -296,22 +342,28 @@ class NotificationScheduler:
                 logger.debug(f"User {user.telegram_id} outside active hours, skipping")
                 return
 
+            # Delete previous pending prompt to avoid message accumulation
+            await self._delete_previous_pending_prompt(user)
+
             # Get question text
             question = self._get_question(user)
 
             # Send message
             try:
-                await self.bot.send_message(
+                sent_message = await self.bot.send_message(
                     chat_id=user.telegram_id,
                     text=question,
                     reply_markup=get_question_keyboard(),
                 )
-                logger.info(f"Sent question to user {user.telegram_id}")
+                # Store the message_id as pending prompt for future deletion
+                user.last_pending_prompt_message_id = sent_message.message_id
+                await session.commit()
+                logger.info(f"Sent question to user {user.telegram_id} (message_id={sent_message.message_id})")
                 await self._conversation_log.log(
                     telegram_id=user.telegram_id,
                     message_type="bot_question",
                     content=question,
-                    metadata={"source": "scheduled"},
+                    metadata={"source": "scheduled", "message_id": sent_message.message_id},
                 )
 
                 # Update stats
