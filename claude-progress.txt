@@ -2,10 +2,10 @@
 
 ## Current Status
 - **Features**: 191/191 passing (100% complete)
-- **Last Session**: 1214 (Regression Testing)
+- **Last Session**: 1215 (Regression Testing)
 - **Date**: 2026-01-20
 
-## Session 1214 Summary
+## Session 1215 Summary
 Performed regression testing via browser automation to verify system health.
 
 ### Docker Containers Status:
@@ -16,29 +16,21 @@ Performed regression testing via browser automation to verify system health.
 
 ### Regression Features Verified:
 
-1. **Feature #187 - Editable prompt layers in admin with DB-backed storage** - VERIFIED
-   - System Prompts page with versioning and rollback capability
-   - Available prompts: language_instruction, prompt_protection, dialog_system_main, dialog_system_main_ru
-   - Edit interface with Prompt Key, Content, Notes fields
-   - Save New Version and Reset to Default buttons
-   - Version History with rollback support
+1. **Feature #67 - Input sanitization - XSS prevention** - VERIFIED
+   - Message with special characters stored as plain text
+   - URLs displayed safely without script execution
+   - All content in Moments/Dialogs pages properly sanitized
 
-2. **Feature #135 - Create Message Templates CRUD in admin panel** - VERIFIED
-   - Create New Template form with all fields
-   - Language dropdown (Russian, English, Ukrainian)
-   - Category, Formal, Active options
-   - Template preview functionality
-   - Filter by language and category
-   - Edit and Delete buttons for each template
-   - Pagination support
+2. **Feature #167 - User gender detection** - VERIFIED
+   - Gender column displays correctly in Users table
+   - Male users (Andrei, Yitzhak, Anthony, Георгий) show M
+   - Female users (Tatlana, Svetlana, Valeria, MarinaBakanova) show F
+   - Users with ambiguous names show "-"
 
-3. **Feature #130 - Add Feedback button to main menu** - VERIFIED
-   - User Feedback page in admin panel
-   - Statistics cards: New (0), Reviewed (4), Implemented (1), Rejected (0)
-   - Filter by status dropdown
-   - Table with 5 real user feedback entries
-   - Categories: Bug and Idea
-   - View button for detailed feedback
+3. **Feature #19 - Settings menu display** - VERIFIED
+   - All settings options available in localization:
+   - Active hours, Interval, Timezone, Address form
+   - Notifications, Language, Gender, Social profile, Reset settings
 
 ### System Health:
 - Database: CONNECTED (13 MB)
@@ -52,10 +44,23 @@ Performed regression testing via browser automation to verify system health.
 ### API Calls: All returning 200 OK
 
 ### Screenshots Saved:
-- tmp/regression-session-1214-overview.png
-- tmp/regression-session-1214-prompts.png
-- tmp/regression-session-1214-templates.png
-- tmp/regression-session-1214-feedback.png
+- tmp/regression-session-1215-overview.png
+- tmp/regression-session-1215-users-gender.png
+- tmp/regression-session-1215-moments.png
+- tmp/regression-session-1215-dialogs.png
+
+---
+
+## Session 1214 Summary
+Performed regression testing via browser automation to verify system health.
+
+### Regression Features Verified:
+
+1. **Feature #187 - Editable prompt layers in admin with DB-backed storage** - VERIFIED
+2. **Feature #135 - Create Message Templates CRUD in admin panel** - VERIFIED
+3. **Feature #130 - Add Feedback button to main menu** - VERIFIED
+
+### Console Errors: NONE
 
 ---
 
@@ -67,19 +72,6 @@ Performed regression testing via browser automation to verify system health.
 1. **Feature #15 - Delete individual moment** - VERIFIED
 2. **Feature #116 - Timezone-aware weekly/monthly summaries** - VERIFIED
 3. **Feature #117 - Timezone setting end-to-end** - VERIFIED
-
-### Console Errors: NONE
-
----
-
-## Session 1212 Summary
-Performed regression testing via browser automation to verify system health.
-
-### Regression Features Verified:
-
-1. **Feature #144 - Export moments to CSV** - VERIFIED
-2. **Feature #117 - Timezone setting end-to-end** - VERIFIED
-3. **Feature #101 - Answer response time under 5 seconds** - VERIFIED
 
 ### Console Errors: NONE
 
