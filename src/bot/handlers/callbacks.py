@@ -840,6 +840,120 @@ async def callback_menu_moments(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
+@router.callback_query(F.data == "filter_today")
+async def callback_filter_today(callback: CallbackQuery) -> None:
+    """Filter moments for today"""
+    from datetime import datetime, timedelta
+    from src.bot.keyboards.inline import get_moments_keyboard
+
+    language_code = await get_user_language(callback.from_user.id)
+    moment_service = MomentService()
+    
+    # Get today's moments (last 24 hours)
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=1)
+    
+    moments = await moment_service.get_user_moments_by_date(
+        telegram_id=callback.from_user.id,
+        start_date=start_date,
+        end_date=end_date,
+        limit=10
+    )
+    
+    if not moments:
+        empty_text = get_system_message("moments_empty_today", language_code) or "У тебя пока нет моментов за сегодня."
+        await callback.message.edit_text(
+            empty_text,
+            reply_markup=get_moments_keyboard(language_code=language_code)
+        )
+    else:
+        title = "📖 <b>Моменты за сегодня</b>\n\n"
+        moments_text = title
+        for moment in moments:
+            date_str = moment.created_at.strftime("%H:%M")
+            content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
+            moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
+        await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
+    
+    await callback.answer()
+
+
+@router.callback_query(F.data == "filter_week")
+async def callback_filter_week(callback: CallbackQuery) -> None:
+    """Filter moments for last 7 days"""
+    from datetime import datetime, timedelta
+    from src.bot.keyboards.inline import get_moments_keyboard
+
+    language_code = await get_user_language(callback.from_user.id)
+    moment_service = MomentService()
+    
+    # Get week's moments (last 7 days)
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=7)
+    
+    moments = await moment_service.get_user_moments_by_date(
+        telegram_id=callback.from_user.id,
+        start_date=start_date,
+        end_date=end_date,
+        limit=15
+    )
+    
+    if not moments:
+        empty_text = get_system_message("moments_empty_week", language_code) or "У тебя пока нет моментов за неделю."
+        await callback.message.edit_text(
+            empty_text,
+            reply_markup=get_moments_keyboard(language_code=language_code)
+        )
+    else:
+        title = "📖 <b>Моменты за неделю</b>\n\n"
+        moments_text = title
+        for moment in moments:
+            date_str = moment.created_at.strftime("%d.%m %H:%M")
+            content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
+            moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
+        await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
+    
+    await callback.answer()
+
+
+@router.callback_query(F.data == "filter_month")
+async def callback_filter_month(callback: CallbackQuery) -> None:
+    """Filter moments for last 30 days"""
+    from datetime import datetime, timedelta
+    from src.bot.keyboards.inline import get_moments_keyboard
+
+    language_code = await get_user_language(callback.from_user.id)
+    moment_service = MomentService()
+    
+    # Get month's moments (last 30 days)
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=30)
+    
+    moments = await moment_service.get_user_moments_by_date(
+        telegram_id=callback.from_user.id,
+        start_date=start_date,
+        end_date=end_date,
+        limit=20
+    )
+    
+    if not moments:
+        empty_text = get_system_message("moments_empty_month", language_code) or "У тебя пока нет моментов за месяц."
+        await callback.message.edit_text(
+            empty_text,
+            reply_markup=get_moments_keyboard(language_code=language_code)
+        )
+    else:
+        title = "📖 <b>Моменты за месяц</b>\n\n"
+        moments_text = title
+        for moment in moments:
+            date_str = moment.created_at.strftime("%d.%m")
+            content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
+            moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
+        await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
+    
+    await callback.answer()
+
+
 @router.callback_query(F.data == "menu_stats")
 async def callback_menu_stats(callback: CallbackQuery) -> None:
     """Show statistics"""
