@@ -117,6 +117,53 @@ class MomentService:
             result = await session.execute(query)
             return list(result.scalars().all())
 
+    async def get_user_moments_by_date(
+        self,
+        telegram_id: int,
+        start_date: datetime,
+        end_date: datetime,
+        limit: int = 20,
+    ) -> List[Moment]:
+        """
+        Get user's moments within a specific date range
+        
+        Args:
+            telegram_id: User's Telegram ID
+            start_date: Start of date range (inclusive)
+            end_date: End of date range (exclusive)
+            limit: Maximum number of moments to return
+        
+        Returns:
+            List of moments within the date range, ordered by most recent first
+        """
+        async with get_session() as session:
+            # Get user
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+
+            if not user:
+                return []
+
+            # Build query with date range filter
+            from sqlalchemy import and_
+            query = (
+                select(Moment)
+                .where(
+                    and_(
+                        Moment.user_id == user.id,
+                        Moment.created_at >= start_date,
+                        Moment.created_at < end_date,
+                    )
+                )
+                .order_by(Moment.created_at.desc())
+                .limit(limit)
+            )
+
+            result = await session.execute(query)
+            return list(result.scalars().all())
+
     async def get_random_moment(self, telegram_id: int) -> Optional[Moment]:
         """Get a random moment for the user"""
         async with get_session() as session:
