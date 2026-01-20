@@ -634,26 +634,17 @@ class NotificationScheduler:
                             )
                             continue
 
-                        # Check if we're at the start of active hours
-                        active_hours_start_hour = user.active_hours_start.hour
-                        active_hours_start_minute = user.active_hours_start.minute
-                        
-                        is_at_active_start = (
-                            local_hour == active_hours_start_hour and 
-                            local_minute >= active_hours_start_minute and
-                            local_minute < active_hours_start_minute + 60
-                        )
-                        
-                        if not is_at_active_start:
+                        # Check if monthly summary was already sent this month
+                        was_sent = await self._was_monthly_summary_sent_this_month(user, session)
+                        if was_sent:
                             logger.debug(
-                                f"User {user.telegram_id} on 1st of month, active hours start at {active_hours_start_hour}:{active_hours_start_minute:02d}, "
-                                f"current time {local_hour}:{local_minute:02d}, not at start, skipping"
+                                f"User {user.telegram_id} already received monthly summary this month, skipping"
                             )
                             continue
 
                         logger.info(
                             f"Generating monthly summary for user {user.telegram_id} "
-                            f"(1st of month, local time {local_hour}:{local_minute:02d}, active hours start: {active_hours_start_hour}:{active_hours_start_minute:02d})"
+                            f"(1st of month, local time {local_hour}:{local_minute:02d})"
                         )
                         summary = await summary_service.generate_monthly_summary(user.telegram_id)
                         if summary:
@@ -686,8 +677,10 @@ class NotificationScheduler:
     async def _was_weekly_summary_sent_this_week(self, user: User, session) -> bool:
         """
         Check if weekly summary was already sent to user this week.
-        Looks for summary messages in conversations table.
+        Looks for summary messages in conversation_log table using metadata.
         """
+        from sqlalchemy import text
+        
         # Calculate week start (last Sunday at 00:00)
         # weekday() returns 0=Monday, 1=Tuesday, ..., 6=Sunday
         user_local_now = get_user_local_now(user.timezone)
@@ -696,22 +689,41 @@ class NotificationScheduler:
         week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start_utc = convert_to_utc(week_start, user.timezone)
 
-        # Check if there's a summary message this week
-        # Summary messages are typically stored with specific metadata or content pattern
+        # Check if there's a weekly summary message this week using metadata
+        # Weekly summaries are logged with metadata={"source": "weekly_summary"}
         result = await session.execute(
             select(Conversation)
             .where(Conversation.user_id == user.id)
             .where(Conversation.created_at >= week_start_utc)
-            .where(
-                # Look for summary-like content (contains week/month summary keywords)
-                or_(
-                    Conversation.content.ilike('%неделю%'),
-                    Conversation.content.ilike('%недели%'),
-                    Conversation.content.ilike('%week%'),
-                    Conversation.content.ilike('%summary%'),
-                    Conversation.content.ilike('%саммари%')
-                )
-            )
+            .where(Conversation.message_type == 'bot_reply')
+            .where(text("metadata->>'source' = 'weekly_summary'"))
+            .order_by(Conversation.created_at.desc())
+            .limit(1)
+        )
+        summary_message = result.scalar_one_or_none()
+        
+        return summary_message is not None
+
+    async def _was_monthly_summary_sent_this_month(self, user: User, session) -> bool:
+        """
+        Check if monthly summary was already sent to user this month.
+        Looks for summary messages in conversation_log table using metadata.
+        """
+        from sqlalchemy import text
+        
+        # Calculate month start (1st day at 00:00)
+        user_local_now = get_user_local_now(user.timezone)
+        month_start = user_local_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_start_utc = convert_to_utc(month_start, user.timezone)
+
+        # Check if there's a monthly summary message this month using metadata
+        # Monthly summaries are logged with metadata={"source": "monthly_summary"}
+        result = await session.execute(
+            select(Conversation)
+            .where(Conversation.user_id == user.id)
+            .where(Conversation.created_at >= month_start_utc)
+            .where(Conversation.message_type == 'bot_reply')
+            .where(text("metadata->>'source' = 'monthly_summary'"))
             .order_by(Conversation.created_at.desc())
             .limit(1)
         )
