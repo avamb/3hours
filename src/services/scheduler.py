@@ -283,8 +283,14 @@ class NotificationScheduler:
         """
         # Check if user has a pending prompt message_id stored
         pending_message_id = getattr(user, 'last_pending_prompt_message_id', None)
+        
+        logger.debug(
+            f"Checking pending prompt for user {user.telegram_id}: "
+            f"message_id={pending_message_id}"
+        )
 
         if not pending_message_id:
+            logger.debug(f"No pending prompt for user {user.telegram_id}, skipping deletion")
             return
 
         try:
@@ -358,7 +364,14 @@ class NotificationScheduler:
                 # Store the message_id as pending prompt for future deletion
                 user.last_pending_prompt_message_id = sent_message.message_id
                 await session.commit()
-                logger.info(f"Sent question to user {user.telegram_id} (message_id={sent_message.message_id})")
+                logger.info(
+                    f"Sent question to user {user.telegram_id} (message_id={sent_message.message_id}), "
+                    f"stored as pending_prompt"
+                )
+                logger.debug(
+                    f"Verified pending_prompt stored: user={user.telegram_id}, "
+                    f"message_id={user.last_pending_prompt_message_id}"
+                )
                 await self._conversation_log.log(
                     telegram_id=user.telegram_id,
                     message_type="bot_question",
@@ -457,17 +470,19 @@ class NotificationScheduler:
                 question = self._get_question(user)
 
                 # Send the message
-                await self.bot.send_message(
+                sent_message = await self.bot.send_message(
                     chat_id=user.telegram_id,
                     text=question,
                     reply_markup=get_question_keyboard(),
                 )
-                logger.info(f"Sent first question after onboarding to user {telegram_id}")
+                # Store the message_id as pending prompt for future deletion
+                user.last_pending_prompt_message_id = sent_message.message_id
+                logger.info(f"Sent first question after onboarding to user {telegram_id} (message_id={sent_message.message_id})")
                 await self._conversation_log.log(
                     telegram_id=telegram_id,
                     message_type="bot_question",
                     content=question,
-                    metadata={"source": "onboarding"},
+                    metadata={"source": "onboarding", "message_id": sent_message.message_id},
                 )
 
                 # Update stats
