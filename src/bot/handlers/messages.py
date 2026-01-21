@@ -170,6 +170,11 @@ async def handle_voice_message(message: Message) -> None:
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
 
+    # Clear pending prompt when user replies via voice
+    if user and getattr(user, 'last_pending_prompt_message_id', None):
+        await user_service.clear_pending_prompt(message.from_user.id)
+        logger.debug(f"Cleared pending prompt for user {message.from_user.id} (voice)")
+
     # Processing messages in different languages
     processing_messages = {
         "ru": "🎙 Распознаю голосовое сообщение...",
@@ -322,6 +327,11 @@ async def handle_text_message(message: Message) -> None:
             "Пожалуйста, начни с команды /start"
         )
         return
+
+    # Clear pending prompt when user replies (to prevent deletion of answered prompts)
+    if user and getattr(user, 'last_pending_prompt_message_id', None):
+        await user_service.clear_pending_prompt(message.from_user.id)
+        logger.debug(f"Cleared pending prompt for user {message.from_user.id}")
 
     language_code = user.language_code if user else "ru"
 
