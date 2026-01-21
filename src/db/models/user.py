@@ -35,6 +35,9 @@ class User(Base):
 
     # Tracking field for incremental memory indexing
     last_memory_indexed_conversation_id: Mapped[int] = mapped_column(Integer, default=0)
+    
+    # Track last pending scheduled prompt for deletion (prevents message accumulation)
+    last_pending_prompt_message_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True, default=None)
 
     # Relationships
     moments = relationship("Moment", back_populates="user", cascade="all, delete-orphan")

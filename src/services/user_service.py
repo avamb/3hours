@@ -241,3 +241,33 @@ class UserService:
             await session.commit()
             logger.info(f"Reset settings for user {telegram_id}")
             return True
+
+    async def clear_pending_prompt(self, telegram_id: int) -> bool:
+        """
+        Clear the pending scheduled prompt message_id for a user.
+
+        This should be called when a user replies to clear the pending state,
+        so the answered prompt won't be deleted when a new prompt is sent.
+
+        Args:
+            telegram_id: The Telegram ID of the user
+
+        Returns:
+            True if cleared successfully, False if user not found
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+
+            if not user:
+                return False
+
+            # Clear the pending prompt message_id
+            if hasattr(user, 'last_pending_prompt_message_id'):
+                user.last_pending_prompt_message_id = None
+                await session.commit()
+                logger.debug(f"Cleared pending prompt for user {telegram_id}")
+
+            return True
