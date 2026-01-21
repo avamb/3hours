@@ -139,3 +139,6 @@ alembic/versions_archive/
 .playwright-mcp/
 playwright-report/
 test-results/
+
+# Expansion pack source files (keep only extracted content)
+knowledge_base/mshbotexpantionv*

@@ -307,6 +307,7 @@ async def callback_settings_language(callback: CallbackQuery) -> None:
         "it": "Italiano",
         "zh": "中文",
         "ja": "日本語",
+        "he": "עברית",
     }
     current_lang_name = lang_names.get(language_code, language_code)
 
@@ -336,6 +337,7 @@ async def callback_set_language(callback: CallbackQuery) -> None:
         "it": "Italiano",
         "zh": "中文",
         "ja": "日本語",
+        "he": "עברית",
     }
 
     user_service = UserService()
@@ -358,6 +360,7 @@ async def callback_set_language(callback: CallbackQuery) -> None:
         "it": f"✅ Lingua cambiata: {lang_name}",
         "zh": f"✅ 语言已更改: {lang_name}",
         "ja": f"✅ 言語を変更しました: {lang_name}",
+        "he": f"✅ השפה שונתה ל-{lang_name}",
     }
     confirm_msg = confirmations.get(new_language, f"✅ Language set to {lang_name}")
 
