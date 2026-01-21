@@ -13,7 +13,7 @@ from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
 from src.db.repositories.user_repository import UserRepository
 from src.services.user_service import UserService
-from src.utils.localization import get_system_message
+from src.utils.localization import get_system_message, t
 
 logger = logging.getLogger(__name__)
 router = Router(name="commands")
@@ -207,13 +207,17 @@ async def cmd_settings(message: Message) -> None:
 
     language_code = user.language_code if user else "ru"
 
+    # Format settings with localization
+    formality = t("address_formal_value" if user.formal_address else "address_informal_value", language_code)
+    notifications_status = t("notifications_on" if user.notifications_enabled else "notifications_off", language_code)
+    
     settings_text = (
-        "⚙️ <b>Настройки</b>\n\n"
-        f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
-        f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
-        f"🌍 Часовой пояс: {user.timezone}\n"
-        f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
-        f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
+        f"{t('settings_title', language_code)}\n\n"
+        f"{t('settings.active_hours_value', language_code, start=user.active_hours_start, end=user.active_hours_end)}\n"
+        f"{t('settings.interval_value', language_code, interval=user.notification_interval_hours)}\n"
+        f"{t('settings.timezone_value', language_code, timezone=user.timezone)}\n"
+        f"{t('settings.formality_value', language_code, formality=formality)}\n"
+        f"{t('settings.notifications_value', language_code, status=notifications_status)}\n"
     )
     await message.answer(settings_text, reply_markup=get_settings_keyboard(language_code))
 
