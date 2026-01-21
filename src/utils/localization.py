@@ -493,6 +493,13 @@ SYSTEM_MESSAGES = {
         "notifications_off": "выключены",
         "notifications_toggled_on": "🔔 Уведомления включены",
         "notifications_toggled_off": "🔔 Уведомления выключены",
+        
+        # Settings values display
+        "settings.active_hours_value": "🕐 Активные часы: {start} - {end}",
+        "settings.interval_value": "⏰ Интервал: каждые {interval} ч.",
+        "settings.timezone_value": "🌍 Часовой пояс: {timezone}",
+        "settings.formality_value": "🗣 Обращение: {formality}",
+        "settings.notifications_value": "🔔 Уведомления: {status}",
 
         # Interval display
         "every_n_hours": "каждые {hours} ч.",
@@ -748,6 +755,13 @@ SYSTEM_MESSAGES = {
         "notifications_off": "disabled",
         "notifications_toggled_on": "🔔 Notifications enabled",
         "notifications_toggled_off": "🔔 Notifications disabled",
+        
+        # Settings values display
+        "settings.active_hours_value": "🕐 Active hours: {start} - {end}",
+        "settings.interval_value": "⏰ Interval: every {interval} h",
+        "settings.timezone_value": "🌍 Timezone: {timezone}",
+        "settings.formality_value": "🗣 Address form: {formality}",
+        "settings.notifications_value": "🔔 Notifications: {status}",
 
         # Interval display
         "every_n_hours": "every {hours} h.",
@@ -1003,6 +1017,13 @@ SYSTEM_MESSAGES = {
         "notifications_off": "вимкнено",
         "notifications_toggled_on": "🔔 Сповіщення увімкнено",
         "notifications_toggled_off": "🔔 Сповіщення вимкнено",
+        
+        # Settings values display
+        "settings.active_hours_value": "🕐 Активні години: {start} - {end}",
+        "settings.interval_value": "⏰ Інтервал: кожні {interval} год.",
+        "settings.timezone_value": "🌍 Часовий пояс: {timezone}",
+        "settings.formality_value": "🗣 Звертання: {formality}",
+        "settings.notifications_value": "🔔 Сповіщення: {status}",
 
         # Interval display
         "every_n_hours": "кожні {hours} год.",
@@ -1240,3 +1261,7 @@ async def detect_and_update_language(telegram_id: int, text: str) -> str:
         return detected_lang
 
     return current_lang
+
+
+# Alias for shorter function name
+t = get_system_message
