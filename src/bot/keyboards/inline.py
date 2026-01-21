@@ -95,8 +95,6 @@ def get_language_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
         ("🇫🇷 Français", "fr"),
         ("🇵🇹 Português", "pt"),
         ("🇮🇹 Italiano", "it"),
-        ("🇨🇳 中文", "zh"),
-        ("🇯🇵 日本語", "ja"),
     ]
 
     rows = []

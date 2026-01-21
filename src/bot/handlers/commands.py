@@ -13,7 +13,7 @@ from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
 from src.db.repositories.user_repository import UserRepository
 from src.services.user_service import UserService
-from src.utils.localization import get_system_message
+from src.utils.localization import get_system_message, get_menu_text
 
 logger = logging.getLogger(__name__)
 router = Router(name="commands")
@@ -49,49 +49,12 @@ async def send_welcome_image(message: Message) -> bool:
 
 def get_localized_welcome_text(first_name: str, language_code: str) -> str:
     """Get welcome text in user's language"""
-    if language_code and language_code.startswith("en"):
-        return (
-            f"Hello, {first_name}! 👋\n\n"
-            "I'm your assistant for developing positive thinking. "
-            "Every day I will ask you about good things, "
-            "so that we can notice the joyful moments of life together. ✨\n\n"
-            "Let's begin! How would you prefer to communicate?"
-        )
-    elif language_code and language_code.startswith("uk"):
-        return (
-            f"Привіт, {first_name}! 👋\n\n"
-            "Я — твій помічник для розвитку позитивного мислення. "
-            "Щодня я буду запитувати тебе про хороше, "
-            "щоб разом помічати радісні моменти життя. ✨\n\n"
-            "Давай почнемо! Як тобі зручніше спілкуватися?"
-        )
-    else:  # Default to Russian
-        return (
-            f"Привет, {first_name}! 👋\n\n"
-            "Я — твой помощник для развития позитивного мышления. "
-            "Каждый день я буду спрашивать тебя о хорошем, "
-            "чтобы вместе замечать радостные моменты жизни. ✨\n\n"
-            "Давай начнём! Как тебе удобнее общаться?"
-        )
+    return get_system_message("welcome_first_time", language_code, first_name=first_name)
 
 
 def get_localized_welcome_back_text(first_name: str, language_code: str) -> str:
     """Get welcome back text in user's language"""
-    if language_code and language_code.startswith("en"):
-        return (
-            f"Welcome back, {first_name}! 💝\n\n"
-            "Good to see you again. How can I help?"
-        )
-    elif language_code and language_code.startswith("uk"):
-        return (
-            f"З поверненням, {first_name}! 💝\n\n"
-            "Радий знову тебе бачити. Чим можу допомогти?"
-        )
-    else:  # Default to Russian
-        return (
-            f"С возвращением, {first_name}! 💝\n\n"
-            "Рад снова тебя видеть. Чем могу помочь?"
-        )
+    return get_system_message("welcome_back", language_code, first_name=first_name)
 
 
 @router.message(CommandStart())
@@ -200,20 +163,33 @@ async def cmd_settings(message: Message) -> None:
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
 
     if not user:
+        language_code = "ru"
         await message.answer(
-            "Пожалуйста, сначала запусти бота командой /start"
+            get_system_message("error_start_required", language_code)
         )
         return
 
     language_code = user.language_code if user else "ru"
 
-    settings_text = (
-        "⚙️ <b>Настройки</b>\n\n"
-        f"🕐 Активные часы: {user.active_hours_start} - {user.active_hours_end}\n"
-        f"⏰ Интервал: каждые {user.notification_interval_hours} ч.\n"
-        f"🌍 Часовой пояс: {user.timezone}\n"
-        f"🗣 Обращение: {'на «вы»' if user.formal_address else 'на «ты»'}\n"
-        f"🔔 Уведомления: {'включены' if user.notifications_enabled else 'выключены'}\n"
+    # Format settings with localization
+    formality = get_system_message(
+        "formality_formal" if user.formal_address else "formality_informal", 
+        language_code
+    )
+    notifications_status = get_system_message(
+        "notifications_enabled" if user.notifications_enabled else "notifications_disabled", 
+        language_code
+    )
+    
+    settings_text = get_system_message(
+        "settings_display", 
+        language_code,
+        start=user.active_hours_start,
+        end=user.active_hours_end,
+        interval=user.notification_interval_hours,
+        timezone=user.timezone,
+        formality=formality,
+        notifications=notifications_status
     )
     await message.answer(settings_text, reply_markup=get_settings_keyboard(language_code))
 
@@ -320,7 +296,8 @@ async def cmd_export_data(message: Message) -> None:
     """Handle /export_data command - export user data (GDPR)"""
     from src.services.gdpr_service import GDPRService
 
-    await message.answer("📦 Готовлю твои данные для экспорта...")
+    language_code = user.language_code if user else "ru"
+    await message.answer(get_system_message("export_preparing", language_code))
 
     gdpr_service = GDPRService()
     try:
@@ -332,7 +309,7 @@ async def cmd_export_data(message: Message) -> None:
     except Exception as e:
         logger.error(f"Export failed: {e}")
         await message.answer(
-            "😔 Не удалось экспортировать данные. Попробуй позже."
+            get_system_message("error_export_failed", language_code)
         )
 
 
@@ -367,10 +344,5 @@ async def cmd_summary(message: Message) -> None:
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
 
-    summary_intro = (
-        "📊 <b>Саммари моментов</b>\n\n"
-        "Выбери тип саммари, который хочешь получить:\n\n"
-        "📅 <b>Еженедельное</b> — обзор хороших моментов за последнюю неделю\n"
-        "🗓 <b>Месячное</b> — итоги за последний месяц"
-    )
+    summary_intro = get_system_message("summary_intro", language_code)
     await message.answer(summary_intro, reply_markup=get_summary_keyboard(language_code))

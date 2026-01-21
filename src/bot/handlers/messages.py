@@ -18,6 +18,7 @@ from src.services.speech_service import SpeechToTextService
 from src.services.personalization_service import PersonalizationService
 from src.services.conversation_log_service import ConversationLogService
 from src.services.social_profile_service import SocialProfileService
+from src.utils.localization import get_system_message
 from src.utils.localization import detect_and_update_language, get_all_menu_button_texts, get_language_code, get_menu_text
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ async def cancel_social_profile_state(message: Message, state: FSMContext) -> No
     social_service = SocialProfileService()
     summary = await social_service.get_profile_summary(message.from_user.id)
     await message.answer(
-        f"❌ Отменено.\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
+        get_system_message("social_profile_cancelled", language_code, summary=summary),
         reply_markup=get_social_profile_keyboard(language_code)
     )
 
@@ -134,8 +135,7 @@ async def handle_bio_input(message: Message, state: FSMContext) -> None:
 
     if len(bio_text) > 1000:
         await message.answer(
-            "❌ Биография слишком длинная. Максимум 1000 символов.\n"
-            "Попробуй сократить текст или отправь /cancel для отмены."
+            get_system_message("error_bio_too_long", language_code)
         )
         return
 
@@ -196,15 +196,7 @@ async def handle_voice_message(message: Message) -> None:
         )
 
         if not transcribed_text or transcribed_text.strip() == "":
-            # Error messages in different languages
-            error_messages = {
-                "ru": "😔 Не удалось распознать голос. Попробуй ещё раз или напиши текстом.",
-                "en": "😔 Couldn't recognize voice. Please try again or type your message.",
-                "uk": "😔 Не вдалося розпізнати голос. Спробуй ще раз або напиши текстом.",
-                "es": "😔 No se pudo reconocer la voz. Intenta de nuevo o escribe tu mensaje.",
-                "de": "😔 Spracherkennung fehlgeschlagen. Bitte versuche es erneut oder schreibe.",
-            }
-            await message.answer(error_messages.get(language_code, error_messages["ru"]))
+            await message.answer(get_system_message("error_voice_recognition", language_code))
             return
 
         # Update user's language preference based on the voice message language
@@ -275,14 +267,7 @@ async def handle_voice_message(message: Message) -> None:
     except Exception as e:
         logger.error(f"Voice processing error: {e}")
         # Error messages in different languages
-        error_messages = {
-            "ru": "😔 Произошла ошибка при обработке голосового сообщения. Попробуй ещё раз или напиши текстом.",
-            "en": "😔 An error occurred while processing the voice message. Please try again or type your message.",
-            "uk": "😔 Сталася помилка при обробці голосового повідомлення. Спробуй ще раз або напиши текстом.",
-            "es": "😔 Ocurrió un error al procesar el mensaje de voz. Intenta de nuevo o escribe tu mensaje.",
-            "de": "😔 Bei der Verarbeitung der Sprachnachricht ist ein Fehler aufgetreten. Bitte versuche es erneut oder schreibe.",
-        }
-        await message.answer(error_messages.get(language_code, error_messages["ru"]))
+        await message.answer(get_system_message("error_voice_processing", language_code))
 
 
 @router.message(F.text)
@@ -318,8 +303,9 @@ async def handle_text_message(message: Message) -> None:
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
 
     if not user:
+        language_code = "ru"
         await message.answer(
-            "Пожалуйста, начни с команды /start"
+            get_system_message("error_start_required", language_code)
         )
         return
 

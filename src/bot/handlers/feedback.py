@@ -17,7 +17,7 @@ from src.bot.keyboards.inline import (
 )
 from src.services.feedback_service import FeedbackService
 from src.services.user_service import UserService
-from src.utils.localization import get_all_menu_button_texts
+from src.utils.localization import get_all_menu_button_texts, get_system_message
 
 logger = logging.getLogger(__name__)
 router = Router(name="feedback")
@@ -152,10 +152,14 @@ async def callback_feedback_cancel(callback: CallbackQuery) -> None:
     """User cancelled feedback"""
     clear_feedback_state(callback.from_user.id)
 
+    language_code = "ru"  # Default, will be updated from user
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    if user:
+        language_code = user.language_code
+    
     await callback.message.edit_text(
-        "❌ Отменено.\n\n"
-        "Если захочешь предложить идею позже, "
-        "нажми кнопку «💡 Предложить идею» в меню."
+        get_system_message("feedback_cancelled", language_code)
     )
     await callback.answer()
 
@@ -168,7 +172,7 @@ async def callback_feedback_submit(callback: CallbackQuery) -> None:
 
     if not state or not state.content:
         await callback.message.edit_text(
-            "😔 Что-то пошло не так. Попробуй ещё раз.",
+            get_system_message("feedback_error_generic", language_code),
             reply_markup=get_feedback_category_keyboard(language_code)
         )
         await callback.answer()
@@ -184,24 +188,26 @@ async def callback_feedback_submit(callback: CallbackQuery) -> None:
 
     clear_feedback_state(callback.from_user.id)
 
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    
     if feedback:
         category_names = {
-            "suggestion": "Идея/предложение",
-            "bug": "Ошибка",
-            "other": "Другое"
+            "suggestion": get_system_message("feedback_category", language_code, category="Идея/предложение"),
+            "bug": get_system_message("feedback_category", language_code, category="Ошибка"),
+            "other": get_system_message("feedback_category", language_code, category="Другое")
         }
         category_name = category_names.get(state.category, "Другое")
+        content_preview = f"{state.content[:100]}{'...' if len(state.content) > 100 else ''}"
 
         await callback.message.edit_text(
-            f"✅ <b>Спасибо за отзыв!</b>\n\n"
-            f"📂 Категория: {category_name}\n"
-            f"📝 Сообщение: {state.content[:100]}{'...' if len(state.content) > 100 else ''}\n\n"
-            f"Твоё сообщение сохранено и будет рассмотрено. 💝",
+            get_system_message("feedback_confirmed", language_code, category=category_name, content=content_preview),
             reply_markup=get_feedback_thanks_keyboard(language_code)
         )
     else:
         await callback.message.edit_text(
-            "😔 Не удалось сохранить отзыв. Попробуй позже.",
+            get_system_message("feedback_save_error", language_code),
             reply_markup=get_feedback_thanks_keyboard(language_code)
         )
 
@@ -223,7 +229,10 @@ async def handle_feedback_text(message: Message) -> bool:
     language_code = await get_user_language(message.from_user.id)
     content = message.text.strip()
     if not content:
-        await message.answer("🤔 Кажется, сообщение пустое. Напиши текстом, что именно ты хотел(а) сообщить.")
+        user_service = UserService()
+        user = await user_service.get_user_by_telegram_id(message.from_user.id)
+        language_code = user.language_code if user else "ru"
+        await message.answer(get_system_message("feedback_empty_message", language_code))
         return True
 
     # Save immediately (no confirmation) to avoid lost in-memory state on restarts
@@ -236,24 +245,26 @@ async def handle_feedback_text(message: Message) -> bool:
 
     clear_feedback_state(message.from_user.id)
 
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+    
     category_names = {
         "suggestion": "Идея/предложение",
         "bug": "Ошибка",
         "other": "Другое",
     }
     category_name = category_names.get(state.category, "Другое")
+    content_preview = f"{content[:100]}{'...' if len(content) > 100 else ''}"
 
     if feedback:
         await message.answer(
-            f"✅ <b>Спасибо за отзыв!</b>\n\n"
-            f"📂 Категория: {category_name}\n"
-            f"📝 Сообщение: {content[:100]}{'...' if len(content) > 100 else ''}\n\n"
-            f"Сохранил — скоро посмотрим. 💝",
+            get_system_message("feedback_confirmed", language_code, category=category_name, content=content_preview),
             reply_markup=get_feedback_thanks_keyboard(language_code),
         )
     else:
         await message.answer(
-            "😔 Не удалось сохранить отзыв. Попробуй позже.",
+            get_system_message("feedback_save_error", language_code),
             reply_markup=get_feedback_thanks_keyboard(language_code),
         )
 

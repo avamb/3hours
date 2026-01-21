@@ -88,8 +88,6 @@ MENU_TEXTS = {
         "language_fr": "🇫🇷 Français",
         "language_pt": "🇧🇷 Português",
         "language_it": "🇮🇹 Italiano",
-        "language_zh": "🇨🇳 中文",
-        "language_ja": "🇯🇵 日本語",
         "social_link_saved": "✅ Ссылка сохранена",
         "social_parse_failed": "К сожалению, нам не удалось получить данные вашего профиля. Ссылка сохранена, но не будет использоваться для персонализации.",
     },
@@ -154,8 +152,6 @@ MENU_TEXTS = {
         "language_fr": "🇫🇷 Français",
         "language_pt": "🇧🇷 Português",
         "language_it": "🇮🇹 Italiano",
-        "language_zh": "🇨🇳 中文",
-        "language_ja": "🇯🇵 日本語",
         "social_link_saved": "✅ Link saved",
         "social_parse_failed": "Unfortunately, we couldn't get your profile data. The link has been saved, but won't be used for personalization.",
     },
@@ -220,8 +216,6 @@ MENU_TEXTS = {
         "language_fr": "🇫🇷 Français",
         "language_pt": "🇧🇷 Português",
         "language_it": "🇮🇹 Italiano",
-        "language_zh": "🇨🇳 中文",
-        "language_ja": "🇯🇵 日本語",
         "social_link_saved": "✅ Посилання збережено",
         "social_parse_failed": "На жаль, нам не вдалося отримати дані вашого профілю. Посилання збережено, але не буде використовуватися для персоналізації.",
     },
@@ -398,6 +392,69 @@ SYSTEM_MESSAGES = {
         "feedback_prompt": "Напиши своё предложение или идею:",
         "feedback_prompt_formal": "Напишите Ваше предложение или идею:",
         "feedback_sent": "Спасибо за обратную связь! 💝",
+        "feedback_cancelled": (
+            "❌ Отменено.\n\n"
+            "Если захочешь предложить идею позже, "
+            "нажми кнопку «💡 Предложить идею» в меню."
+        ),
+        "feedback_confirmed": (
+            "✅ <b>Спасибо за отзыв!</b>\n\n"
+            "📂 Категория: {category}\n"
+            "📝 Сообщение: {content}\n\n"
+            "Твоё сообщение сохранено и будет рассмотрено. 💝"
+        ),
+        "feedback_save_error": "😔 Не удалось сохранить отзыв. Попробуй позже.",
+        "feedback_error_generic": "😔 Что-то пошло не так. Попробуй ещё раз.",
+        "feedback_empty_message": "🤔 Кажется, сообщение пустое. Напиши текстом, что именно ты хотел(а) сообщить.",
+        "export_preparing": "📦 Готовлю твои данные для экспорта...",
+        
+        # Onboarding messages
+        "welcome_first_time": (
+            "Привет, {first_name}! 👋\n\n"
+            "Я — твой помощник для развития позитивного мышления. "
+            "Каждый день я буду спрашивать тебя о хорошем, "
+            "чтобы вместе замечать радостные моменты жизни. ✨\n\n"
+            "Давай начнём! Как тебе удобнее общаться?"
+        ),
+        "welcome_back": (
+            "С возвращением, {first_name}! 💝\n\n"
+            "Рад снова тебя видеть. Чем могу помочь?"
+        ),
+        
+        # Error messages
+        "error_start_required": "Пожалуйста, сначала запусти бота командой /start",
+        "error_export_failed": "😔 Не удалось экспортировать данные. Попробуй позже.",
+        "error_bio_too_long": (
+            "❌ Биография слишком длинная. Максимум 1000 символов.\n"
+            "Попробуй сократить текст или отправь /cancel для отмены."
+        ),
+        "error_voice_recognition": "😔 Не удалось распознать голос. Попробуй ещё раз или напиши текстом.",
+        "error_voice_processing": "😔 Произошла ошибка при обработке голосового сообщения. Попробуй ещё раз или напиши текстом.",
+        
+        # Settings display
+        "settings_display": (
+            "⚙️ <b>Настройки</b>\n\n"
+            "🕐 Активные часы: {start} - {end}\n"
+            "⏰ Интервал: каждые {interval} ч.\n"
+            "🌍 Часовой пояс: {timezone}\n"
+            "🗣 Обращение: {formality}\n"
+            "🔔 Уведомления: {notifications}"
+        ),
+        "formality_formal": "на «вы»",
+        "formality_informal": "на «ты»",
+        "notifications_enabled": "включены",
+        "notifications_disabled": "выключены",
+        
+        # Summary messages
+        "summary_intro": (
+            "📊 <b>Саммари моментов</b>\n\n"
+            "Выбери тип саммари, который хочешь получить:\n\n"
+            "📅 <b>Еженедельное</b> — обзор хороших моментов за последнюю неделю\n"
+            "🗓 <b>Месячное</b> — итоги за последний месяц"
+        ),
+        
+        # Social profile messages
+        "social_profile_cancelled": "❌ Отменено.\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
         "feedback_category": "Категория: {category}",
 
         # Help message
@@ -654,6 +711,69 @@ SYSTEM_MESSAGES = {
         "feedback_prompt_formal": "Please write your suggestion or idea:",
         "feedback_sent": "Thanks for your feedback! 💝",
         "feedback_category": "Category: {category}",
+        "feedback_cancelled": (
+            "❌ Cancelled.\n\n"
+            "If you want to suggest an idea later, "
+            "press the «💡 Suggest idea» button in the menu."
+        ),
+        "feedback_confirmed": (
+            "✅ <b>Thanks for your feedback!</b>\n\n"
+            "📂 Category: {category}\n"
+            "📝 Message: {content}\n\n"
+            "Your message has been saved and will be reviewed. 💝"
+        ),
+        "feedback_save_error": "😔 Failed to save feedback. Please try again later.",
+        "feedback_error_generic": "😔 Something went wrong. Please try again.",
+        "feedback_empty_message": "🤔 The message appears to be empty. Please write what you wanted to say.",
+        "export_preparing": "📦 Preparing your data for export...",
+        
+        # Onboarding messages
+        "welcome_first_time": (
+            "Hello, {first_name}! 👋\n\n"
+            "I'm your assistant for developing positive thinking. "
+            "Every day I'll ask you about the good things, "
+            "so we can notice the joyful moments of life together. ✨\n\n"
+            "Let's start! How would you prefer to communicate?"
+        ),
+        "welcome_back": (
+            "Welcome back, {first_name}! 💝\n\n"
+            "Good to see you again. How can I help?"
+        ),
+        
+        # Error messages
+        "error_start_required": "Please start the bot first with /start command",
+        "error_export_failed": "😔 Failed to export data. Please try again later.",
+        "error_bio_too_long": (
+            "❌ Bio is too long. Maximum 1000 characters.\n"
+            "Try to shorten the text or send /cancel to cancel."
+        ),
+        "error_voice_recognition": "😔 Couldn't recognize voice. Please try again or type your message.",
+        "error_voice_processing": "😔 An error occurred while processing the voice message. Please try again or type your message.",
+        
+        # Settings display
+        "settings_display": (
+            "⚙️ <b>Settings</b>\n\n"
+            "🕐 Active hours: {start} - {end}\n"
+            "⏰ Interval: every {interval} h\n"
+            "🌍 Timezone: {timezone}\n"
+            "🗣 Address form: {formality}\n"
+            "🔔 Notifications: {notifications}"
+        ),
+        "formality_formal": "formal",
+        "formality_informal": "informal",
+        "notifications_enabled": "enabled",
+        "notifications_disabled": "disabled",
+        
+        # Summary messages
+        "summary_intro": (
+            "📊 <b>Moments Summary</b>\n\n"
+            "Choose the type of summary you want to get:\n\n"
+            "📅 <b>Weekly</b> — overview of good moments from last week\n"
+            "🗓 <b>Monthly</b> — summary for the last month"
+        ),
+        
+        # Social profile messages
+        "social_profile_cancelled": "❌ Cancelled.\n\n👤 <b>Social Profile</b>\n\n{summary}",
 
         # Help message
         "help_title": "📋 Available commands:",
@@ -909,6 +1029,69 @@ SYSTEM_MESSAGES = {
         "feedback_prompt_formal": "Напишіть Вашу пропозицію або ідею:",
         "feedback_sent": "Дякуємо за зворотний зв'язок! 💝",
         "feedback_category": "Категорія: {category}",
+        "feedback_cancelled": (
+            "❌ Скасовано.\n\n"
+            "Якщо захочеш запропонувати ідею пізніше, "
+            "натисни кнопку «💡 Запропонувати ідею» в меню."
+        ),
+        "feedback_confirmed": (
+            "✅ <b>Дякуємо за відгук!</b>\n\n"
+            "📂 Категорія: {category}\n"
+            "📝 Повідомлення: {content}\n\n"
+            "Твоє повідомлення збережено і буде розглянуто. 💝"
+        ),
+        "feedback_save_error": "😔 Не вдалося зберегти відгук. Спробуй пізніше.",
+        "feedback_error_generic": "😔 Щось пішло не так. Спробуй ще раз.",
+        "feedback_empty_message": "🤔 Здається, повідомлення порожнє. Напиши текстом, що саме ти хотів(ла) повідомити.",
+        "export_preparing": "📦 Готую твої дані для експорту...",
+        
+        # Onboarding messages
+        "welcome_first_time": (
+            "Привіт, {first_name}! 👋\n\n"
+            "Я — твій помічник для розвитку позитивного мислення. "
+            "Щодня я буду запитувати тебе про хороше, "
+            "щоб разом помічати радісні моменти життя. ✨\n\n"
+            "Давай почнемо! Як тобі зручніше спілкуватися?"
+        ),
+        "welcome_back": (
+            "З поверненням, {first_name}! 💝\n\n"
+            "Радий знову тебе бачити. Чим можу допомогти?"
+        ),
+        
+        # Error messages
+        "error_start_required": "Будь ласка, спочатку запусти бота командою /start",
+        "error_export_failed": "😔 Не вдалося експортувати дані. Спробуй пізніше.",
+        "error_bio_too_long": (
+            "❌ Біографія занадто довга. Максимум 1000 символів.\n"
+            "Спробуй скоротити текст або надішли /cancel для скасування."
+        ),
+        "error_voice_recognition": "😔 Не вдалося розпізнати голос. Спробуй ще раз або напиши текстом.",
+        "error_voice_processing": "😔 Сталася помилка при обробці голосового повідомлення. Спробуй ще раз або напиши текстом.",
+        
+        # Settings display
+        "settings_display": (
+            "⚙️ <b>Налаштування</b>\n\n"
+            "🕐 Активні години: {start} - {end}\n"
+            "⏰ Інтервал: кожні {interval} год.\n"
+            "🌍 Часовий пояс: {timezone}\n"
+            "🗣 Звертання: {formality}\n"
+            "🔔 Сповіщення: {notifications}"
+        ),
+        "formality_formal": "на «ви»",
+        "formality_informal": "на «ти»",
+        "notifications_enabled": "увімкнено",
+        "notifications_disabled": "вимкнено",
+        
+        # Summary messages
+        "summary_intro": (
+            "📊 <b>Підсумок моментів</b>\n\n"
+            "Вибери тип підсумку, який хочеш отримати:\n\n"
+            "📅 <b>Тижневий</b> — огляд хороших моментів за останній тиждень\n"
+            "🗓 <b>Місячний</b> — підсумки за останній місяць"
+        ),
+        
+        # Social profile messages
+        "social_profile_cancelled": "❌ Скасовано.\n\n👤 <b>Соціальний профіль</b>\n\n{summary}",
 
         # Help message
         "help_title": "📋 Доступні команди:",
