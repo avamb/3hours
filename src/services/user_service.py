@@ -74,6 +74,16 @@ class UserService:
                 # Update last active
                 user.last_active_at = datetime.utcnow()
 
+                # If user was blocked but sent a message, they unblocked the bot
+                if user.is_blocked:
+                    user.is_blocked = False
+                    logger.info(f"User {user.telegram_id} unblocked the bot (detected from message)")
+
+                # If notifications were paused but user sent a message, resume notifications
+                if user.notifications_paused_until:
+                    user.notifications_paused_until = None
+                    logger.info(f"User {user.telegram_id} resumed notifications (detected from message)")
+
                 # Update gender if not set or unknown
                 if not user.gender or user.gender == 'unknown':
                     detected_gender = detect_user_gender(

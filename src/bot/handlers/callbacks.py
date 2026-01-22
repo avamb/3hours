@@ -23,6 +23,7 @@ from src.bot.keyboards.inline import (
     get_language_keyboard,
     get_social_profile_keyboard,
     get_social_remove_keyboard,
+    get_pause_period_keyboard,
 )
 from src.bot.states.social_profile import SocialProfileStates
 from src.services.user_service import UserService
@@ -732,7 +733,13 @@ async def callback_settings_reset(callback: CallbackQuery) -> None:
             f"🗣 {get_menu_text('settings_address', language_code).replace('🗣 ', '')}: {address_value}\n"
             f"🔔 {get_menu_text('settings_notifications', language_code).replace('🔔 ', '')}: {notifications_value}\n"
         )
-        await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard(language_code))
+        try:
+            await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard(language_code))
+        except Exception as e:
+            # Ignore "message is not modified" error - it means settings were already at default values
+            error_msg = str(e)
+            if "message is not modified" not in error_msg.lower():
+                raise
         await callback.answer(get_system_message("settings_reset", language_code))
     else:
         language_code = await get_user_language(callback.from_user.id)
@@ -1249,4 +1256,111 @@ async def callback_summary_monthly(callback: CallbackQuery) -> None:
             reply_markup=get_main_menu_inline(language_code)
         )
 
+    await callback.answer()
+
+
+# Pause callbacks
+@router.callback_query(F.data == "pause_day")
+async def callback_pause_day(callback: CallbackQuery) -> None:
+    """Pause notifications for 1 day"""
+    await _set_pause(callback, days=1)
+
+
+@router.callback_query(F.data == "pause_week")
+async def callback_pause_week(callback: CallbackQuery) -> None:
+    """Pause notifications for 1 week"""
+    await _set_pause(callback, days=7)
+
+
+@router.callback_query(F.data == "pause_two_weeks")
+async def callback_pause_two_weeks(callback: CallbackQuery) -> None:
+    """Pause notifications for 2 weeks"""
+    await _set_pause(callback, days=14)
+
+
+@router.callback_query(F.data == "pause_cancel")
+async def callback_pause_cancel(callback: CallbackQuery) -> None:
+    """Cancel pause selection"""
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    
+    # Use answer instead of edit_text because we need ReplyKeyboardMarkup for main menu
+    from src.bot.keyboards.reply import get_main_menu_keyboard
+    await callback.message.answer(
+        get_system_message("cancelled", language_code),
+        reply_markup=get_main_menu_keyboard(language_code)
+    )
+    # Delete the inline message with pause selection
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass  # Ignore if message already deleted
+    await callback.answer()
+
+
+async def _set_pause(callback: CallbackQuery, days: int) -> None:
+    """Set pause for notifications"""
+    from datetime import datetime, timedelta, timezone as dt_timezone
+    from sqlalchemy import select
+    from src.db.database import get_session
+    from src.db.models import User
+    
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
+    
+    # Calculate pause until datetime
+    pause_until = datetime.now(dt_timezone.utc) + timedelta(days=days)
+    
+    # Update user
+    async with get_session() as session:
+        result = await session.execute(
+            select(User).where(User.id == user.id)
+        )
+        db_user = result.scalar_one_or_none()
+        if db_user:
+            db_user.notifications_paused_until = pause_until.replace(tzinfo=None)
+            await session.commit()
+    
+    # Format date for display
+    from src.utils.localization import get_language_code
+    lang = get_language_code(language_code)
+    
+    # Format date based on language
+    if lang == "ru":
+        date_str = pause_until.strftime("%d.%m.%Y в %H:%M")
+    elif lang == "uk":
+        date_str = pause_until.strftime("%d.%m.%Y о %H:%M")
+    elif lang in ["es", "pt", "it", "fr", "de"]:
+        # European format: DD.MM.YYYY at HH:MM
+        date_str = pause_until.strftime("%d.%m.%Y в %H:%M")
+    elif lang == "he":
+        # Hebrew: DD/MM/YYYY at HH:MM
+        date_str = pause_until.strftime("%d/%m/%Y в %H:%M")
+    elif lang in ["zh", "ja"]:
+        # Asian format: YYYY年MM月DD日 HH:MM
+        if lang == "zh":
+            date_str = pause_until.strftime("%Y年%m月%d日 %H:%M")
+        else:  # ja
+            date_str = pause_until.strftime("%Y年%m月%d日 %H:%M")
+    else:  # English and others
+        date_str = pause_until.strftime("%B %d, %Y at %H:%M")
+    
+    # Get confirmation message
+    confirm_key = "pause_confirmed_formal" if formal else "pause_confirmed"
+    confirm_msg = get_system_message(confirm_key, language_code, date=date_str)
+    
+    # Use answer instead of edit_text because we need ReplyKeyboardMarkup for main menu
+    from src.bot.keyboards.reply import get_main_menu_keyboard
+    await callback.message.answer(
+        confirm_msg,
+        reply_markup=get_main_menu_keyboard(language_code)
+    )
+    # Delete the inline message with pause selection
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass  # Ignore if message already deleted
     await callback.answer()
