@@ -733,7 +733,13 @@ async def callback_settings_reset(callback: CallbackQuery) -> None:
             f"🗣 {get_menu_text('settings_address', language_code).replace('🗣 ', '')}: {address_value}\n"
             f"🔔 {get_menu_text('settings_notifications', language_code).replace('🔔 ', '')}: {notifications_value}\n"
         )
-        await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard(language_code))
+        try:
+            await callback.message.edit_text(settings_text, reply_markup=get_settings_keyboard(language_code))
+        except Exception as e:
+            # Ignore "message is not modified" error - it means settings were already at default values
+            error_msg = str(e)
+            if "message is not modified" not in error_msg.lower():
+                raise
         await callback.answer(get_system_message("settings_reset", language_code))
     else:
         language_code = await get_user_language(callback.from_user.id)
