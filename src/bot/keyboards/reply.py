@@ -31,6 +31,9 @@ def get_main_menu_keyboard(language_code: str = "ru") -> ReplyKeyboardMarkup:
             [
                 KeyboardButton(text=get_menu_text("menu_feedback", language_code)),
             ],
+            [
+                KeyboardButton(text=get_menu_text("menu_pause", language_code)),
+            ],
         ],
         resize_keyboard=True,
         is_persistent=True,
