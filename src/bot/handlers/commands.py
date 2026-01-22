@@ -325,16 +325,29 @@ async def cmd_delete_data(message: Message) -> None:
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
+
+    # Build localized confirmation message
+    title = get_system_message("delete_data_title", language_code)
+    confirm = get_system_message("delete_data_confirm_formal" if formal else "delete_data_confirm", language_code, formal=formal)
+    warning = get_system_message("delete_data_warning_formal" if formal else "delete_data_warning", language_code, formal=formal)
+    moments = get_system_message("delete_data_moments_formal" if formal else "delete_data_moments", language_code, formal=formal)
+    conversations = get_system_message("delete_data_conversations", language_code)
+    stats = get_system_message("delete_data_stats", language_code)
+    settings = get_system_message("delete_data_settings", language_code)
+    irreversible = get_system_message("delete_data_irreversible", language_code)
+    chat_note = get_system_message("delete_data_chat_note_formal" if formal else "delete_data_chat_note", language_code, formal=formal)
 
     confirm_text = (
-        "⚠️ <b>Удаление данных</b>\n\n"
-        "Ты уверен, что хочешь удалить ВСЕ свои данные?\n\n"
-        "Это действие:\n"
-        "• Удалит все твои моменты\n"
-        "• Удалит историю диалогов\n"
-        "• Удалит статистику\n"
-        "• Сбросит настройки\n\n"
-        "⚠️ <b>Это действие необратимо!</b>"
+        f"{title}\n\n"
+        f"{confirm}\n\n"
+        f"{warning}\n"
+        f"{moments}\n"
+        f"{conversations}\n"
+        f"{stats}\n"
+        f"{settings}\n\n"
+        f"{irreversible}\n\n"
+        f"{chat_note}"
     )
     await message.answer(confirm_text, reply_markup=get_delete_confirmation_keyboard(language_code))
 

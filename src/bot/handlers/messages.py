@@ -73,9 +73,13 @@ async def cancel_social_profile_state(message: Message, state: FSMContext) -> No
 
     await state.clear()
     social_service = SocialProfileService()
-    summary = await social_service.get_profile_summary(message.from_user.id)
+    formal = user.formal_address if user else False
+    from src.utils.localization import get_system_message
+    cancelled = get_system_message("cancelled", language_code)
+    profile_title = get_system_message("social_profile_title", language_code)
+    summary = await social_service.get_profile_summary(message.from_user.id, language_code, formal)
     await message.answer(
-        f"❌ Отменено.\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
+        f"❌ {cancelled}\n\n{profile_title}\n\n{summary}",
         reply_markup=get_social_profile_keyboard(language_code)
     )
 
@@ -90,16 +94,21 @@ async def handle_social_link_input(message: Message, state: FSMContext) -> None:
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
 
     url = message.text.strip()
 
     social_service = SocialProfileService()
-    success, result_message, profile_parse_failed = await social_service.add_social_link(message.from_user.id, url)
+    success, result_message, profile_parse_failed = await social_service.add_social_link(
+        message.from_user.id, url, language_code, formal
+    )
 
     await state.clear()
 
     if success:
-        summary = await social_service.get_profile_summary(message.from_user.id)
+        from src.utils.localization import get_system_message
+        profile_title = get_system_message("social_profile_title", language_code)
+        summary = await social_service.get_profile_summary(message.from_user.id, language_code, formal)
 
         # Build response message
         response_parts = [f"✅ {result_message}"]
@@ -109,7 +118,7 @@ async def handle_social_link_input(message: Message, state: FSMContext) -> None:
             parse_failed_msg = get_menu_text("social_parse_failed", language_code)
             response_parts.append(f"\n⚠️ {parse_failed_msg}")
 
-        response_parts.append(f"\n\n👤 <b>Социальный профиль</b>\n\n{summary}")
+        response_parts.append(f"\n\n{profile_title}\n\n{summary}")
 
         await message.answer(
             "".join(response_parts),
@@ -129,25 +138,32 @@ async def handle_bio_input(message: Message, state: FSMContext) -> None:
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
 
     bio_text = message.text.strip()
 
     if len(bio_text) > 1000:
+        from src.utils.localization import get_system_message
+        bio_too_long = get_system_message("bio_too_long", language_code)
+        bio_hint = get_system_message("bio_too_long_hint_formal" if formal else "bio_too_long_hint", language_code, formal=formal)
         await message.answer(
-            "❌ Биография слишком длинная. Максимум 1000 символов.\n"
-            "Попробуй сократить текст или отправь /cancel для отмены."
+            f"{bio_too_long}\n{bio_hint}"
         )
         return
 
     social_service = SocialProfileService()
-    success, result_message = await social_service.update_bio(message.from_user.id, bio_text)
+    success, result_message = await social_service.update_bio(
+        message.from_user.id, bio_text, language_code, formal
+    )
 
     await state.clear()
 
     if success:
-        summary = await social_service.get_profile_summary(message.from_user.id)
+        from src.utils.localization import get_system_message
+        profile_title = get_system_message("social_profile_title", language_code)
+        summary = await social_service.get_profile_summary(message.from_user.id, language_code, formal)
         await message.answer(
-            f"✅ {result_message}\n\n👤 <b>Социальный профиль</b>\n\n{summary}",
+            f"✅ {result_message}\n\n{profile_title}\n\n{summary}",
             reply_markup=get_social_profile_keyboard(language_code)
         )
     else:

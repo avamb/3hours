@@ -549,9 +549,12 @@ async def callback_set_timezone(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "settings_social")
 async def callback_settings_social(callback: CallbackQuery) -> None:
     """Show social profile settings"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
     social_service = SocialProfileService()
-    summary = await social_service.get_profile_summary(callback.from_user.id)
+    summary = await social_service.get_profile_summary(callback.from_user.id, language_code, formal)
     title = get_system_message("social_profile_title", language_code)
 
     await callback.message.edit_text(
@@ -633,15 +636,23 @@ async def callback_social_remove(callback: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("social_del_"))
 async def callback_social_delete(callback: CallbackQuery) -> None:
     """Delete a social network link"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
     network = callback.data.replace("social_del_", "")
 
     social_service = SocialProfileService()
-    success, message = await social_service.remove_social_link(callback.from_user.id, network)
+    success, message = await social_service.remove_social_link(
+        callback.from_user.id, network, language_code, formal
+    )
 
     if success:
+        from src.utils.localization import get_system_message
+        summary = await social_service.get_profile_summary(callback.from_user.id, language_code, formal)
+        profile_title = get_system_message("social_profile_title", language_code)
         await callback.message.edit_text(
-            f"✅ {message}",
+            f"✅ {message}\n\n{profile_title}\n\n{summary}",
             reply_markup=get_social_profile_keyboard(language_code)
         )
     else:
@@ -655,9 +666,12 @@ async def callback_social_delete(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "social_back")
 async def callback_social_back(callback: CallbackQuery) -> None:
     """Go back to social profile menu"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
     social_service = SocialProfileService()
-    summary = await social_service.get_profile_summary(callback.from_user.id)
+    summary = await social_service.get_profile_summary(callback.from_user.id, language_code, formal)
     title = get_system_message("social_profile_title", language_code)
 
     await callback.message.edit_text(
@@ -771,16 +785,19 @@ async def callback_moments_random(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "delete_confirm")
 async def callback_delete_confirm(callback: CallbackQuery) -> None:
     """Confirm and execute data deletion"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
     gdpr_service = GDPRService()
 
     try:
         await gdpr_service.delete_all_user_data(callback.from_user.id)
-        success_text = get_system_message("data_deleted", language_code)
+        success_text = get_system_message("data_deleted_formal" if formal else "data_deleted", language_code, formal=formal)
         await callback.message.edit_text(success_text)
     except Exception as e:
         logger.error(f"Delete failed: {e}")
-        error_text = get_system_message("data_delete_error", language_code)
+        error_text = get_system_message("data_delete_error_formal" if formal else "data_delete_error", language_code, formal=formal)
         await callback.message.edit_text(error_text)
 
     await callback.answer()
@@ -789,8 +806,11 @@ async def callback_delete_confirm(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "delete_cancel")
 async def callback_delete_cancel(callback: CallbackQuery) -> None:
     """Cancel data deletion"""
-    language_code = await get_user_language(callback.from_user.id)
-    cancelled_text = get_system_message("delete_cancelled", language_code)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
+    cancelled_text = get_system_message("delete_cancelled_formal" if formal else "delete_cancelled", language_code, formal=formal)
     await callback.message.edit_text(cancelled_text)
     await callback.answer()
 
