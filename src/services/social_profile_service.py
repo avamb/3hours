@@ -15,6 +15,7 @@ from src.config import get_settings
 from src.db.database import get_session
 from src.db.models import User, SocialProfile
 from src.services.personalization_service import LANGUAGE_INSTRUCTION
+from src.utils.localization import get_system_message, get_language_code
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +162,8 @@ class SocialProfileService:
         self,
         telegram_id: int,
         url: str,
+        language_code: str = "ru",
+        formal: bool = False,
     ) -> Tuple[bool, str, bool]:
         """
         Add a social network link to user's profile and attempt to parse profile data.
@@ -173,7 +176,9 @@ class SocialProfileService:
         """
         network = self.detect_social_network(url)
         if not network:
-            return False, "Не удалось определить социальную сеть. Поддерживаются: Instagram, Facebook, Twitter/X, LinkedIn, VK, Telegram, YouTube, TikTok", False
+            lang = get_language_code(language_code)
+            error_msg = get_system_message("unknown_social_network", lang, formal=formal)
+            return False, error_msg, False
 
         normalized_url = self.normalize_url(url, network)
 
@@ -185,7 +190,9 @@ class SocialProfileService:
             user = result.scalar_one_or_none()
 
             if not user:
-                return False, "Пользователь не найден", False
+                lang = get_language_code(language_code)
+                error_msg = get_system_message("user_not_found", lang, formal=formal)
+                return False, error_msg, False
 
             # Get or create profile
             result = await session.execute(
@@ -220,7 +227,7 @@ class SocialProfileService:
                     "facebook": "Facebook",
                     "twitter": "Twitter/X",
                     "linkedin": "LinkedIn",
-                    "vk": "ВКонтакте",
+                    "vk": "VKontakte",
                     "telegram": "Telegram",
                     "youtube": "YouTube",
                     "tiktok": "TikTok",
@@ -232,16 +239,27 @@ class SocialProfileService:
                 # If parsing failed, we still saved the link but couldn't get profile data
                 profile_parse_failed = not parse_success
 
-                return True, f"Добавлена ссылка на {network_names.get(network, network)}", profile_parse_failed
+                # Get localized message
+                lang = get_language_code(language_code)
+                network_name = network_names.get(network, network)
+                success_msg = get_system_message("social_link_added", lang, formal=formal, network=network_name)
 
-            return False, "Неизвестная ошибка", False
+                return True, success_msg, profile_parse_failed
+
+            lang = get_language_code(language_code)
+            error_msg = get_system_message("unknown_error", lang, formal=formal)
+            return False, error_msg, False
 
     async def remove_social_link(
         self,
         telegram_id: int,
         network: str,
+        language_code: str = "ru",
+        formal: bool = False,
     ) -> tuple[bool, str]:
         """Remove a social network link from user's profile"""
+        lang = get_language_code(language_code)
+        
         async with get_session() as session:
             result = await session.execute(
                 select(User).where(User.telegram_id == telegram_id)
@@ -249,7 +267,8 @@ class SocialProfileService:
             user = result.scalar_one_or_none()
 
             if not user:
-                return False, "Пользователь не найден"
+                error_msg = get_system_message("user_not_found", lang, formal=formal)
+                return False, error_msg
 
             result = await session.execute(
                 select(SocialProfile).where(SocialProfile.user_id == user.id)
@@ -257,7 +276,8 @@ class SocialProfileService:
             profile = result.scalar_one_or_none()
 
             if not profile:
-                return False, "Профиль не найден"
+                error_msg = get_system_message("profile_not_found", lang, formal=formal)
+                return False, error_msg
 
             field_map = {
                 "instagram": "instagram_url",
@@ -275,16 +295,22 @@ class SocialProfileService:
                 setattr(profile, field_name, None)
                 profile.updated_at = datetime.utcnow()
                 await session.commit()
-                return True, "Ссылка удалена"
+                success_msg = get_system_message("social_link_removed", lang, formal=formal)
+                return True, success_msg
 
-            return False, "Неизвестная социальная сеть"
+            error_msg = get_system_message("unknown_social_network", lang, formal=formal)
+            return False, error_msg
 
     async def update_bio(
         self,
         telegram_id: int,
         bio_text: str,
+        language_code: str = "ru",
+        formal: bool = False,
     ) -> tuple[bool, str]:
         """Update user's bio text"""
+        lang = get_language_code(language_code)
+        
         async with get_session() as session:
             result = await session.execute(
                 select(User).where(User.telegram_id == telegram_id)
@@ -292,7 +318,8 @@ class SocialProfileService:
             user = result.scalar_one_or_none()
 
             if not user:
-                return False, "Пользователь не найден"
+                error_msg = get_system_message("user_not_found", lang, formal=formal)
+                return False, error_msg
 
             result = await session.execute(
                 select(SocialProfile).where(SocialProfile.user_id == user.id)
@@ -307,9 +334,10 @@ class SocialProfileService:
             profile.updated_at = datetime.utcnow()
             await session.commit()
 
-            return True, "Биография обновлена"
+            success_msg = get_system_message("social_bio_updated", lang, formal=formal)
+            return True, success_msg
 
-    async def parse_interests(self, telegram_id: int) -> tuple[bool, List[str]]:
+    async def parse_interests(self, telegram_id: int, language_code: str = "ru") -> tuple[bool, List[str]]:
         """
         Parse interests from user's bio and social links using GPT.
         Returns (success, list of interests)
@@ -321,15 +349,32 @@ class SocialProfileService:
         # Collect all available info
         info_parts = []
         if profile.bio_text:
-            info_parts.append(f"Биография: {profile.bio_text}")
+            info_parts.append(f"Biography: {profile.bio_text}")
 
         urls = profile.get_all_urls()
         active_networks = [k for k, v in urls.items() if v]
         if active_networks:
-            info_parts.append(f"Социальные сети: {', '.join(active_networks)}")
+            info_parts.append(f"Social networks: {', '.join(active_networks)}")
 
         if not info_parts:
             return False, []
+
+        # Get language name for prompt
+        lang = get_language_code(language_code)
+        language_names = {
+            "ru": "Russian",
+            "en": "English",
+            "uk": "Ukrainian",
+            "es": "Spanish",
+            "de": "German",
+            "fr": "French",
+            "pt": "Portuguese",
+            "it": "Italian",
+            "he": "Hebrew",
+            "zh": "Chinese",
+            "ja": "Japanese",
+        }
+        lang_name = language_names.get(lang, "English")
 
         try:
             response = await self.client.chat.completions.create(
@@ -339,16 +384,26 @@ class SocialProfileService:
                         "role": "system",
                         "content": f"""{LANGUAGE_INSTRUCTION}
 
+⚠️ CRITICAL: You MUST respond ONLY in {lang_name} language. ⚠️
+
 You analyze the user's profile and determine their interests.
 Based on the biography and social networks, identify 3-7 main interests.
-Reply only with a comma-separated list of interests, without numbering or explanations.
-Example: music, travel, photography, sports, books
+Reply ONLY with a comma-separated list of interests in {lang_name}, without numbering or explanations.
 
-(Russian version / Русская версия):
-Ты анализируешь профиль пользователя и определяешь его интересы.
-На основе биографии и социальных сетей определи 3-7 основных интересов.
-Ответь только списком интересов через запятую, без нумерации и пояснений.
-Например: музыка, путешествия, фотография, спорт, книги""",
+Examples for different languages:
+- English: music, travel, photography, sports, books
+- Russian: музыка, путешествия, фотография, спорт, книги
+- Ukrainian: музика, подорожі, фотографія, спорт, книги
+- Spanish: música, viajes, fotografía, deportes, libros
+- German: Musik, Reisen, Fotografie, Sport, Bücher
+- French: musique, voyage, photographie, sport, livres
+- Portuguese: música, viagens, fotografia, esportes, livros
+- Italian: musica, viaggi, fotografia, sport, libri
+- Hebrew: מוזיקה, נסיעות, צילום, ספורט, ספרים
+- Chinese: 音乐, 旅行, 摄影, 运动, 书籍
+- Japanese: 音楽, 旅行, 写真, スポーツ, 本
+
+IMPORTANT: The user's language is {lang_name}. Return interests ONLY in {lang_name}.""",
                     },
                     {
                         "role": "user",
@@ -386,12 +441,13 @@ Example: music, travel, photography, sports, books
             logger.error(f"Failed to parse interests: {e}")
             return False, []
 
-    async def get_profile_summary(self, telegram_id: int) -> str:
+    async def get_profile_summary(self, telegram_id: int, language_code: str = "ru", formal: bool = False) -> str:
         """Get a formatted summary of user's social profile"""
+        lang = get_language_code(language_code)
         profile = await self.get_profile(telegram_id)
 
         if not profile:
-            return "Социальный профиль не настроен"
+            return get_system_message("social_profile_not_configured", lang, formal=formal)
 
         lines = []
 
@@ -402,27 +458,30 @@ Example: music, travel, photography, sports, books
             "facebook": "Facebook",
             "twitter": "Twitter/X",
             "linkedin": "LinkedIn",
-            "vk": "ВКонтакте",
-            "telegram_channel": "Telegram канал",
+            "vk": "VKontakte",
+            "telegram_channel": "Telegram channel",
             "youtube": "YouTube",
             "tiktok": "TikTok",
         }
 
         active_links = [(network_names.get(k, k), v) for k, v in urls.items() if v]
         if active_links:
-            lines.append("<b>Социальные сети:</b>")
+            networks_label = get_system_message("social_networks_label", lang, formal=formal)
+            lines.append(networks_label)
             for name, url in active_links:
                 lines.append(f"  • {name}")
 
         # Bio
         if profile.bio_text:
-            lines.append(f"\n<b>О себе:</b>\n{profile.bio_text[:200]}{'...' if len(profile.bio_text) > 200 else ''}")
+            about_label = get_system_message("about_me_label", lang, formal=formal)
+            lines.append(f"\n{about_label}\n{profile.bio_text[:200]}{'...' if len(profile.bio_text) > 200 else ''}")
 
         # Interests
         if profile.interests:
-            lines.append(f"\n<b>Интересы:</b> {', '.join(profile.interests)}")
+            interests_label = get_system_message("interests_label", lang, formal=formal)
+            lines.append(f"\n{interests_label} {', '.join(profile.interests)}")
 
         if not lines:
-            return "Социальный профиль пуст. Добавьте ссылки на соцсети или биографию."
+            return get_system_message("social_profile_empty", lang, formal=formal)
 
         return "\n".join(lines)

@@ -78,7 +78,10 @@ MENU_TEXTS = {
         "address_formal": "На «вы» 🤝",
         "gender_male": "👨 Он",
         "gender_female": "👩 Она",
+        "gender_neutral": "⚪ Нейтрально",
         "settings_gender": "🚻 Пол",
+        "yes_start": "✅ Да, начать",
+        "no_settings": "⚙️ Сначала настройки",
         "settings_language": "🌐 Язык интерфейса",
         "language_ru": "🇷🇺 Русский",
         "language_en": "🇬🇧 English",
@@ -144,7 +147,10 @@ MENU_TEXTS = {
         "address_formal": "Formal 🤝",
         "gender_male": "👨 He",
         "gender_female": "👩 She",
+        "gender_neutral": "⚪ Neutral",
         "settings_gender": "🚻 Gender",
+        "yes_start": "✅ Yes, start",
+        "no_settings": "⚙️ Settings first",
         "settings_language": "🌐 Interface language",
         "language_ru": "🇷🇺 Русский",
         "language_en": "🇬🇧 English",
@@ -210,7 +216,10 @@ MENU_TEXTS = {
         "address_formal": "На «ви» 🤝",
         "gender_male": "👨 Він",
         "gender_female": "👩 Вона",
+        "gender_neutral": "⚪ Нейтрально",
         "settings_gender": "🚻 Стать",
+        "yes_start": "✅ Так, почати",
+        "no_settings": "⚙️ Спочатку налаштування",
         "settings_language": "🌐 Мова інтерфейсу",
         "language_ru": "🇷🇺 Русский",
         "language_en": "🇬🇧 English",
@@ -797,6 +806,51 @@ ONBOARDING_TEXTS = {
             "🔒 Ваши данные в безопасности и используются только для нашего общения.\n"
             "Подробнее: /privacy"
         ),
+        "welcome_with_voice": (
+            "Привет, {first_name}! 👋\n\n"
+            "Я — твой помощник для развития позитивного мышления. "
+            "Каждый день я буду спрашивать тебя о хорошем, "
+            "чтобы вместе замечать радостные моменты жизни. ✨\n\n"
+            "💬 Ты можешь отвечать текстом или голосовыми сообщениями - я пойму оба варианта!\n\n"
+            "Давай начнём! Как тебе удобнее общаться?"
+        ),
+        "onboarding_select_gender": (
+            "Отлично! Буду обращаться на «ты» 😊\n\n"
+            "Теперь выбери, как тебя лучше называть:\n\n"
+            "Это поможет мне задавать более персонализированные вопросы."
+        ),
+        "onboarding_select_gender_formal": (
+            "Хорошо! Буду обращаться на «вы» 😊\n\n"
+            "Теперь выберите, как Вас лучше называть:\n\n"
+            "Это поможет мне задавать более персонализированные вопросы."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Важно: Выбор часового пояса</b>\n\n"
+            "Это очень важно! Без правильного часового пояса я могу начать отправлять "
+            "сообщения ночью, когда ты не хочешь получать уведомления. 😴\n\n"
+            "Я буду писать тебе только в активные часы (по умолчанию с 9:00 до 21:00), "
+            "но для этого мне нужно знать твой часовой пояс.\n\n"
+            "Пожалуйста, выбери свой часовой пояс:"
+        ),
+        "onboarding_ready_confirm": (
+            "Всё готово! 🎉\n\n"
+            "Я буду задавать тебе вопросы о хороших моментах дня.\n\n"
+            "Готов начать? Или хочешь сначала настроить часовой пояс и интервал?"
+        ),
+        "onboarding_complete": (
+            "Отлично! Всё готово! 🎉\n\n"
+            "Теперь немного о том, как это работает:\n\n"
+            "• Каждые несколько часов я спрошу: «Что хорошего произошло?»\n"
+            "• Ты можешь ответить текстом или голосовым сообщением\n"
+            "• Я сохраню твои моменты и напомню о них, когда понадобится поддержка\n\n"
+            "📝 <b>Примеры ответов:</b>\n"
+            "• «Сегодня прогулялся в парке, было очень красиво!»\n"
+            "• «Встретился с друзьями, хорошо пообщались»\n"
+            "• «Закончил важный проект, чувствую гордость»\n"
+            "• «Выпил вкусный кофе и почитал книгу»\n\n"
+            "🔒 Твои данные в безопасности и используются только для нашего общения.\n"
+            "Подробнее: /privacy"
+        ),
     },
     "en": {
         "address_informal_button": "Informal 😊",
@@ -820,6 +874,51 @@ ONBOARDING_TEXTS = {
             "• I'll save your moments and remind you of them when you need support\n\n"
             "⚙️ <b>Important:</b> Please set up your <b>timezone</b> and <b>message frequency</b> "
             "in ⚙️ Settings, so I can message you at a convenient time!\n\n"
+            "🔒 Your data is safe and used only for our communication.\n"
+            "More info: /privacy"
+        ),
+        "welcome_with_voice": (
+            "Hello, {first_name}! 👋\n\n"
+            "I'm your assistant for developing positive thinking. "
+            "Every day I will ask you about good things, "
+            "so that we can notice the joyful moments of life together. ✨\n\n"
+            "💬 You can reply with text or voice messages - I'll understand both!\n\n"
+            "Let's begin! How would you prefer to communicate?"
+        ),
+        "onboarding_select_gender": (
+            "Great! I'll use informal communication 😊\n\n"
+            "Now choose how you'd like to be addressed:\n\n"
+            "This will help me ask more personalized questions."
+        ),
+        "onboarding_select_gender_formal": (
+            "Understood! I'll use formal communication 😊\n\n"
+            "Now please choose how you'd like to be addressed:\n\n"
+            "This will help me ask more personalized questions."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Important: Timezone Selection</b>\n\n"
+            "This is very important! Without the correct timezone, I might start sending "
+            "messages at night when you don't want to receive notifications. 😴\n\n"
+            "I will only message you during active hours (default 9:00 AM to 9:00 PM), "
+            "but I need to know your timezone for that.\n\n"
+            "Please select your timezone:"
+        ),
+        "onboarding_ready_confirm": (
+            "Everything is ready! 🎉\n\n"
+            "I will ask you questions about good moments of the day.\n\n"
+            "Ready to start? Or would you like to configure timezone and interval first?"
+        ),
+        "onboarding_complete": (
+            "Excellent! Everything is ready! 🎉\n\n"
+            "Here's how it works:\n\n"
+            "• Every few hours I'll ask: \"What good happened?\"\n"
+            "• You can reply with text or voice message\n"
+            "• I'll save your moments and remind you of them when you need support\n\n"
+            "📝 <b>Answer examples:</b>\n"
+            "• \"Today I walked in the park, it was very beautiful!\"\n"
+            "• \"Met with friends, had a good conversation\"\n"
+            "• \"Finished an important project, feeling proud\"\n"
+            "• \"Had a delicious coffee and read a book\"\n\n"
             "🔒 Your data is safe and used only for our communication.\n"
             "More info: /privacy"
         ),
@@ -849,24 +948,80 @@ ONBOARDING_TEXTS = {
             "🔒 Ваші дані в безпеці і використовуються тільки для нашого спілкування.\n"
             "Детальніше: /privacy"
         ),
+        "welcome_with_voice": (
+            "Привіт, {first_name}! 👋\n\n"
+            "Я — твій помічник для розвитку позитивного мислення. "
+            "Щодня я буду запитувати тебе про хороше, "
+            "щоб разом помічати радісні моменти життя. ✨\n\n"
+            "💬 Ти можеш відповідати текстом або голосовими повідомленнями - я зрозумію обидва варіанти!\n\n"
+            "Давай почнемо! Як тобі зручніше спілкуватися?"
+        ),
+        "onboarding_select_gender": (
+            "Чудово! Буду звертатися на «ти» 😊\n\n"
+            "Тепер вибери, як тебе краще називати:\n\n"
+            "Це допоможе мені задавати більш персоналізовані питання."
+        ),
+        "onboarding_select_gender_formal": (
+            "Добре! Буду звертатися на «ви» 😊\n\n"
+            "Тепер виберіть, як Вас краще називати:\n\n"
+            "Це допоможе мені задавати більш персоналізовані питання."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Важливо: Вибір часового поясу</b>\n\n"
+            "Це дуже важливо! Без правильного часового поясу я можу почати надсилати "
+            "повідомлення вночі, коли ти не хочеш отримувати сповіщення. 😴\n\n"
+            "Я буду писати тобі тільки в активні години (за замовчуванням з 9:00 до 21:00), "
+            "але для цього мені потрібно знати твій часовий пояс.\n\n"
+            "Будь ласка, вибери свій часовий пояс:"
+        ),
+        "onboarding_ready_confirm": (
+            "Все готово! 🎉\n\n"
+            "Я буду запитувати тебе про хороші моменти дня.\n\n"
+            "Готовий почати? Чи хочеш спочатку налаштувати часовий пояс та інтервал?"
+        ),
+        "onboarding_complete": (
+            "Чудово! Все готово! 🎉\n\n"
+            "Ось як це працює:\n\n"
+            "• Кожні кілька годин я запитаю: «Що хорошого сталося?»\n"
+            "• Ти можеш відповісти текстом або голосовим повідомленням\n"
+            "• Я збережу твої моменти і нагадаю про них, коли потрібна підтримка\n\n"
+            "📝 <b>Приклади відповідей:</b>\n"
+            "• «Сьогодні прогулявся в парку, було дуже красиво!»\n"
+            "• «Зустрівся з друзями, добре поспілкувалися»\n"
+            "• «Закінчив важливий проект, відчуваю гордість»\n"
+            "• «Випив смачну каву і почитав книгу»\n\n"
+            "🔒 Твої дані в безпеці і використовуються тільки для нашого спілкування.\n"
+            "Детальніше: /privacy"
+        ),
     },
 }
 
 
-def get_onboarding_text(key: str, language_code: str) -> str:
+def get_onboarding_text(key: str, language_code: str, **kwargs) -> str:
     """
     Get localized onboarding text.
 
     Args:
         key: Text key (e.g., "address_informal_button", "address_informal_confirm")
         language_code: User's language code
+        **kwargs: Optional parameters to format the text (e.g., first_name="John")
 
     Returns:
         Localized text or Russian fallback
     """
     lang = get_language_code(language_code)
     texts = ONBOARDING_TEXTS.get(lang, ONBOARDING_TEXTS["ru"])
-    return texts.get(key, ONBOARDING_TEXTS["ru"].get(key, ""))
+    text = texts.get(key, ONBOARDING_TEXTS["ru"].get(key, ""))
+    
+    # Format text with parameters if provided
+    if kwargs:
+        try:
+            return text.format(**kwargs)
+        except (KeyError, ValueError):
+            # If formatting fails, return text as-is
+            return text
+    
+    return text
 
 
 # System/status messages for localization
@@ -891,6 +1046,7 @@ SYSTEM_MESSAGES = {
         "address_changed_formal": "Буду обращаться на «вы»",
         "gender_set_male": "Пол установлен: мужской",
         "gender_set_female": "Пол установлен: женский",
+        "gender_set_neutral": "Пол установлен: нейтрально",
 
         # Moments messages
         "no_moments": "У тебя пока нет сохранённых моментов. Расскажи, что хорошего произошло сегодня!",
@@ -915,7 +1071,22 @@ SYSTEM_MESSAGES = {
 
         # Social profile messages
         "social_profile_updated": "Профиль обновлён",
+        "social_link_added": "Добавлена ссылка на {network}",
         "social_link_removed": "Ссылка удалена",
+        "social_bio_updated": "Биография обновлена",
+        "social_profile_not_configured": "Социальный профиль не настроен",
+        "social_profile_empty": "Социальный профиль пуст. Добавьте ссылки на соцсети или биографию.",
+        "social_networks_label": "<b>Социальные сети:</b>",
+        "about_me_label": "<b>О себе:</b>",
+        "interests_label": "<b>Интересы:</b>",
+        "user_not_found": "Пользователь не найден",
+        "profile_not_found": "Профиль не найден",
+        "unknown_social_network": "Неизвестная социальная сеть",
+        "social_network_not_detected": "Не удалось определить социальную сеть. Поддерживаются: Instagram, Facebook, Twitter/X, LinkedIn, VK, Telegram, YouTube, TikTok",
+        "unknown_error": "Неизвестная ошибка",
+        "bio_too_long": "❌ Биография слишком длинная. Максимум 1000 символов.",
+        "bio_too_long_hint": "Попробуй сократить текст или отправь /cancel для отмены.",
+        "bio_too_long_hint_formal": "Попробуйте сократить текст или отправьте /cancel для отмены.",
         "enter_social_link": "Отправь ссылку на свой профиль в социальной сети:",
         "enter_social_link_formal": "Отправьте ссылку на Ваш профиль в социальной сети:",
         "enter_bio": "Расскажи немного о себе (увлечения, интересы):",
@@ -923,10 +1094,57 @@ SYSTEM_MESSAGES = {
         "interests_detected": "✨ Определены интересы: {interests}",
 
         # Feedback messages
+        "feedback_title": "💡 <b>Предложить идею</b>",
+        "feedback_intro": "Я буду рад услышать твои идеи и предложения!",
+        "feedback_intro_formal": "Я буду рад услышать Ваши идеи и предложения!",
+        "feedback_choose_category": "Выбери категорию:",
+        "feedback_choose_category_formal": "Выберите категорию:",
+        "feedback_suggestion_title": "💡 <b>Идея/предложение</b>",
+        "feedback_suggestion_text": "Напиши свою идею или предложение. Я передам её разработчикам! 📝",
+        "feedback_suggestion_text_formal": "Напишите свою идею или предложение. Я передам её разработчикам! 📝",
+        "feedback_bug_title": "🐛 <b>Сообщение об ошибке</b>",
+        "feedback_bug_text": "Опиши, что пошло не так. Укажи, что ты делал и что произошло. 📝",
+        "feedback_bug_text_formal": "Опишите, что пошло не так. Укажите, что Вы делали и что произошло. 📝",
+        "feedback_other_title": "💬 <b>Другое</b>",
+        "feedback_other_text": "Напиши своё сообщение. 📝",
+        "feedback_other_text_formal": "Напишите своё сообщение. 📝",
+        "feedback_input_hint": "<i>Просто отправь текстовое сообщение:</i>",
+        "feedback_cancelled": "❌ Отменено.",
+        "feedback_cancelled_hint": "Если захочешь предложить идею позже, нажми кнопку «💡 Предложить идею» в меню.",
+        "feedback_cancelled_hint_formal": "Если захотите предложить идею позже, нажмите кнопку «💡 Предложить идею» в меню.",
+        "feedback_error": "😔 Что-то пошло не так. Попробуй ещё раз.",
+        "feedback_error_formal": "😔 Что-то пошло не так. Попробуйте ещё раз.",
+        "feedback_empty": "🤔 Кажется, сообщение пустое. Напиши текстом, что именно ты хотел(а) сообщить.",
+        "feedback_empty_formal": "🤔 Кажется, сообщение пустое. Напишите текстом, что именно Вы хотели сообщить.",
+        "feedback_saved": "✅ <b>Спасибо за отзыв!</b>",
+        "feedback_saved_details": "📂 Категория: {category}\n📝 Сообщение: {content}",
+        "feedback_saved_confirm": "Твоё сообщение сохранено и будет рассмотрено. 💝",
+        "feedback_saved_confirm_formal": "Ваше сообщение сохранено и будет рассмотрено. 💝",
+        "feedback_saved_short": "Сохранил — скоро посмотрим. 💝",
+        "feedback_save_error": "😔 Не удалось сохранить отзыв. Попробуй позже.",
+        "feedback_save_error_formal": "😔 Не удалось сохранить отзыв. Попробуйте позже.",
         "feedback_prompt": "Напиши своё предложение или идею:",
         "feedback_prompt_formal": "Напишите Ваше предложение или идею:",
         "feedback_sent": "Спасибо за обратную связь! 💝",
         "feedback_category": "Категория: {category}",
+        
+        # Question templates (for scheduler)
+        "question_1_informal": "Что хорошего произошло сегодня? 🌟",
+        "question_2_informal": "Расскажи, чему ты порадовался? ✨",
+        "question_3_informal": "Что приятного случилось? 😊",
+        "question_4_informal": "Какой момент сегодня был особенным? 💫",
+        "question_5_informal": "Что тебя сегодня вдохновило? 🌈",
+        "question_6_informal": "Расскажи о маленькой радости дня! 💝",
+        "question_7_informal": "Что хорошего ты заметил сегодня? 🌻",
+        "question_8_informal": "Чему ты улыбнулся сегодня? 😄",
+        "question_1_formal": "Что хорошего произошло сегодня? 🌟",
+        "question_2_formal": "Расскажите, чему Вы порадовались? ✨",
+        "question_3_formal": "Что приятного случилось? 😊",
+        "question_4_formal": "Какой момент сегодня был особенным? 💫",
+        "question_5_formal": "Что Вас сегодня вдохновило? 🌈",
+        "question_6_formal": "Расскажите о маленькой радости дня! 💝",
+        "question_7_formal": "Что хорошего Вы заметили сегодня? 🌻",
+        "question_8_formal": "Чему Вы улыбнулись сегодня? 😄",
 
         # Help message
         "help_title": "📋 Доступные команды:",
@@ -1101,12 +1319,31 @@ SYSTEM_MESSAGES = {
         "main_menu_prompt": "Чем могу помочь? 😊",
 
         # Delete data
+        "delete_data_title": "⚠️ <b>Удаление данных</b>",
+        "delete_data_confirm": "Ты уверен, что хочешь удалить ВСЕ свои данные из базы данных бота?",
+        "delete_data_confirm_formal": "Вы уверены, что хотите удалить ВСЕ свои данные из базы данных бота?",
+        "delete_data_warning": "Это действие удалит из базы данных бота:",
+        "delete_data_warning_formal": "Это действие удалит из базы данных бота:",
+        "delete_data_moments": "• Все твои моменты",
+        "delete_data_moments_formal": "• Все Ваши моменты",
+        "delete_data_conversations": "• Историю диалогов",
+        "delete_data_stats": "• Статистику",
+        "delete_data_settings": "• Настройки",
+        "delete_data_irreversible": "⚠️ <b>Это действие необратимо!</b>",
+        "delete_data_chat_note": "ℹ️ <i>Примечание: Переписка в этом чате на твоём устройстве останется. Удаляются только данные из базы данных бота.</i>",
+        "delete_data_chat_note_formal": "ℹ️ <i>Примечание: Переписка в этом чате на Вашем устройстве останется. Удаляются только данные из базы данных бота.</i>",
         "data_deleted": (
-            "✅ Все твои данные удалены.\n\n"
+            "✅ Все твои данные удалены из базы данных бота.\n\n"
             "Если захочешь вернуться — просто напиши /start 💝"
         ),
+        "data_deleted_formal": (
+            "✅ Все Ваши данные удалены из базы данных бота.\n\n"
+            "Если захотите вернуться — просто напишите /start 💝"
+        ),
         "data_delete_error": "😔 Произошла ошибка при удалении. Попробуй позже.",
+        "data_delete_error_formal": "😔 Произошла ошибка при удалении. Попробуйте позже.",
         "delete_cancelled": "👍 Удаление отменено. Твои данные в безопасности!",
+        "delete_cancelled_formal": "👍 Удаление отменено. Ваши данные в безопасности!",
 
         # Question skip
         "question_skipped": "👍 Хорошо, пропустим этот вопрос. До скорой встречи! 😊",
@@ -1153,6 +1390,7 @@ SYSTEM_MESSAGES = {
         "address_changed_formal": "I'll use formal communication",
         "gender_set_male": "Gender set: male",
         "gender_set_female": "Gender set: female",
+        "gender_set_neutral": "Gender set: neutral",
 
         # Moments messages
         "no_moments": "You don't have any saved moments yet. Tell me what good happened today!",
@@ -1177,7 +1415,22 @@ SYSTEM_MESSAGES = {
 
         # Social profile messages
         "social_profile_updated": "Profile updated",
+        "social_link_added": "✅ Link added to {network}",
         "social_link_removed": "Link removed",
+        "social_bio_updated": "Biography updated",
+        "social_profile_not_configured": "Social profile is not configured",
+        "social_profile_empty": "Social profile is empty. Add social network links or biography.",
+        "social_networks_label": "<b>Social Networks:</b>",
+        "about_me_label": "<b>About me:</b>",
+        "interests_label": "<b>Interests:</b>",
+        "user_not_found": "User not found",
+        "profile_not_found": "Profile not found",
+        "unknown_social_network": "Unknown social network",
+        "social_network_not_detected": "Could not detect social network. Supported: Instagram, Facebook, Twitter/X, LinkedIn, VK, Telegram, YouTube, TikTok",
+        "unknown_error": "Unknown error",
+        "bio_too_long": "❌ Biography is too long. Maximum 1000 characters.",
+        "bio_too_long_hint": "Try to shorten the text or send /cancel to cancel.",
+        "bio_too_long_hint_formal": "Please try to shorten the text or send /cancel to cancel.",
         "enter_social_link": "Send a link to your social media profile:",
         "enter_social_link_formal": "Please send a link to your social media profile:",
         "enter_bio": "Tell me a bit about yourself (hobbies, interests):",
@@ -1185,10 +1438,57 @@ SYSTEM_MESSAGES = {
         "interests_detected": "✨ Interests detected: {interests}",
 
         # Feedback messages
+        "feedback_title": "💡 <b>Suggest idea</b>",
+        "feedback_intro": "I'll be glad to hear your ideas and suggestions!",
+        "feedback_intro_formal": "I'll be glad to hear your ideas and suggestions!",
+        "feedback_choose_category": "Choose a category:",
+        "feedback_choose_category_formal": "Choose a category:",
+        "feedback_suggestion_title": "💡 <b>Idea/suggestion</b>",
+        "feedback_suggestion_text": "Write your idea or suggestion. I'll pass it on to the developers! 📝",
+        "feedback_suggestion_text_formal": "Please write your idea or suggestion. I'll pass it on to the developers! 📝",
+        "feedback_bug_title": "🐛 <b>Report bug</b>",
+        "feedback_bug_text": "Describe what went wrong. Tell me what you were doing and what happened. 📝",
+        "feedback_bug_text_formal": "Please describe what went wrong. Tell me what you were doing and what happened. 📝",
+        "feedback_other_title": "💬 <b>Other</b>",
+        "feedback_other_text": "Write your message. 📝",
+        "feedback_other_text_formal": "Please write your message. 📝",
+        "feedback_input_hint": "<i>Just send a text message:</i>",
+        "feedback_cancelled": "❌ Cancelled.",
+        "feedback_cancelled_hint": "If you want to suggest an idea later, press the «💡 Suggest idea» button in the menu.",
+        "feedback_cancelled_hint_formal": "If you want to suggest an idea later, press the «💡 Suggest idea» button in the menu.",
+        "feedback_error": "😔 Something went wrong. Try again.",
+        "feedback_error_formal": "😔 Something went wrong. Please try again.",
+        "feedback_empty": "🤔 Seems like the message is empty. Write in text what you wanted to report.",
+        "feedback_empty_formal": "🤔 Seems like the message is empty. Please write in text what you wanted to report.",
+        "feedback_saved": "✅ <b>Thanks for your feedback!</b>",
+        "feedback_saved_details": "📂 Category: {category}\n📝 Message: {content}",
+        "feedback_saved_confirm": "Your message has been saved and will be reviewed. 💝",
+        "feedback_saved_confirm_formal": "Your message has been saved and will be reviewed. 💝",
+        "feedback_saved_short": "Saved — we'll look at it soon. 💝",
+        "feedback_save_error": "😔 Failed to save feedback. Try again later.",
+        "feedback_save_error_formal": "😔 Failed to save feedback. Please try again later.",
         "feedback_prompt": "Write your suggestion or idea:",
         "feedback_prompt_formal": "Please write your suggestion or idea:",
         "feedback_sent": "Thanks for your feedback! 💝",
         "feedback_category": "Category: {category}",
+        
+        # Question templates (for scheduler)
+        "question_1_informal": "What good happened today? 🌟",
+        "question_2_informal": "Tell me, what made you happy? ✨",
+        "question_3_informal": "What pleasant happened? 😊",
+        "question_4_informal": "What moment today was special? 💫",
+        "question_5_informal": "What inspired you today? 🌈",
+        "question_6_informal": "Tell me about a little joy of the day! 💝",
+        "question_7_informal": "What good did you notice today? 🌻",
+        "question_8_informal": "What made you smile today? 😄",
+        "question_1_formal": "What good happened today? 🌟",
+        "question_2_formal": "Tell me, what made you happy? ✨",
+        "question_3_formal": "What pleasant happened? 😊",
+        "question_4_formal": "What moment today was special? 💫",
+        "question_5_formal": "What inspired you today? 🌈",
+        "question_6_formal": "Tell me about a little joy of the day! 💝",
+        "question_7_formal": "What good did you notice today? 🌻",
+        "question_8_formal": "What made you smile today? 😄",
 
         # Help message
         "help_title": "📋 Available commands:",
@@ -1363,12 +1663,31 @@ SYSTEM_MESSAGES = {
         "main_menu_prompt": "How can I help? 😊",
 
         # Delete data
+        "delete_data_title": "⚠️ <b>Data Deletion</b>",
+        "delete_data_confirm": "Are you sure you want to delete ALL your data from the bot's database?",
+        "delete_data_confirm_formal": "Are you sure you want to delete ALL your data from the bot's database?",
+        "delete_data_warning": "This action will delete from the bot's database:",
+        "delete_data_warning_formal": "This action will delete from the bot's database:",
+        "delete_data_moments": "• All your moments",
+        "delete_data_moments_formal": "• All your moments",
+        "delete_data_conversations": "• Conversation history",
+        "delete_data_stats": "• Statistics",
+        "delete_data_settings": "• Settings",
+        "delete_data_irreversible": "⚠️ <b>This action is irreversible!</b>",
+        "delete_data_chat_note": "ℹ️ <i>Note: The chat history on your device will remain. Only data from the bot's database will be deleted.</i>",
+        "delete_data_chat_note_formal": "ℹ️ <i>Note: The chat history on your device will remain. Only data from the bot's database will be deleted.</i>",
         "data_deleted": (
-            "✅ All your data has been deleted.\n\n"
+            "✅ All your data has been deleted from the bot's database.\n\n"
+            "If you want to come back — just write /start 💝"
+        ),
+        "data_deleted_formal": (
+            "✅ All your data has been deleted from the bot's database.\n\n"
             "If you want to come back — just write /start 💝"
         ),
         "data_delete_error": "😔 An error occurred while deleting. Try again later.",
+        "data_delete_error_formal": "😔 An error occurred while deleting. Please try again later.",
         "delete_cancelled": "👍 Deletion cancelled. Your data is safe!",
+        "delete_cancelled_formal": "👍 Deletion cancelled. Your data is safe!",
 
         # Question skip
         "question_skipped": "👍 Okay, let's skip this question. See you soon! 😊",
@@ -1415,6 +1734,7 @@ SYSTEM_MESSAGES = {
         "address_changed_formal": "Буду звертатися на «ви»",
         "gender_set_male": "Стать встановлено: чоловіча",
         "gender_set_female": "Стать встановлено: жіноча",
+        "gender_set_neutral": "Стать встановлено: нейтрально",
 
         # Moments messages
         "no_moments": "У тебе поки немає збережених моментів. Розкажи, що хорошого сталося сьогодні!",
@@ -1439,7 +1759,22 @@ SYSTEM_MESSAGES = {
 
         # Social profile messages
         "social_profile_updated": "Профіль оновлено",
+        "social_link_added": "✅ Додано посилання на {network}",
         "social_link_removed": "Посилання видалено",
+        "social_bio_updated": "Біографія оновлена",
+        "social_profile_not_configured": "Соціальний профіль не налаштовано",
+        "social_profile_empty": "Соціальний профіль порожній. Додайте посилання на соцмережі або біографію.",
+        "social_networks_label": "<b>Соціальні мережі:</b>",
+        "about_me_label": "<b>Про себе:</b>",
+        "interests_label": "<b>Інтереси:</b>",
+        "user_not_found": "Користувача не знайдено",
+        "profile_not_found": "Профіль не знайдено",
+        "unknown_social_network": "Невідома соціальна мережа",
+        "social_network_not_detected": "Не вдалося визначити соціальну мережу. Підтримуються: Instagram, Facebook, Twitter/X, LinkedIn, VK, Telegram, YouTube, TikTok",
+        "unknown_error": "Невідома помилка",
+        "bio_too_long": "❌ Біографія занадто довга. Максимум 1000 символів.",
+        "bio_too_long_hint": "Спробуй скоротити текст або надішли /cancel для скасування.",
+        "bio_too_long_hint_formal": "Спробуйте скоротити текст або надішліть /cancel для скасування.",
         "enter_social_link": "Надішли посилання на свій профіль у соціальній мережі:",
         "enter_social_link_formal": "Надішліть посилання на Ваш профіль у соціальній мережі:",
         "enter_bio": "Розкажи трохи про себе (захоплення, інтереси):",
@@ -1447,10 +1782,57 @@ SYSTEM_MESSAGES = {
         "interests_detected": "✨ Визначено інтереси: {interests}",
 
         # Feedback messages
+        "feedback_title": "💡 <b>Запропонувати ідею</b>",
+        "feedback_intro": "Я буду радий почути твої ідеї та пропозиції!",
+        "feedback_intro_formal": "Я буду радий почути Ваші ідеї та пропозиції!",
+        "feedback_choose_category": "Виберіть категорію:",
+        "feedback_choose_category_formal": "Виберіть категорію:",
+        "feedback_suggestion_title": "💡 <b>Ідея/пропозиція</b>",
+        "feedback_suggestion_text": "Напиши свою ідею або пропозицію. Я передам її розробникам! 📝",
+        "feedback_suggestion_text_formal": "Напишіть свою ідею або пропозицію. Я передам її розробникам! 📝",
+        "feedback_bug_title": "🐛 <b>Повідомлення про помилку</b>",
+        "feedback_bug_text": "Опиши, що пішло не так. Вкажи, що ти робив і що сталося. 📝",
+        "feedback_bug_text_formal": "Опишіть, що пішло не так. Вкажіть, що Ви робили і що сталося. 📝",
+        "feedback_other_title": "💬 <b>Інше</b>",
+        "feedback_other_text": "Напиши своє повідомлення. 📝",
+        "feedback_other_text_formal": "Напишіть своє повідомлення. 📝",
+        "feedback_input_hint": "<i>Просто надішліть текстове повідомлення:</i>",
+        "feedback_cancelled": "❌ Скасовано.",
+        "feedback_cancelled_hint": "Якщо захочеш запропонувати ідею пізніше, натисни кнопку «💡 Запропонувати ідею» в меню.",
+        "feedback_cancelled_hint_formal": "Якщо захочете запропонувати ідею пізніше, натисніть кнопку «💡 Запропонувати ідею» в меню.",
+        "feedback_error": "😔 Щось пішло не так. Спробуй ще раз.",
+        "feedback_error_formal": "😔 Щось пішло не так. Спробуйте ще раз.",
+        "feedback_empty": "🤔 Здається, повідомлення порожнє. Напиши текстом, що саме ти хотів(а) повідомити.",
+        "feedback_empty_formal": "🤔 Здається, повідомлення порожнє. Напишіть текстом, що саме Ви хотіли повідомити.",
+        "feedback_saved": "✅ <b>Дякуємо за відгук!</b>",
+        "feedback_saved_details": "📂 Категорія: {category}\n📝 Повідомлення: {content}",
+        "feedback_saved_confirm": "Твоє повідомлення збережено і буде розглянуто. 💝",
+        "feedback_saved_confirm_formal": "Ваше повідомлення збережено і буде розглянуто. 💝",
+        "feedback_saved_short": "Зберіг — скоро подивимось. 💝",
+        "feedback_save_error": "😔 Не вдалося зберегти відгук. Спробуй пізніше.",
+        "feedback_save_error_formal": "😔 Не вдалося зберегти відгук. Спробуйте пізніше.",
         "feedback_prompt": "Напиши свою пропозицію або ідею:",
         "feedback_prompt_formal": "Напишіть Вашу пропозицію або ідею:",
         "feedback_sent": "Дякуємо за зворотний зв'язок! 💝",
         "feedback_category": "Категорія: {category}",
+        
+        # Question templates (for scheduler)
+        "question_1_informal": "Що хорошого сталося сьогодні? 🌟",
+        "question_2_informal": "Розкажи, чому ти порадувався? ✨",
+        "question_3_informal": "Що приємного сталося? 😊",
+        "question_4_informal": "Який момент сьогодні був особливим? 💫",
+        "question_5_informal": "Що тебе сьогодні надихнуло? 🌈",
+        "question_6_informal": "Розкажи про маленьку радість дня! 💝",
+        "question_7_informal": "Що хорошого ти помітив сьогодні? 🌻",
+        "question_8_informal": "Чому ти посміхнувся сьогодні? 😄",
+        "question_1_formal": "Що хорошого сталося сьогодні? 🌟",
+        "question_2_formal": "Розкажіть, чому Ви порадувалися? ✨",
+        "question_3_formal": "Що приємного сталося? 😊",
+        "question_4_formal": "Який момент сьогодні був особливим? 💫",
+        "question_5_formal": "Що Вас сьогодні надихнуло? 🌈",
+        "question_6_formal": "Розкажіть про маленьку радість дня! 💝",
+        "question_7_formal": "Що хорошого Ви помітили сьогодні? 🌻",
+        "question_8_formal": "Чому Ви посміхнулися сьогодні? 😄",
 
         # Help message
         "help_title": "📋 Доступні команди:",
@@ -1625,12 +2007,31 @@ SYSTEM_MESSAGES = {
         "main_menu_prompt": "Чим можу допомогти? 😊",
 
         # Delete data
+        "delete_data_title": "⚠️ <b>Видалення даних</b>",
+        "delete_data_confirm": "Ти впевнений, що хочеш видалити ВСІ свої дані з бази даних бота?",
+        "delete_data_confirm_formal": "Ви впевнені, що хочете видалити ВСІ свої дані з бази даних бота?",
+        "delete_data_warning": "Ця дія видалить з бази даних бота:",
+        "delete_data_warning_formal": "Ця дія видалить з бази даних бота:",
+        "delete_data_moments": "• Всі твої моменти",
+        "delete_data_moments_formal": "• Всі Ваші моменти",
+        "delete_data_conversations": "• Історію діалогів",
+        "delete_data_stats": "• Статистику",
+        "delete_data_settings": "• Налаштування",
+        "delete_data_irreversible": "⚠️ <b>Ця дія незворотна!</b>",
+        "delete_data_chat_note": "ℹ️ <i>Примітка: Переписка в цьому чаті на твоєму пристрої залишиться. Видаляються тільки дані з бази даних бота.</i>",
+        "delete_data_chat_note_formal": "ℹ️ <i>Примітка: Переписка в цьому чаті на Вашому пристрої залишиться. Видаляються тільки дані з бази даних бота.</i>",
         "data_deleted": (
-            "✅ Всі твої дані видалено.\n\n"
+            "✅ Всі твої дані видалено з бази даних бота.\n\n"
             "Якщо захочеш повернутися — просто напиши /start 💝"
         ),
+        "data_deleted_formal": (
+            "✅ Всі Ваші дані видалено з бази даних бота.\n\n"
+            "Якщо захотите повернутися — просто напишіть /start 💝"
+        ),
         "data_delete_error": "😔 Сталася помилка при видаленні. Спробуй пізніше.",
+        "data_delete_error_formal": "😔 Сталася помилка при видаленні. Спробуйте пізніше.",
         "delete_cancelled": "👍 Видалення скасовано. Твої дані в безпеці!",
+        "delete_cancelled_formal": "👍 Видалення скасовано. Ваші дані в безпеці!",
 
         # Question skip
         "question_skipped": "👍 Добре, пропустимо це запитання. До скорої зустрічі! 😊",

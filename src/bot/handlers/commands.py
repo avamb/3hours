@@ -13,7 +13,7 @@ from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
 from src.db.repositories.user_repository import UserRepository
 from src.services.user_service import UserService
-from src.utils.localization import get_system_message, t
+from src.utils.localization import get_system_message, get_onboarding_text, t
 
 logger = logging.getLogger(__name__)
 router = Router(name="commands")
@@ -48,31 +48,8 @@ async def send_welcome_image(message: Message) -> bool:
 
 
 def get_localized_welcome_text(first_name: str, language_code: str) -> str:
-    """Get welcome text in user's language"""
-    if language_code and language_code.startswith("en"):
-        return (
-            f"Hello, {first_name}! 👋\n\n"
-            "I'm your assistant for developing positive thinking. "
-            "Every day I will ask you about good things, "
-            "so that we can notice the joyful moments of life together. ✨\n\n"
-            "Let's begin! How would you prefer to communicate?"
-        )
-    elif language_code and language_code.startswith("uk"):
-        return (
-            f"Привіт, {first_name}! 👋\n\n"
-            "Я — твій помічник для розвитку позитивного мислення. "
-            "Щодня я буду запитувати тебе про хороше, "
-            "щоб разом помічати радісні моменти життя. ✨\n\n"
-            "Давай почнемо! Як тобі зручніше спілкуватися?"
-        )
-    else:  # Default to Russian
-        return (
-            f"Привет, {first_name}! 👋\n\n"
-            "Я — твой помощник для развития позитивного мышления. "
-            "Каждый день я буду спрашивать тебя о хорошем, "
-            "чтобы вместе замечать радостные моменты жизни. ✨\n\n"
-            "Давай начнём! Как тебе удобнее общаться?"
-        )
+    """Get welcome text in user's language with voice message info"""
+    return get_onboarding_text("welcome_with_voice", language_code, first_name=first_name)
 
 
 def get_localized_welcome_back_text(first_name: str, language_code: str) -> str:
@@ -348,16 +325,29 @@ async def cmd_delete_data(message: Message) -> None:
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
+
+    # Build localized confirmation message
+    title = get_system_message("delete_data_title", language_code)
+    confirm = get_system_message("delete_data_confirm_formal" if formal else "delete_data_confirm", language_code, formal=formal)
+    warning = get_system_message("delete_data_warning_formal" if formal else "delete_data_warning", language_code, formal=formal)
+    moments = get_system_message("delete_data_moments_formal" if formal else "delete_data_moments", language_code, formal=formal)
+    conversations = get_system_message("delete_data_conversations", language_code)
+    stats = get_system_message("delete_data_stats", language_code)
+    settings = get_system_message("delete_data_settings", language_code)
+    irreversible = get_system_message("delete_data_irreversible", language_code)
+    chat_note = get_system_message("delete_data_chat_note_formal" if formal else "delete_data_chat_note", language_code, formal=formal)
 
     confirm_text = (
-        "⚠️ <b>Удаление данных</b>\n\n"
-        "Ты уверен, что хочешь удалить ВСЕ свои данные?\n\n"
-        "Это действие:\n"
-        "• Удалит все твои моменты\n"
-        "• Удалит историю диалогов\n"
-        "• Удалит статистику\n"
-        "• Сбросит настройки\n\n"
-        "⚠️ <b>Это действие необратимо!</b>"
+        f"{title}\n\n"
+        f"{confirm}\n\n"
+        f"{warning}\n"
+        f"{moments}\n"
+        f"{conversations}\n"
+        f"{stats}\n"
+        f"{settings}\n\n"
+        f"{irreversible}\n\n"
+        f"{chat_note}"
     )
     await message.answer(confirm_text, reply_markup=get_delete_confirmation_keyboard(language_code))
 

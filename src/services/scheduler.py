@@ -24,6 +24,7 @@ from src.db.models import User, ScheduledNotification, QuestionTemplate, Convers
 from src.bot.keyboards.inline import get_question_keyboard
 from src.services.conversation_log_service import ConversationLogService
 from src.services.memory_indexer_job import index_conversation_memories, create_dialog_summaries
+from src.utils.localization import get_system_message, get_language_code
 
 logger = logging.getLogger(__name__)
 
@@ -417,10 +418,29 @@ class NotificationScheduler:
                 logger.error(f"Failed to send message to {user.telegram_id}: {e}")
 
     def _get_question(self, user: User) -> str:
-        """Get a random question that wasn't used last time, adapted for user's gender"""
-        questions = (
-            DEFAULT_QUESTIONS_FORMAL if user.formal_address else DEFAULT_QUESTIONS_INFORMAL
-        )
+        """Get a random question that wasn't used last time, adapted for user's gender and language"""
+        language_code = get_language_code(user.language_code)
+        formal = user.formal_address
+        
+        # Get localized questions
+        question_keys = [
+            "question_1", "question_2", "question_3", "question_4",
+            "question_5", "question_6", "question_7", "question_8"
+        ]
+        
+        # Build list of localized questions
+        questions = []
+        for key in question_keys:
+            full_key = f"{key}_{'formal' if formal else 'informal'}"
+            question = get_system_message(full_key, language_code, formal=formal)
+            if question and question != full_key:  # Check if translation exists
+                questions.append(question)
+        
+        # Fallback to Russian if no translations found
+        if not questions:
+            questions = (
+                DEFAULT_QUESTIONS_FORMAL if formal else DEFAULT_QUESTIONS_INFORMAL
+            )
 
         # Avoid repeating last question
         last_question = self._last_questions.get(user.id)
@@ -431,9 +451,10 @@ class NotificationScheduler:
 
         question = random.choice(available)
         
-        # Adapt question for user's gender (for Russian language)
-        gender = user.gender if user.gender else "unknown"
-        question = adapt_question_for_gender(question, gender, user.formal_address)
+        # Adapt question for user's gender (for Russian language only)
+        if language_code == "ru":
+            gender = user.gender if user.gender else "unknown"
+            question = adapt_question_for_gender(question, gender, formal)
         
         self._last_questions[user.id] = question
 
@@ -465,6 +486,15 @@ class NotificationScheduler:
                 if not user.notifications_enabled:
                     logger.info(f"Notifications disabled for user {telegram_id}")
                     return False
+
+                # Show typing indicator for better UX
+                from aiogram.enums import ChatAction
+                await self.bot.send_chat_action(
+                    chat_id=user.telegram_id,
+                    action=ChatAction.TYPING
+                )
+                import asyncio
+                await asyncio.sleep(0.5)  # Small delay for better UX
 
                 # Get a question
                 question = self._get_question(user)

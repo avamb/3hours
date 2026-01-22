@@ -380,20 +380,32 @@ def get_address_form_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup
     return keyboard
 
 
-def get_gender_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
-    """Create keyboard for gender selection"""
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text=get_menu_text("gender_male", language_code), callback_data="gender_male"),
-                InlineKeyboardButton(text=get_menu_text("gender_female", language_code), callback_data="gender_female"),
-            ],
-            [
-                InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back"),
-            ],
-        ]
-    )
-    return keyboard
+def get_gender_keyboard(language_code: str = "ru", include_neutral: bool = False) -> InlineKeyboardMarkup:
+    """Create keyboard for gender selection
+    
+    Args:
+        language_code: User's language
+        include_neutral: If True, adds "neutral/unknown" option (for onboarding)
+    """
+    buttons = [
+        [
+            InlineKeyboardButton(text=get_menu_text("gender_male", language_code), callback_data="gender_male"),
+            InlineKeyboardButton(text=get_menu_text("gender_female", language_code), callback_data="gender_female"),
+        ],
+    ]
+    
+    if include_neutral:
+        buttons.append([
+            InlineKeyboardButton(text=get_menu_text("gender_neutral", language_code), callback_data="gender_neutral"),
+        ])
+    
+    # Add back button only if not in onboarding
+    if not include_neutral:
+        buttons.append([
+            InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="settings_back"),
+        ])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 def get_moments_keyboard(page: int = 1, total_pages: int = 1, language_code: str = "ru") -> InlineKeyboardMarkup:
