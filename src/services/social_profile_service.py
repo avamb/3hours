@@ -337,7 +337,7 @@ class SocialProfileService:
             success_msg = get_system_message("social_bio_updated", lang, formal=formal)
             return True, success_msg
 
-    async def parse_interests(self, telegram_id: int) -> tuple[bool, List[str]]:
+    async def parse_interests(self, telegram_id: int, language_code: str = "ru") -> tuple[bool, List[str]]:
         """
         Parse interests from user's bio and social links using GPT.
         Returns (success, list of interests)
@@ -349,15 +349,32 @@ class SocialProfileService:
         # Collect all available info
         info_parts = []
         if profile.bio_text:
-            info_parts.append(f"Биография: {profile.bio_text}")
+            info_parts.append(f"Biography: {profile.bio_text}")
 
         urls = profile.get_all_urls()
         active_networks = [k for k, v in urls.items() if v]
         if active_networks:
-            info_parts.append(f"Социальные сети: {', '.join(active_networks)}")
+            info_parts.append(f"Social networks: {', '.join(active_networks)}")
 
         if not info_parts:
             return False, []
+
+        # Get language name for prompt
+        lang = get_language_code(language_code)
+        language_names = {
+            "ru": "Russian",
+            "en": "English",
+            "uk": "Ukrainian",
+            "es": "Spanish",
+            "de": "German",
+            "fr": "French",
+            "pt": "Portuguese",
+            "it": "Italian",
+            "he": "Hebrew",
+            "zh": "Chinese",
+            "ja": "Japanese",
+        }
+        lang_name = language_names.get(lang, "English")
 
         try:
             response = await self.client.chat.completions.create(
@@ -367,16 +384,26 @@ class SocialProfileService:
                         "role": "system",
                         "content": f"""{LANGUAGE_INSTRUCTION}
 
+⚠️ CRITICAL: You MUST respond ONLY in {lang_name} language. ⚠️
+
 You analyze the user's profile and determine their interests.
 Based on the biography and social networks, identify 3-7 main interests.
-Reply only with a comma-separated list of interests, without numbering or explanations.
-Example: music, travel, photography, sports, books
+Reply ONLY with a comma-separated list of interests in {lang_name}, without numbering or explanations.
 
-(Russian version / Русская версия):
-Ты анализируешь профиль пользователя и определяешь его интересы.
-На основе биографии и социальных сетей определи 3-7 основных интересов.
-Ответь только списком интересов через запятую, без нумерации и пояснений.
-Например: музыка, путешествия, фотография, спорт, книги""",
+Examples for different languages:
+- English: music, travel, photography, sports, books
+- Russian: музыка, путешествия, фотография, спорт, книги
+- Ukrainian: музика, подорожі, фотографія, спорт, книги
+- Spanish: música, viajes, fotografía, deportes, libros
+- German: Musik, Reisen, Fotografie, Sport, Bücher
+- French: musique, voyage, photographie, sport, livres
+- Portuguese: música, viagens, fotografia, esportes, livros
+- Italian: musica, viaggi, fotografia, sport, libri
+- Hebrew: מוזיקה, נסיעות, צילום, ספורט, ספרים
+- Chinese: 音乐, 旅行, 摄影, 运动, 书籍
+- Japanese: 音楽, 旅行, 写真, スポーツ, 本
+
+IMPORTANT: The user's language is {lang_name}. Return interests ONLY in {lang_name}.""",
                     },
                     {
                         "role": "user",

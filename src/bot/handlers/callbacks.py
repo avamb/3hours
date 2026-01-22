@@ -587,12 +587,14 @@ async def callback_social_bio(callback: CallbackQuery, state: FSMContext) -> Non
 @router.callback_query(F.data == "social_parse")
 async def callback_social_parse(callback: CallbackQuery) -> None:
     """Parse interests from profile"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
     parsing_text = get_system_message("social_parsing", language_code)
     await callback.message.edit_text(parsing_text)
 
     social_service = SocialProfileService()
-    success, interests = await social_service.parse_interests(callback.from_user.id)
+    success, interests = await social_service.parse_interests(callback.from_user.id, language_code)
 
     if success and interests:
         interests_text = ", ".join(interests)
