@@ -3,8 +3,10 @@ MINDSETHAPPYBOT - Callback query handlers
 Handles inline button presses and navigation
 """
 import logging
+import asyncio
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
+from aiogram.enums import ChatAction
 
 from aiogram.fsm.context import FSMContext
 
@@ -40,32 +42,22 @@ async def get_user_language(telegram_id: int) -> str:
     return user.language_code if user else "ru"
 
 
-# Onboarding callbacks
-@router.callback_query(F.data == "address_informal")
-async def callback_address_informal(callback: CallbackQuery) -> None:
-    """Set informal address (ты)"""
+async def _complete_onboarding_flow(callback: CallbackQuery, language_code: str) -> None:
+    """Complete onboarding and send first question"""
     user_service = UserService()
-    await user_service.update_user_settings(
-        telegram_id=callback.from_user.id,
-        formal_address=False
-    )
-
-    # Get user's language for localized response
-    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
-    language_code = user.language_code if user else "ru"
-    confirm_text = get_onboarding_text("address_informal_confirm", language_code)
-
+    await user_service.complete_onboarding(callback.from_user.id)
+    
+    # Show final message with instructions and examples
+    confirm_text = get_onboarding_text("onboarding_complete", language_code)
     await callback.message.edit_text(
         confirm_text,
         reply_markup=get_main_menu_inline(language_code)
     )
-
-    await user_service.complete_onboarding(callback.from_user.id)
-
-    # Send first question immediately after onboarding
+    
+    # Send first question (typing animation is handled in scheduler)
     from src.services.scheduler import NotificationScheduler
+    
     scheduler = NotificationScheduler.get_instance()
-    logger.info(f"Attempting to send first question after onboarding for user {callback.from_user.id}, scheduler instance: {scheduler is not None}")
     if scheduler:
         try:
             result = await scheduler.send_first_question_after_onboarding(callback.from_user.id)
@@ -81,6 +73,55 @@ async def callback_address_informal(callback: CallbackQuery) -> None:
             logger.info(f"First question sent via fallback for user {callback.from_user.id}: {result}")
         except Exception as e:
             logger.error(f"Fallback failed to send first question for user {callback.from_user.id}: {e}")
+    
+    await callback.answer()
+
+
+async def _show_onboarding_timezone(callback: CallbackQuery, language_code: str) -> None:
+    """Show timezone selection during onboarding with explanation"""
+    explanation = get_onboarding_text("onboarding_timezone_important", language_code)
+    
+    await callback.message.edit_text(
+        explanation,
+        reply_markup=get_timezone_regions_keyboard(language_code)
+    )
+    await callback.answer()
+
+
+# Onboarding callbacks
+@router.callback_query(F.data == "address_informal")
+async def callback_address_informal(callback: CallbackQuery) -> None:
+    """Set informal address (ты)"""
+    user_service = UserService()
+    await user_service.update_user_settings(
+        telegram_id=callback.from_user.id,
+        formal_address=False
+    )
+
+    # Get user's language for localized response
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    
+    # Check if onboarding is in progress
+    if user and not user.onboarding_completed:
+        # Show gender selection during onboarding
+        # Use appropriate text based on formality
+        if user.formal_address:
+            prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+        else:
+            prompt = get_onboarding_text("onboarding_select_gender", language_code)
+        await callback.message.edit_text(
+            prompt,
+            reply_markup=get_gender_keyboard(language_code, include_neutral=True)
+        )
+    else:
+        # Existing user changing settings
+        confirm_text = get_onboarding_text("address_informal_confirm", language_code)
+        await callback.message.edit_text(
+            confirm_text,
+            reply_markup=get_main_menu_inline(language_code)
+        )
+    
     await callback.answer()
 
 
@@ -96,34 +137,27 @@ async def callback_address_formal(callback: CallbackQuery) -> None:
     # Get user's language for localized response
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     language_code = user.language_code if user else "ru"
-    confirm_text = get_onboarding_text("address_formal_confirm", language_code)
-
-    await callback.message.edit_text(
-        confirm_text,
-        reply_markup=get_main_menu_inline(language_code)
-    )
-
-    await user_service.complete_onboarding(callback.from_user.id)
-
-    # Send first question immediately after onboarding
-    from src.services.scheduler import NotificationScheduler
-    scheduler = NotificationScheduler.get_instance()
-    logger.info(f"Attempting to send first question after onboarding for user {callback.from_user.id}, scheduler instance: {scheduler is not None}")
-    if scheduler:
-        try:
-            result = await scheduler.send_first_question_after_onboarding(callback.from_user.id)
-            logger.info(f"First question sent result for user {callback.from_user.id}: {result}")
-        except Exception as e:
-            logger.error(f"Failed to send first question after onboarding for user {callback.from_user.id}: {e}")
+    
+    # Check if onboarding is in progress
+    if user and not user.onboarding_completed:
+        # Show gender selection during onboarding
+        # Use appropriate text based on formality
+        if user.formal_address:
+            prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+        else:
+            prompt = get_onboarding_text("onboarding_select_gender", language_code)
+        await callback.message.edit_text(
+            prompt,
+            reply_markup=get_gender_keyboard(language_code, include_neutral=True)
+        )
     else:
-        # Fallback: create temporary scheduler with bot from callback
-        logger.warning(f"No scheduler instance available for user {callback.from_user.id}, using fallback")
-        try:
-            temp_scheduler = NotificationScheduler(callback.bot)
-            result = await temp_scheduler.send_first_question_after_onboarding(callback.from_user.id)
-            logger.info(f"First question sent via fallback for user {callback.from_user.id}: {result}")
-        except Exception as e:
-            logger.error(f"Fallback failed to send first question for user {callback.from_user.id}: {e}")
+        # Existing user changing settings
+        confirm_text = get_onboarding_text("address_formal_confirm", language_code)
+        await callback.message.edit_text(
+            confirm_text,
+            reply_markup=get_main_menu_inline(language_code)
+        )
+    
     await callback.answer()
 
 
@@ -227,6 +261,32 @@ async def callback_settings_address(callback: CallbackQuery) -> None:
 
 
 
+@router.callback_query(F.data == "gender_neutral")
+async def callback_gender_neutral(callback: CallbackQuery) -> None:
+    """Set gender to neutral/unknown"""
+    user_service = UserService()
+    await user_service.update_user_settings(
+        telegram_id=callback.from_user.id,
+        gender="unknown"
+    )
+
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    
+    # Check if onboarding is in progress
+    if user and not user.onboarding_completed:
+        # Show timezone selection during onboarding
+        await _show_onboarding_timezone(callback, language_code)
+    else:
+        # Existing user changing settings
+        confirm_text = get_system_message("gender_set_neutral", language_code)
+        await callback.message.edit_text(
+            f"✅ {confirm_text}",
+            reply_markup=get_settings_keyboard(language_code)
+        )
+        await callback.answer(get_system_message("saved", language_code))
+
+
 @router.callback_query(F.data == "settings_gender")
 async def callback_settings_gender(callback: CallbackQuery) -> None:
     """Show gender settings"""
@@ -261,13 +321,21 @@ async def callback_gender_male(callback: CallbackQuery) -> None:
         gender="male"
     )
 
-    language_code = await get_user_language(callback.from_user.id)
-    confirm_text = get_system_message("gender_set_male", language_code)
-    await callback.message.edit_text(
-        f"✅ {confirm_text}",
-        reply_markup=get_settings_keyboard(language_code)
-    )
-    await callback.answer(get_system_message("saved", language_code))
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    
+    # Check if onboarding is in progress
+    if user and not user.onboarding_completed:
+        # Show timezone selection during onboarding
+        await _show_onboarding_timezone(callback, language_code)
+    else:
+        # Existing user changing settings
+        confirm_text = get_system_message("gender_set_male", language_code)
+        await callback.message.edit_text(
+            f"✅ {confirm_text}",
+            reply_markup=get_settings_keyboard(language_code)
+        )
+        await callback.answer(get_system_message("saved", language_code))
 
 
 @router.callback_query(F.data == "gender_female")
@@ -279,13 +347,21 @@ async def callback_gender_female(callback: CallbackQuery) -> None:
         gender="female"
     )
 
-    language_code = await get_user_language(callback.from_user.id)
-    confirm_text = get_system_message("gender_set_female", language_code)
-    await callback.message.edit_text(
-        f"✅ {confirm_text}",
-        reply_markup=get_settings_keyboard(language_code)
-    )
-    await callback.answer(get_system_message("saved", language_code))
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    
+    # Check if onboarding is in progress
+    if user and not user.onboarding_completed:
+        # Show timezone selection during onboarding
+        await _show_onboarding_timezone(callback, language_code)
+    else:
+        # Existing user changing settings
+        confirm_text = get_system_message("gender_set_female", language_code)
+        await callback.message.edit_text(
+            f"✅ {confirm_text}",
+            reply_markup=get_settings_keyboard(language_code)
+        )
+        await callback.answer(get_system_message("saved", language_code))
 
 
 @router.callback_query(F.data == "settings_language")
@@ -438,21 +514,28 @@ async def callback_timezone_region(callback: CallbackQuery) -> None:
 async def callback_set_timezone(callback: CallbackQuery) -> None:
     """Set user timezone"""
     timezone = callback.data.replace("timezone_", "")
-    language_code = await get_user_language(callback.from_user.id)
-
     user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+
     try:
         await user_service.update_user_settings(
             telegram_id=callback.from_user.id,
             timezone=timezone
         )
 
-        confirm_text = get_system_message("timezone_set_confirm", language_code, timezone=timezone)
-        await callback.message.edit_text(
-            confirm_text,
-            reply_markup=get_settings_keyboard(language_code)
-        )
-        await callback.answer(get_system_message("saved", language_code))
+        # Check if onboarding is in progress
+        if user and not user.onboarding_completed:
+            # During onboarding - show confirmation and complete onboarding
+            await _complete_onboarding_flow(callback, language_code)
+        else:
+            # Existing user changing settings
+            confirm_text = get_system_message("timezone_set_confirm", language_code, timezone=timezone)
+            await callback.message.edit_text(
+                confirm_text,
+                reply_markup=get_settings_keyboard(language_code)
+            )
+            await callback.answer(get_system_message("saved", language_code))
     except ValueError as e:
         error_text = get_system_message("timezone_invalid", language_code)
         await callback.message.edit_text(
@@ -466,9 +549,12 @@ async def callback_set_timezone(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "settings_social")
 async def callback_settings_social(callback: CallbackQuery) -> None:
     """Show social profile settings"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
     social_service = SocialProfileService()
-    summary = await social_service.get_profile_summary(callback.from_user.id)
+    summary = await social_service.get_profile_summary(callback.from_user.id, language_code, formal)
     title = get_system_message("social_profile_title", language_code)
 
     await callback.message.edit_text(
@@ -550,15 +636,23 @@ async def callback_social_remove(callback: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("social_del_"))
 async def callback_social_delete(callback: CallbackQuery) -> None:
     """Delete a social network link"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
     network = callback.data.replace("social_del_", "")
 
     social_service = SocialProfileService()
-    success, message = await social_service.remove_social_link(callback.from_user.id, network)
+    success, message = await social_service.remove_social_link(
+        callback.from_user.id, network, language_code, formal
+    )
 
     if success:
+        from src.utils.localization import get_system_message
+        summary = await social_service.get_profile_summary(callback.from_user.id, language_code, formal)
+        profile_title = get_system_message("social_profile_title", language_code)
         await callback.message.edit_text(
-            f"✅ {message}",
+            f"✅ {message}\n\n{profile_title}\n\n{summary}",
             reply_markup=get_social_profile_keyboard(language_code)
         )
     else:
@@ -572,9 +666,12 @@ async def callback_social_delete(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "social_back")
 async def callback_social_back(callback: CallbackQuery) -> None:
     """Go back to social profile menu"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
     social_service = SocialProfileService()
-    summary = await social_service.get_profile_summary(callback.from_user.id)
+    summary = await social_service.get_profile_summary(callback.from_user.id, language_code, formal)
     title = get_system_message("social_profile_title", language_code)
 
     await callback.message.edit_text(
@@ -688,16 +785,19 @@ async def callback_moments_random(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "delete_confirm")
 async def callback_delete_confirm(callback: CallbackQuery) -> None:
     """Confirm and execute data deletion"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
     gdpr_service = GDPRService()
 
     try:
         await gdpr_service.delete_all_user_data(callback.from_user.id)
-        success_text = get_system_message("data_deleted", language_code)
+        success_text = get_system_message("data_deleted_formal" if formal else "data_deleted", language_code, formal=formal)
         await callback.message.edit_text(success_text)
     except Exception as e:
         logger.error(f"Delete failed: {e}")
-        error_text = get_system_message("data_delete_error", language_code)
+        error_text = get_system_message("data_delete_error_formal" if formal else "data_delete_error", language_code, formal=formal)
         await callback.message.edit_text(error_text)
 
     await callback.answer()
@@ -706,8 +806,11 @@ async def callback_delete_confirm(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "delete_cancel")
 async def callback_delete_cancel(callback: CallbackQuery) -> None:
     """Cancel data deletion"""
-    language_code = await get_user_language(callback.from_user.id)
-    cancelled_text = get_system_message("delete_cancelled", language_code)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
+    cancelled_text = get_system_message("delete_cancelled_formal" if formal else "delete_cancelled", language_code, formal=formal)
     await callback.message.edit_text(cancelled_text)
     await callback.answer()
 
