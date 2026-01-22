@@ -12,7 +12,7 @@ from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, delete
 
 try:
     from zoneinfo import ZoneInfo
@@ -251,13 +251,19 @@ class NotificationScheduler:
         utc_now = datetime.now(dt_timezone.utc).replace(tzinfo=None)
 
         async with get_session() as session:
-            # Find unsent notifications that are due
+            # Find unsent notifications that are due, excluding blocked and paused users
             result = await session.execute(
                 select(ScheduledNotification)
+                .join(User, ScheduledNotification.user_id == User.id)
                 .where(
                     and_(
                         ScheduledNotification.sent == False,
                         ScheduledNotification.scheduled_time <= utc_now,
+                        User.is_blocked == False,
+                        or_(
+                            User.notifications_paused_until.is_(None),
+                            User.notifications_paused_until <= utc_now,
+                        ),
                     )
                 )
                 .limit(50)
@@ -343,6 +349,19 @@ class NotificationScheduler:
                 logger.debug(f"User {user.telegram_id} is blocked, skipping notification")
                 return
 
+            # Check if notifications are paused
+            if user.notifications_paused_until:
+                from datetime import datetime, timezone as dt_timezone
+                utc_now = datetime.now(dt_timezone.utc).replace(tzinfo=None)
+                if user.notifications_paused_until > utc_now:
+                    logger.debug(f"User {user.telegram_id} notifications paused until {user.notifications_paused_until}, skipping")
+                    return
+                else:
+                    # Pause expired, clear it
+                    user.notifications_paused_until = None
+                    await session.commit()
+                    logger.debug(f"User {user.telegram_id} pause expired, cleared")
+
             # Check if within active hours (timezone-aware)
             if not is_within_active_hours(user):
                 # Outside active hours, skipping this notification
@@ -388,7 +407,7 @@ class NotificationScheduler:
             except TelegramBadRequest as e:
                 error_message = str(e).lower()
                 
-                # Handle "bot was blocked by the user" - mark user as blocked
+                # Handle "bot was blocked by the user" - mark user as blocked and cancel notifications
                 if "bot was blocked by the user" in error_message:
                     async with get_session() as session:
                         result = await session.execute(
@@ -397,14 +416,48 @@ class NotificationScheduler:
                         db_user = result.scalar_one_or_none()
                         if db_user and not db_user.is_blocked:
                             db_user.is_blocked = True
+                            
+                            # Delete all pending notifications for this user
+                            await session.execute(
+                                delete(ScheduledNotification).where(
+                                    and_(
+                                        ScheduledNotification.user_id == user.id,
+                                        ScheduledNotification.sent == False,
+                                    )
+                                )
+                            )
+                            
                             await session.commit()
-                            logger.info(f"Marked user {user.telegram_id} as blocked (auto-detected)")
+                            logger.info(
+                                f"Marked user {user.telegram_id} as blocked (auto-detected) "
+                                f"and cancelled all pending notifications"
+                            )
                     # Don't log as ERROR - this is expected behavior
                     logger.debug(f"User {user.telegram_id} blocked the bot")
                 
                 # Handle "bot can't initiate conversation" - this is normal for new users
                 elif "can't initiate conversation" in error_message:
                     # This is normal - user hasn't started conversation yet
+                    # Cancel this notification to avoid repeated attempts
+                    async with get_session() as session:
+                        result = await session.execute(
+                            select(ScheduledNotification).where(
+                                and_(
+                                    ScheduledNotification.user_id == user.id,
+                                    ScheduledNotification.sent == False,
+                                )
+                            )
+                        )
+                        notifications = result.scalars().all()
+                        if notifications:
+                            # Delete only the oldest pending notification (the one we just tried)
+                            oldest = min(notifications, key=lambda n: n.scheduled_time)
+                            await session.delete(oldest)
+                            await session.commit()
+                            logger.debug(
+                                f"User {user.telegram_id} hasn't started conversation yet, "
+                                f"cancelled pending notification"
+                            )
                     logger.debug(f"User {user.telegram_id} hasn't started conversation yet")
                 
                 # Other Telegram API errors
@@ -487,6 +540,18 @@ class NotificationScheduler:
                     logger.info(f"Notifications disabled for user {telegram_id}")
                     return False
 
+                # Check if notifications are paused
+                if user.notifications_paused_until:
+                    utc_now = datetime.now(dt_timezone.utc).replace(tzinfo=None)
+                    if user.notifications_paused_until > utc_now:
+                        logger.info(f"Notifications paused for user {telegram_id} until {user.notifications_paused_until}")
+                        return False
+                    else:
+                        # Pause expired, clear it
+                        user.notifications_paused_until = None
+                        await session.commit()
+                        logger.debug(f"User {telegram_id} pause expired, cleared")
+
                 # Show typing indicator for better UX
                 from aiogram.enums import ChatAction
                 await self.bot.send_chat_action(
@@ -541,6 +606,10 @@ class NotificationScheduler:
                         User.notifications_enabled == True,
                         User.onboarding_completed == True,
                         User.is_blocked == False,
+                        or_(
+                            User.notifications_paused_until.is_(None),
+                            User.notifications_paused_until <= datetime.now(dt_timezone.utc).replace(tzinfo=None),
+                        ),
                     )
                 )
             )
@@ -646,6 +715,10 @@ class NotificationScheduler:
                         User.notifications_enabled == True,
                         User.onboarding_completed == True,
                         User.is_blocked == False,
+                        or_(
+                            User.notifications_paused_until.is_(None),
+                            User.notifications_paused_until <= datetime.now(dt_timezone.utc).replace(tzinfo=None),
+                        ),
                     )
                 )
             )
@@ -850,6 +923,10 @@ class NotificationScheduler:
                         User.notifications_enabled == True,
                         User.onboarding_completed == True,
                         User.is_blocked == False,
+                        or_(
+                            User.notifications_paused_until.is_(None),
+                            User.notifications_paused_until <= datetime.now(dt_timezone.utc).replace(tzinfo=None),
+                        ),
                     )
                 )
             )

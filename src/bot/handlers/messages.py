@@ -62,6 +62,30 @@ async def handle_feedback_button(message: Message) -> None:
     await cmd_feedback(message)
 
 
+@router.message(F.text.in_(get_all_menu_button_texts("menu_pause")))
+async def handle_pause_button(message: Message) -> None:
+    """Handle 'Pause' button press"""
+    from src.services.user_service import UserService
+    from src.bot.keyboards.inline import get_pause_period_keyboard
+    from src.utils.localization import get_system_message
+    
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(message.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
+    
+    title_key = "pause_title_formal" if formal else "pause_title"
+    prompt_key = "pause_select_period_formal" if formal else "pause_select_period"
+    
+    title = get_system_message(title_key, language_code)
+    prompt = get_system_message(prompt_key, language_code)
+    
+    await message.answer(
+        f"{title}\n\n{prompt}",
+        reply_markup=get_pause_period_keyboard(language_code)
+    )
+
+
 # Cancel command for FSM states
 @router.message(Command("cancel"), StateFilter(SocialProfileStates))
 async def cancel_social_profile_state(message: Message, state: FSMContext) -> None:
