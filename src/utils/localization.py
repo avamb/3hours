@@ -1079,10 +1079,57 @@ SYSTEM_MESSAGES = {
         "interests_detected": "✨ Определены интересы: {interests}",
 
         # Feedback messages
+        "feedback_title": "💡 <b>Предложить идею</b>",
+        "feedback_intro": "Я буду рад услышать твои идеи и предложения!",
+        "feedback_intro_formal": "Я буду рад услышать Ваши идеи и предложения!",
+        "feedback_choose_category": "Выбери категорию:",
+        "feedback_choose_category_formal": "Выберите категорию:",
+        "feedback_suggestion_title": "💡 <b>Идея/предложение</b>",
+        "feedback_suggestion_text": "Напиши свою идею или предложение. Я передам её разработчикам! 📝",
+        "feedback_suggestion_text_formal": "Напишите свою идею или предложение. Я передам её разработчикам! 📝",
+        "feedback_bug_title": "🐛 <b>Сообщение об ошибке</b>",
+        "feedback_bug_text": "Опиши, что пошло не так. Укажи, что ты делал и что произошло. 📝",
+        "feedback_bug_text_formal": "Опишите, что пошло не так. Укажите, что Вы делали и что произошло. 📝",
+        "feedback_other_title": "💬 <b>Другое</b>",
+        "feedback_other_text": "Напиши своё сообщение. 📝",
+        "feedback_other_text_formal": "Напишите своё сообщение. 📝",
+        "feedback_input_hint": "<i>Просто отправь текстовое сообщение:</i>",
+        "feedback_cancelled": "❌ Отменено.",
+        "feedback_cancelled_hint": "Если захочешь предложить идею позже, нажми кнопку «💡 Предложить идею» в меню.",
+        "feedback_cancelled_hint_formal": "Если захотите предложить идею позже, нажмите кнопку «💡 Предложить идею» в меню.",
+        "feedback_error": "😔 Что-то пошло не так. Попробуй ещё раз.",
+        "feedback_error_formal": "😔 Что-то пошло не так. Попробуйте ещё раз.",
+        "feedback_empty": "🤔 Кажется, сообщение пустое. Напиши текстом, что именно ты хотел(а) сообщить.",
+        "feedback_empty_formal": "🤔 Кажется, сообщение пустое. Напишите текстом, что именно Вы хотели сообщить.",
+        "feedback_saved": "✅ <b>Спасибо за отзыв!</b>",
+        "feedback_saved_details": "📂 Категория: {category}\n📝 Сообщение: {content}",
+        "feedback_saved_confirm": "Твоё сообщение сохранено и будет рассмотрено. 💝",
+        "feedback_saved_confirm_formal": "Ваше сообщение сохранено и будет рассмотрено. 💝",
+        "feedback_saved_short": "Сохранил — скоро посмотрим. 💝",
+        "feedback_save_error": "😔 Не удалось сохранить отзыв. Попробуй позже.",
+        "feedback_save_error_formal": "😔 Не удалось сохранить отзыв. Попробуйте позже.",
         "feedback_prompt": "Напиши своё предложение или идею:",
         "feedback_prompt_formal": "Напишите Ваше предложение или идею:",
         "feedback_sent": "Спасибо за обратную связь! 💝",
         "feedback_category": "Категория: {category}",
+        
+        # Question templates (for scheduler)
+        "question_1_informal": "Что хорошего произошло сегодня? 🌟",
+        "question_2_informal": "Расскажи, чему ты порадовался? ✨",
+        "question_3_informal": "Что приятного случилось? 😊",
+        "question_4_informal": "Какой момент сегодня был особенным? 💫",
+        "question_5_informal": "Что тебя сегодня вдохновило? 🌈",
+        "question_6_informal": "Расскажи о маленькой радости дня! 💝",
+        "question_7_informal": "Что хорошего ты заметил сегодня? 🌻",
+        "question_8_informal": "Чему ты улыбнулся сегодня? 😄",
+        "question_1_formal": "Что хорошего произошло сегодня? 🌟",
+        "question_2_formal": "Расскажите, чему Вы порадовались? ✨",
+        "question_3_formal": "Что приятного случилось? 😊",
+        "question_4_formal": "Какой момент сегодня был особенным? 💫",
+        "question_5_formal": "Что Вас сегодня вдохновило? 🌈",
+        "question_6_formal": "Расскажите о маленькой радости дня! 💝",
+        "question_7_formal": "Что хорошего Вы заметили сегодня? 🌻",
+        "question_8_formal": "Чему Вы улыбнулись сегодня? 😄",
 
         # Help message
         "help_title": "📋 Доступные команды:",
@@ -1257,12 +1304,31 @@ SYSTEM_MESSAGES = {
         "main_menu_prompt": "Чем могу помочь? 😊",
 
         # Delete data
+        "delete_data_title": "⚠️ <b>Удаление данных</b>",
+        "delete_data_confirm": "Ты уверен, что хочешь удалить ВСЕ свои данные из базы данных бота?",
+        "delete_data_confirm_formal": "Вы уверены, что хотите удалить ВСЕ свои данные из базы данных бота?",
+        "delete_data_warning": "Это действие удалит из базы данных бота:",
+        "delete_data_warning_formal": "Это действие удалит из базы данных бота:",
+        "delete_data_moments": "• Все твои моменты",
+        "delete_data_moments_formal": "• Все Ваши моменты",
+        "delete_data_conversations": "• Историю диалогов",
+        "delete_data_stats": "• Статистику",
+        "delete_data_settings": "• Настройки",
+        "delete_data_irreversible": "⚠️ <b>Это действие необратимо!</b>",
+        "delete_data_chat_note": "ℹ️ <i>Примечание: Переписка в этом чате на твоём устройстве останется. Удаляются только данные из базы данных бота.</i>",
+        "delete_data_chat_note_formal": "ℹ️ <i>Примечание: Переписка в этом чате на Вашем устройстве останется. Удаляются только данные из базы данных бота.</i>",
         "data_deleted": (
-            "✅ Все твои данные удалены.\n\n"
+            "✅ Все твои данные удалены из базы данных бота.\n\n"
             "Если захочешь вернуться — просто напиши /start 💝"
         ),
+        "data_deleted_formal": (
+            "✅ Все Ваши данные удалены из базы данных бота.\n\n"
+            "Если захотите вернуться — просто напишите /start 💝"
+        ),
         "data_delete_error": "😔 Произошла ошибка при удалении. Попробуй позже.",
+        "data_delete_error_formal": "😔 Произошла ошибка при удалении. Попробуйте позже.",
         "delete_cancelled": "👍 Удаление отменено. Твои данные в безопасности!",
+        "delete_cancelled_formal": "👍 Удаление отменено. Ваши данные в безопасности!",
 
         # Question skip
         "question_skipped": "👍 Хорошо, пропустим этот вопрос. До скорой встречи! 😊",
@@ -1342,10 +1408,57 @@ SYSTEM_MESSAGES = {
         "interests_detected": "✨ Interests detected: {interests}",
 
         # Feedback messages
+        "feedback_title": "💡 <b>Suggest idea</b>",
+        "feedback_intro": "I'll be glad to hear your ideas and suggestions!",
+        "feedback_intro_formal": "I'll be glad to hear your ideas and suggestions!",
+        "feedback_choose_category": "Choose a category:",
+        "feedback_choose_category_formal": "Choose a category:",
+        "feedback_suggestion_title": "💡 <b>Idea/suggestion</b>",
+        "feedback_suggestion_text": "Write your idea or suggestion. I'll pass it on to the developers! 📝",
+        "feedback_suggestion_text_formal": "Please write your idea or suggestion. I'll pass it on to the developers! 📝",
+        "feedback_bug_title": "🐛 <b>Report bug</b>",
+        "feedback_bug_text": "Describe what went wrong. Tell me what you were doing and what happened. 📝",
+        "feedback_bug_text_formal": "Please describe what went wrong. Tell me what you were doing and what happened. 📝",
+        "feedback_other_title": "💬 <b>Other</b>",
+        "feedback_other_text": "Write your message. 📝",
+        "feedback_other_text_formal": "Please write your message. 📝",
+        "feedback_input_hint": "<i>Just send a text message:</i>",
+        "feedback_cancelled": "❌ Cancelled.",
+        "feedback_cancelled_hint": "If you want to suggest an idea later, press the «💡 Suggest idea» button in the menu.",
+        "feedback_cancelled_hint_formal": "If you want to suggest an idea later, press the «💡 Suggest idea» button in the menu.",
+        "feedback_error": "😔 Something went wrong. Try again.",
+        "feedback_error_formal": "😔 Something went wrong. Please try again.",
+        "feedback_empty": "🤔 Seems like the message is empty. Write in text what you wanted to report.",
+        "feedback_empty_formal": "🤔 Seems like the message is empty. Please write in text what you wanted to report.",
+        "feedback_saved": "✅ <b>Thanks for your feedback!</b>",
+        "feedback_saved_details": "📂 Category: {category}\n📝 Message: {content}",
+        "feedback_saved_confirm": "Your message has been saved and will be reviewed. 💝",
+        "feedback_saved_confirm_formal": "Your message has been saved and will be reviewed. 💝",
+        "feedback_saved_short": "Saved — we'll look at it soon. 💝",
+        "feedback_save_error": "😔 Failed to save feedback. Try again later.",
+        "feedback_save_error_formal": "😔 Failed to save feedback. Please try again later.",
         "feedback_prompt": "Write your suggestion or idea:",
         "feedback_prompt_formal": "Please write your suggestion or idea:",
         "feedback_sent": "Thanks for your feedback! 💝",
         "feedback_category": "Category: {category}",
+        
+        # Question templates (for scheduler)
+        "question_1_informal": "What good happened today? 🌟",
+        "question_2_informal": "Tell me, what made you happy? ✨",
+        "question_3_informal": "What pleasant happened? 😊",
+        "question_4_informal": "What moment today was special? 💫",
+        "question_5_informal": "What inspired you today? 🌈",
+        "question_6_informal": "Tell me about a little joy of the day! 💝",
+        "question_7_informal": "What good did you notice today? 🌻",
+        "question_8_informal": "What made you smile today? 😄",
+        "question_1_formal": "What good happened today? 🌟",
+        "question_2_formal": "Tell me, what made you happy? ✨",
+        "question_3_formal": "What pleasant happened? 😊",
+        "question_4_formal": "What moment today was special? 💫",
+        "question_5_formal": "What inspired you today? 🌈",
+        "question_6_formal": "Tell me about a little joy of the day! 💝",
+        "question_7_formal": "What good did you notice today? 🌻",
+        "question_8_formal": "What made you smile today? 😄",
 
         # Help message
         "help_title": "📋 Available commands:",
@@ -1520,12 +1633,31 @@ SYSTEM_MESSAGES = {
         "main_menu_prompt": "How can I help? 😊",
 
         # Delete data
+        "delete_data_title": "⚠️ <b>Data Deletion</b>",
+        "delete_data_confirm": "Are you sure you want to delete ALL your data from the bot's database?",
+        "delete_data_confirm_formal": "Are you sure you want to delete ALL your data from the bot's database?",
+        "delete_data_warning": "This action will delete from the bot's database:",
+        "delete_data_warning_formal": "This action will delete from the bot's database:",
+        "delete_data_moments": "• All your moments",
+        "delete_data_moments_formal": "• All your moments",
+        "delete_data_conversations": "• Conversation history",
+        "delete_data_stats": "• Statistics",
+        "delete_data_settings": "• Settings",
+        "delete_data_irreversible": "⚠️ <b>This action is irreversible!</b>",
+        "delete_data_chat_note": "ℹ️ <i>Note: The chat history on your device will remain. Only data from the bot's database will be deleted.</i>",
+        "delete_data_chat_note_formal": "ℹ️ <i>Note: The chat history on your device will remain. Only data from the bot's database will be deleted.</i>",
         "data_deleted": (
-            "✅ All your data has been deleted.\n\n"
+            "✅ All your data has been deleted from the bot's database.\n\n"
+            "If you want to come back — just write /start 💝"
+        ),
+        "data_deleted_formal": (
+            "✅ All your data has been deleted from the bot's database.\n\n"
             "If you want to come back — just write /start 💝"
         ),
         "data_delete_error": "😔 An error occurred while deleting. Try again later.",
+        "data_delete_error_formal": "😔 An error occurred while deleting. Please try again later.",
         "delete_cancelled": "👍 Deletion cancelled. Your data is safe!",
+        "delete_cancelled_formal": "👍 Deletion cancelled. Your data is safe!",
 
         # Question skip
         "question_skipped": "👍 Okay, let's skip this question. See you soon! 😊",
@@ -1605,10 +1737,57 @@ SYSTEM_MESSAGES = {
         "interests_detected": "✨ Визначено інтереси: {interests}",
 
         # Feedback messages
+        "feedback_title": "💡 <b>Запропонувати ідею</b>",
+        "feedback_intro": "Я буду радий почути твої ідеї та пропозиції!",
+        "feedback_intro_formal": "Я буду радий почути Ваші ідеї та пропозиції!",
+        "feedback_choose_category": "Виберіть категорію:",
+        "feedback_choose_category_formal": "Виберіть категорію:",
+        "feedback_suggestion_title": "💡 <b>Ідея/пропозиція</b>",
+        "feedback_suggestion_text": "Напиши свою ідею або пропозицію. Я передам її розробникам! 📝",
+        "feedback_suggestion_text_formal": "Напишіть свою ідею або пропозицію. Я передам її розробникам! 📝",
+        "feedback_bug_title": "🐛 <b>Повідомлення про помилку</b>",
+        "feedback_bug_text": "Опиши, що пішло не так. Вкажи, що ти робив і що сталося. 📝",
+        "feedback_bug_text_formal": "Опишіть, що пішло не так. Вкажіть, що Ви робили і що сталося. 📝",
+        "feedback_other_title": "💬 <b>Інше</b>",
+        "feedback_other_text": "Напиши своє повідомлення. 📝",
+        "feedback_other_text_formal": "Напишіть своє повідомлення. 📝",
+        "feedback_input_hint": "<i>Просто надішліть текстове повідомлення:</i>",
+        "feedback_cancelled": "❌ Скасовано.",
+        "feedback_cancelled_hint": "Якщо захочеш запропонувати ідею пізніше, натисни кнопку «💡 Запропонувати ідею» в меню.",
+        "feedback_cancelled_hint_formal": "Якщо захочете запропонувати ідею пізніше, натисніть кнопку «💡 Запропонувати ідею» в меню.",
+        "feedback_error": "😔 Щось пішло не так. Спробуй ще раз.",
+        "feedback_error_formal": "😔 Щось пішло не так. Спробуйте ще раз.",
+        "feedback_empty": "🤔 Здається, повідомлення порожнє. Напиши текстом, що саме ти хотів(а) повідомити.",
+        "feedback_empty_formal": "🤔 Здається, повідомлення порожнє. Напишіть текстом, що саме Ви хотіли повідомити.",
+        "feedback_saved": "✅ <b>Дякуємо за відгук!</b>",
+        "feedback_saved_details": "📂 Категорія: {category}\n📝 Повідомлення: {content}",
+        "feedback_saved_confirm": "Твоє повідомлення збережено і буде розглянуто. 💝",
+        "feedback_saved_confirm_formal": "Ваше повідомлення збережено і буде розглянуто. 💝",
+        "feedback_saved_short": "Зберіг — скоро подивимось. 💝",
+        "feedback_save_error": "😔 Не вдалося зберегти відгук. Спробуй пізніше.",
+        "feedback_save_error_formal": "😔 Не вдалося зберегти відгук. Спробуйте пізніше.",
         "feedback_prompt": "Напиши свою пропозицію або ідею:",
         "feedback_prompt_formal": "Напишіть Вашу пропозицію або ідею:",
         "feedback_sent": "Дякуємо за зворотний зв'язок! 💝",
         "feedback_category": "Категорія: {category}",
+        
+        # Question templates (for scheduler)
+        "question_1_informal": "Що хорошого сталося сьогодні? 🌟",
+        "question_2_informal": "Розкажи, чому ти порадувався? ✨",
+        "question_3_informal": "Що приємного сталося? 😊",
+        "question_4_informal": "Який момент сьогодні був особливим? 💫",
+        "question_5_informal": "Що тебе сьогодні надихнуло? 🌈",
+        "question_6_informal": "Розкажи про маленьку радість дня! 💝",
+        "question_7_informal": "Що хорошого ти помітив сьогодні? 🌻",
+        "question_8_informal": "Чому ти посміхнувся сьогодні? 😄",
+        "question_1_formal": "Що хорошого сталося сьогодні? 🌟",
+        "question_2_formal": "Розкажіть, чому Ви порадувалися? ✨",
+        "question_3_formal": "Що приємного сталося? 😊",
+        "question_4_formal": "Який момент сьогодні був особливим? 💫",
+        "question_5_formal": "Що Вас сьогодні надихнуло? 🌈",
+        "question_6_formal": "Розкажіть про маленьку радість дня! 💝",
+        "question_7_formal": "Що хорошого Ви помітили сьогодні? 🌻",
+        "question_8_formal": "Чому Ви посміхнулися сьогодні? 😄",
 
         # Help message
         "help_title": "📋 Доступні команди:",
@@ -1783,12 +1962,31 @@ SYSTEM_MESSAGES = {
         "main_menu_prompt": "Чим можу допомогти? 😊",
 
         # Delete data
+        "delete_data_title": "⚠️ <b>Видалення даних</b>",
+        "delete_data_confirm": "Ти впевнений, що хочеш видалити ВСІ свої дані з бази даних бота?",
+        "delete_data_confirm_formal": "Ви впевнені, що хочете видалити ВСІ свої дані з бази даних бота?",
+        "delete_data_warning": "Ця дія видалить з бази даних бота:",
+        "delete_data_warning_formal": "Ця дія видалить з бази даних бота:",
+        "delete_data_moments": "• Всі твої моменти",
+        "delete_data_moments_formal": "• Всі Ваші моменти",
+        "delete_data_conversations": "• Історію діалогів",
+        "delete_data_stats": "• Статистику",
+        "delete_data_settings": "• Налаштування",
+        "delete_data_irreversible": "⚠️ <b>Ця дія незворотна!</b>",
+        "delete_data_chat_note": "ℹ️ <i>Примітка: Переписка в цьому чаті на твоєму пристрої залишиться. Видаляються тільки дані з бази даних бота.</i>",
+        "delete_data_chat_note_formal": "ℹ️ <i>Примітка: Переписка в цьому чаті на Вашому пристрої залишиться. Видаляються тільки дані з бази даних бота.</i>",
         "data_deleted": (
-            "✅ Всі твої дані видалено.\n\n"
+            "✅ Всі твої дані видалено з бази даних бота.\n\n"
             "Якщо захочеш повернутися — просто напиши /start 💝"
         ),
+        "data_deleted_formal": (
+            "✅ Всі Ваші дані видалено з бази даних бота.\n\n"
+            "Якщо захотите повернутися — просто напишіть /start 💝"
+        ),
         "data_delete_error": "😔 Сталася помилка при видаленні. Спробуй пізніше.",
+        "data_delete_error_formal": "😔 Сталася помилка при видаленні. Спробуйте пізніше.",
         "delete_cancelled": "👍 Видалення скасовано. Твої дані в безпеці!",
+        "delete_cancelled_formal": "👍 Видалення скасовано. Ваші дані в безпеці!",
 
         # Question skip
         "question_skipped": "👍 Добре, пропустимо це запитання. До скорої зустрічі! 😊",

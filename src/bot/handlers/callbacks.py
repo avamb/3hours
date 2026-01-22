@@ -771,16 +771,19 @@ async def callback_moments_random(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "delete_confirm")
 async def callback_delete_confirm(callback: CallbackQuery) -> None:
     """Confirm and execute data deletion"""
-    language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
     gdpr_service = GDPRService()
 
     try:
         await gdpr_service.delete_all_user_data(callback.from_user.id)
-        success_text = get_system_message("data_deleted", language_code)
+        success_text = get_system_message("data_deleted_formal" if formal else "data_deleted", language_code, formal=formal)
         await callback.message.edit_text(success_text)
     except Exception as e:
         logger.error(f"Delete failed: {e}")
-        error_text = get_system_message("data_delete_error", language_code)
+        error_text = get_system_message("data_delete_error_formal" if formal else "data_delete_error", language_code, formal=formal)
         await callback.message.edit_text(error_text)
 
     await callback.answer()
@@ -789,8 +792,11 @@ async def callback_delete_confirm(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "delete_cancel")
 async def callback_delete_cancel(callback: CallbackQuery) -> None:
     """Cancel data deletion"""
-    language_code = await get_user_language(callback.from_user.id)
-    cancelled_text = get_system_message("delete_cancelled", language_code)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
+    language_code = user.language_code if user else "ru"
+    formal = user.formal_address if user else False
+    cancelled_text = get_system_message("delete_cancelled_formal" if formal else "delete_cancelled", language_code, formal=formal)
     await callback.message.edit_text(cancelled_text)
     await callback.answer()
 
