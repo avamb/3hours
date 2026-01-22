@@ -466,6 +466,15 @@ class NotificationScheduler:
                     logger.info(f"Notifications disabled for user {telegram_id}")
                     return False
 
+                # Show typing indicator for better UX
+                from aiogram.enums import ChatAction
+                await self.bot.send_chat_action(
+                    chat_id=user.telegram_id,
+                    action=ChatAction.TYPING
+                )
+                import asyncio
+                await asyncio.sleep(0.5)  # Small delay for better UX
+
                 # Get a question
                 question = self._get_question(user)
 

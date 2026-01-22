@@ -78,7 +78,10 @@ MENU_TEXTS = {
         "address_formal": "На «вы» 🤝",
         "gender_male": "👨 Он",
         "gender_female": "👩 Она",
+        "gender_neutral": "⚪ Нейтрально",
         "settings_gender": "🚻 Пол",
+        "yes_start": "✅ Да, начать",
+        "no_settings": "⚙️ Сначала настройки",
         "settings_language": "🌐 Язык интерфейса",
         "language_ru": "🇷🇺 Русский",
         "language_en": "🇬🇧 English",
@@ -144,7 +147,10 @@ MENU_TEXTS = {
         "address_formal": "Formal 🤝",
         "gender_male": "👨 He",
         "gender_female": "👩 She",
+        "gender_neutral": "⚪ Neutral",
         "settings_gender": "🚻 Gender",
+        "yes_start": "✅ Yes, start",
+        "no_settings": "⚙️ Settings first",
         "settings_language": "🌐 Interface language",
         "language_ru": "🇷🇺 Русский",
         "language_en": "🇬🇧 English",
@@ -210,7 +216,10 @@ MENU_TEXTS = {
         "address_formal": "На «ви» 🤝",
         "gender_male": "👨 Він",
         "gender_female": "👩 Вона",
+        "gender_neutral": "⚪ Нейтрально",
         "settings_gender": "🚻 Стать",
+        "yes_start": "✅ Так, почати",
+        "no_settings": "⚙️ Спочатку налаштування",
         "settings_language": "🌐 Мова інтерфейсу",
         "language_ru": "🇷🇺 Русский",
         "language_en": "🇬🇧 English",
@@ -797,6 +806,51 @@ ONBOARDING_TEXTS = {
             "🔒 Ваши данные в безопасности и используются только для нашего общения.\n"
             "Подробнее: /privacy"
         ),
+        "welcome_with_voice": (
+            "Привет, {first_name}! 👋\n\n"
+            "Я — твой помощник для развития позитивного мышления. "
+            "Каждый день я буду спрашивать тебя о хорошем, "
+            "чтобы вместе замечать радостные моменты жизни. ✨\n\n"
+            "💬 Ты можешь отвечать текстом или голосовыми сообщениями - я пойму оба варианта!\n\n"
+            "Давай начнём! Как тебе удобнее общаться?"
+        ),
+        "onboarding_select_gender": (
+            "Отлично! Буду обращаться на «ты» 😊\n\n"
+            "Теперь выбери, как тебя лучше называть:\n\n"
+            "Это поможет мне задавать более персонализированные вопросы."
+        ),
+        "onboarding_select_gender_formal": (
+            "Хорошо! Буду обращаться на «вы» 😊\n\n"
+            "Теперь выберите, как Вас лучше называть:\n\n"
+            "Это поможет мне задавать более персонализированные вопросы."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Важно: Выбор часового пояса</b>\n\n"
+            "Это очень важно! Без правильного часового пояса я могу начать отправлять "
+            "сообщения ночью, когда ты не хочешь получать уведомления. 😴\n\n"
+            "Я буду писать тебе только в активные часы (по умолчанию с 9:00 до 21:00), "
+            "но для этого мне нужно знать твой часовой пояс.\n\n"
+            "Пожалуйста, выбери свой часовой пояс:"
+        ),
+        "onboarding_ready_confirm": (
+            "Всё готово! 🎉\n\n"
+            "Я буду задавать тебе вопросы о хороших моментах дня.\n\n"
+            "Готов начать? Или хочешь сначала настроить часовой пояс и интервал?"
+        ),
+        "onboarding_complete": (
+            "Отлично! Всё готово! 🎉\n\n"
+            "Теперь немного о том, как это работает:\n\n"
+            "• Каждые несколько часов я спрошу: «Что хорошего произошло?»\n"
+            "• Ты можешь ответить текстом или голосовым сообщением\n"
+            "• Я сохраню твои моменты и напомню о них, когда понадобится поддержка\n\n"
+            "📝 <b>Примеры ответов:</b>\n"
+            "• «Сегодня прогулялся в парке, было очень красиво!»\n"
+            "• «Встретился с друзьями, хорошо пообщались»\n"
+            "• «Закончил важный проект, чувствую гордость»\n"
+            "• «Выпил вкусный кофе и почитал книгу»\n\n"
+            "🔒 Твои данные в безопасности и используются только для нашего общения.\n"
+            "Подробнее: /privacy"
+        ),
     },
     "en": {
         "address_informal_button": "Informal 😊",
@@ -820,6 +874,51 @@ ONBOARDING_TEXTS = {
             "• I'll save your moments and remind you of them when you need support\n\n"
             "⚙️ <b>Important:</b> Please set up your <b>timezone</b> and <b>message frequency</b> "
             "in ⚙️ Settings, so I can message you at a convenient time!\n\n"
+            "🔒 Your data is safe and used only for our communication.\n"
+            "More info: /privacy"
+        ),
+        "welcome_with_voice": (
+            "Hello, {first_name}! 👋\n\n"
+            "I'm your assistant for developing positive thinking. "
+            "Every day I will ask you about good things, "
+            "so that we can notice the joyful moments of life together. ✨\n\n"
+            "💬 You can reply with text or voice messages - I'll understand both!\n\n"
+            "Let's begin! How would you prefer to communicate?"
+        ),
+        "onboarding_select_gender": (
+            "Great! I'll use informal communication 😊\n\n"
+            "Now choose how you'd like to be addressed:\n\n"
+            "This will help me ask more personalized questions."
+        ),
+        "onboarding_select_gender_formal": (
+            "Understood! I'll use formal communication 😊\n\n"
+            "Now please choose how you'd like to be addressed:\n\n"
+            "This will help me ask more personalized questions."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Important: Timezone Selection</b>\n\n"
+            "This is very important! Without the correct timezone, I might start sending "
+            "messages at night when you don't want to receive notifications. 😴\n\n"
+            "I will only message you during active hours (default 9:00 AM to 9:00 PM), "
+            "but I need to know your timezone for that.\n\n"
+            "Please select your timezone:"
+        ),
+        "onboarding_ready_confirm": (
+            "Everything is ready! 🎉\n\n"
+            "I will ask you questions about good moments of the day.\n\n"
+            "Ready to start? Or would you like to configure timezone and interval first?"
+        ),
+        "onboarding_complete": (
+            "Excellent! Everything is ready! 🎉\n\n"
+            "Here's how it works:\n\n"
+            "• Every few hours I'll ask: \"What good happened?\"\n"
+            "• You can reply with text or voice message\n"
+            "• I'll save your moments and remind you of them when you need support\n\n"
+            "📝 <b>Answer examples:</b>\n"
+            "• \"Today I walked in the park, it was very beautiful!\"\n"
+            "• \"Met with friends, had a good conversation\"\n"
+            "• \"Finished an important project, feeling proud\"\n"
+            "• \"Had a delicious coffee and read a book\"\n\n"
             "🔒 Your data is safe and used only for our communication.\n"
             "More info: /privacy"
         ),
@@ -849,24 +948,80 @@ ONBOARDING_TEXTS = {
             "🔒 Ваші дані в безпеці і використовуються тільки для нашого спілкування.\n"
             "Детальніше: /privacy"
         ),
+        "welcome_with_voice": (
+            "Привіт, {first_name}! 👋\n\n"
+            "Я — твій помічник для розвитку позитивного мислення. "
+            "Щодня я буду запитувати тебе про хороше, "
+            "щоб разом помічати радісні моменти життя. ✨\n\n"
+            "💬 Ти можеш відповідати текстом або голосовими повідомленнями - я зрозумію обидва варіанти!\n\n"
+            "Давай почнемо! Як тобі зручніше спілкуватися?"
+        ),
+        "onboarding_select_gender": (
+            "Чудово! Буду звертатися на «ти» 😊\n\n"
+            "Тепер вибери, як тебе краще називати:\n\n"
+            "Це допоможе мені задавати більш персоналізовані питання."
+        ),
+        "onboarding_select_gender_formal": (
+            "Добре! Буду звертатися на «ви» 😊\n\n"
+            "Тепер виберіть, як Вас краще називати:\n\n"
+            "Це допоможе мені задавати більш персоналізовані питання."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Важливо: Вибір часового поясу</b>\n\n"
+            "Це дуже важливо! Без правильного часового поясу я можу почати надсилати "
+            "повідомлення вночі, коли ти не хочеш отримувати сповіщення. 😴\n\n"
+            "Я буду писати тобі тільки в активні години (за замовчуванням з 9:00 до 21:00), "
+            "але для цього мені потрібно знати твій часовий пояс.\n\n"
+            "Будь ласка, вибери свій часовий пояс:"
+        ),
+        "onboarding_ready_confirm": (
+            "Все готово! 🎉\n\n"
+            "Я буду запитувати тебе про хороші моменти дня.\n\n"
+            "Готовий почати? Чи хочеш спочатку налаштувати часовий пояс та інтервал?"
+        ),
+        "onboarding_complete": (
+            "Чудово! Все готово! 🎉\n\n"
+            "Ось як це працює:\n\n"
+            "• Кожні кілька годин я запитаю: «Що хорошого сталося?»\n"
+            "• Ти можеш відповісти текстом або голосовим повідомленням\n"
+            "• Я збережу твої моменти і нагадаю про них, коли потрібна підтримка\n\n"
+            "📝 <b>Приклади відповідей:</b>\n"
+            "• «Сьогодні прогулявся в парку, було дуже красиво!»\n"
+            "• «Зустрівся з друзями, добре поспілкувалися»\n"
+            "• «Закінчив важливий проект, відчуваю гордість»\n"
+            "• «Випив смачну каву і почитав книгу»\n\n"
+            "🔒 Твої дані в безпеці і використовуються тільки для нашого спілкування.\n"
+            "Детальніше: /privacy"
+        ),
     },
 }
 
 
-def get_onboarding_text(key: str, language_code: str) -> str:
+def get_onboarding_text(key: str, language_code: str, **kwargs) -> str:
     """
     Get localized onboarding text.
 
     Args:
         key: Text key (e.g., "address_informal_button", "address_informal_confirm")
         language_code: User's language code
+        **kwargs: Optional parameters to format the text (e.g., first_name="John")
 
     Returns:
         Localized text or Russian fallback
     """
     lang = get_language_code(language_code)
     texts = ONBOARDING_TEXTS.get(lang, ONBOARDING_TEXTS["ru"])
-    return texts.get(key, ONBOARDING_TEXTS["ru"].get(key, ""))
+    text = texts.get(key, ONBOARDING_TEXTS["ru"].get(key, ""))
+    
+    # Format text with parameters if provided
+    if kwargs:
+        try:
+            return text.format(**kwargs)
+        except (KeyError, ValueError):
+            # If formatting fails, return text as-is
+            return text
+    
+    return text
 
 
 # System/status messages for localization
@@ -891,6 +1046,7 @@ SYSTEM_MESSAGES = {
         "address_changed_formal": "Буду обращаться на «вы»",
         "gender_set_male": "Пол установлен: мужской",
         "gender_set_female": "Пол установлен: женский",
+        "gender_set_neutral": "Пол установлен: нейтрально",
 
         # Moments messages
         "no_moments": "У тебя пока нет сохранённых моментов. Расскажи, что хорошего произошло сегодня!",
@@ -1153,6 +1309,7 @@ SYSTEM_MESSAGES = {
         "address_changed_formal": "I'll use formal communication",
         "gender_set_male": "Gender set: male",
         "gender_set_female": "Gender set: female",
+        "gender_set_neutral": "Gender set: neutral",
 
         # Moments messages
         "no_moments": "You don't have any saved moments yet. Tell me what good happened today!",
@@ -1415,6 +1572,7 @@ SYSTEM_MESSAGES = {
         "address_changed_formal": "Буду звертатися на «ви»",
         "gender_set_male": "Стать встановлено: чоловіча",
         "gender_set_female": "Стать встановлено: жіноча",
+        "gender_set_neutral": "Стать встановлено: нейтрально",
 
         # Moments messages
         "no_moments": "У тебе поки немає збережених моментів. Розкажи, що хорошого сталося сьогодні!",
