@@ -4,7 +4,7 @@ Inline buttons for various bot interactions
 """
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from src.utils.localization import get_onboarding_text, get_menu_text
+from src.utils.localization import get_onboarding_text, get_menu_text, get_system_message
 
 
 def get_onboarding_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
@@ -578,6 +578,39 @@ def get_summary_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text=get_menu_text("back", language_code), callback_data="main_menu"),
+            ],
+        ]
+    )
+    return keyboard
+
+
+def get_pause_period_keyboard(language_code: str = "ru") -> InlineKeyboardMarkup:
+    """Create keyboard for pause period selection"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=get_system_message("pause_day", language_code),
+                    callback_data="pause_day"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=get_system_message("pause_week", language_code),
+                    callback_data="pause_week"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=get_system_message("pause_two_weeks", language_code),
+                    callback_data="pause_two_weeks"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=get_system_message("pause_cancel", language_code),
+                    callback_data="pause_cancel"
+                ),
             ],
         ]
     )

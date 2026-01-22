@@ -32,6 +32,7 @@ class User(Base):
     last_active_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
+    notifications_paused_until: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
 
     # Tracking field for incremental memory indexing
     last_memory_indexed_conversation_id: Mapped[int] = mapped_column(Integer, default=0)
