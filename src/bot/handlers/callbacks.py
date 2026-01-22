@@ -1279,11 +1279,17 @@ async def callback_pause_cancel(callback: CallbackQuery) -> None:
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     language_code = user.language_code if user else "ru"
     
+    # Use answer instead of edit_text because we need ReplyKeyboardMarkup for main menu
     from src.bot.keyboards.reply import get_main_menu_keyboard
-    await callback.message.edit_text(
+    await callback.message.answer(
         get_system_message("cancelled", language_code),
         reply_markup=get_main_menu_keyboard(language_code)
     )
+    # Delete the inline message with pause selection
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass  # Ignore if message already deleted
     await callback.answer()
 
 
@@ -1340,9 +1346,15 @@ async def _set_pause(callback: CallbackQuery, days: int) -> None:
     confirm_key = "pause_confirmed_formal" if formal else "pause_confirmed"
     confirm_msg = get_system_message(confirm_key, language_code, date=date_str)
     
+    # Use answer instead of edit_text because we need ReplyKeyboardMarkup for main menu
     from src.bot.keyboards.reply import get_main_menu_keyboard
-    await callback.message.edit_text(
+    await callback.message.answer(
         confirm_msg,
         reply_markup=get_main_menu_keyboard(language_code)
     )
+    # Delete the inline message with pause selection
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass  # Ignore if message already deleted
     await callback.answer()
