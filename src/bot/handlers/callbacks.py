@@ -30,17 +30,17 @@ from src.services.user_service import UserService
 from src.services.moment_service import MomentService
 from src.services.gdpr_service import GDPRService
 from src.services.social_profile_service import SocialProfileService
-from src.utils.localization import get_onboarding_text, get_system_message, get_menu_text
+from src.utils.localization import get_onboarding_text, get_system_message, get_menu_text, get_language_code
 
 logger = logging.getLogger(__name__)
 router = Router(name="callbacks")
 
 
 async def get_user_language(telegram_id: int) -> str:
-    """Helper to get user's language code"""
+    """Helper to get user's normalized language code (for localization)."""
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(telegram_id)
-    return user.language_code if user else "ru"
+    return get_language_code(user.language_code) if user else "ru"
 
 
 async def _complete_onboarding_flow(callback: CallbackQuery, language_code: str) -> None:

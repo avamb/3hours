@@ -70,6 +70,41 @@ def get_localized_welcome_back_text(first_name: str, language_code: str) -> str:
             f"ברוך שובך, {first_name}! 💝\n\n"
             "טוב לראות אותך שוב. איך אני יכול לעזור?"
         )
+    if lang == "es":
+        return (
+            f"¡Bienvenido de nuevo, {first_name}! 💝\n\n"
+            "Me alegra verte otra vez. ¿En qué puedo ayudarte?"
+        )
+    if lang == "de":
+        return (
+            f"Willkommen zurück, {first_name}! 💝\n\n"
+            "Schön, dich wiederzusehen. Womit kann ich helfen?"
+        )
+    if lang == "fr":
+        return (
+            f"Ravi de te revoir, {first_name}! 💝\n\n"
+            "Comment puis-je t'aider?"
+        )
+    if lang == "pt":
+        return (
+            f"Bem-vindo de volta, {first_name}! 💝\n\n"
+            "Que bom ver-te outra vez. Em que posso ajudar?"
+        )
+    if lang == "it":
+        return (
+            f"Bentornato, {first_name}! 💝\n\n"
+            "Che piacere rivederti. Come posso aiutarti?"
+        )
+    if lang == "zh":
+        return (
+            f"欢迎回来，{first_name}！💝\n\n"
+            "很高兴再见到你。需要什么帮助？"
+        )
+    if lang == "ja":
+        return (
+            f"おかえり、{first_name}！💝\n\n"
+            "また会えてうれしい。何か手伝うことある？"
+        )
     return (
         f"С возвращением, {first_name}! 💝\n\n"
         "Рад снова тебя видеть. Чем могу помочь?"

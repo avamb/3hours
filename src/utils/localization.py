@@ -1076,6 +1076,427 @@ ONBOARDING_TEXTS = {
             "מידע נוסף: /privacy"
         ),
     },
+    "es": {
+        "address_informal_button": "De «tú» 😊",
+        "address_formal_button": "De «usted» 🤝",
+        "address_informal_confirm": (
+            "¡Genial! Me dirigiré a ti de «tú» 😊\n\n"
+            "Así funciona:\n\n"
+            "• Cada pocas horas te preguntaré: «¿Qué bueno pasó?»\n"
+            "• Puedes responder con texto o mensaje de voz\n"
+            "• Guardaré tus momentos y te recordaré cuando necesites apoyo\n\n"
+            "⚙️ <b>Importante:</b> Configura tu <b>zona horaria</b> y <b>frecuencia de mensajes</b> "
+            "en ⚙️ Ajustes, para escribirte a una hora conveniente.\n\n"
+            "🔒 Tus datos están seguros y se usan solo para nuestra comunicación.\n"
+            "Más info: /privacy"
+        ),
+        "address_formal_confirm": (
+            "Entendido. Me dirigiré a usted de «usted» 😊\n\n"
+            "Así funciona:\n\n"
+            "• Cada pocas horas le preguntaré: «¿Qué bueno pasó?»\n"
+            "• Puede responder con texto o mensaje de voz\n"
+            "• Guardaré sus momentos y le recordaré cuando necesite apoyo\n\n"
+            "⚙️ <b>Importante:</b> Configure su <b>zona horaria</b> y <b>frecuencia de mensajes</b> "
+            "en ⚙️ Ajustes.\n\n"
+            "🔒 Sus datos están seguros. Más info: /privacy"
+        ),
+        "welcome_with_voice": (
+            "¡Hola, {first_name}! 👋\n\n"
+            "Soy tu asistente para desarrollar el pensamiento positivo. "
+            "Cada día te preguntaré por lo bueno "
+            "para notar juntos los momentos alegres de la vida. ✨\n\n"
+            "💬 Puedes responder con texto o mensajes de voz, ¡entiendo ambos!\n\n"
+            "¡Empecemos! ¿Cómo prefieres que te hable?"
+        ),
+        "onboarding_select_gender": (
+            "¡Genial! De «tú» 😊\n\n"
+            "Elige cómo prefieres que te llame:\n\n"
+            "Así podré hacer preguntas más personalizadas."
+        ),
+        "onboarding_select_gender_formal": (
+            "Entendido. De «usted» 😊\n\n"
+            "Elija cómo prefiere que le llame:\n\n"
+            "Así podré hacer preguntas más personalizadas."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Importante: zona horaria</b>\n\n"
+            "Sin la zona correcta, podría enviarte mensajes de noche. 😴\n\n"
+            "Te escribiré solo en horas activas (por defecto 9:00–21:00). "
+            "Necesito saber tu zona horaria.\n\n"
+            "Elige tu zona horaria:"
+        ),
+        "onboarding_ready_confirm": (
+            "¡Todo listo! 🎉\n\n"
+            "Te preguntaré por los buenos momentos del día.\n\n"
+            "¿Comenzamos? ¿O prefieres configurar antes zona e intervalo?"
+        ),
+        "onboarding_complete": (
+            "¡Excelente! Todo listo. 🎉\n\n"
+            "• Cada pocas horas preguntaré: «¿Qué bueno pasó?»\n"
+            "• Responde con texto o voz\n"
+            "• Guardaré tus momentos y te recordaré cuando necesites apoyo\n\n"
+            "📝 <b>Ejemplos:</b> «Paseé por el parque», «Quedé con amigos», «Terminé un proyecto».\n\n"
+            "🔒 Tus datos seguros. Más info: /privacy"
+        ),
+    },
+    "de": {
+        "address_informal_button": "Mit «du» 😊",
+        "address_formal_button": "Mit «Sie» 🤝",
+        "address_informal_confirm": (
+            "Super! Ich werde dich «du» nennen 😊\n\n"
+            "So funktioniert es:\n\n"
+            "• Alle paar Stunden frage ich: „Was war heute schön?“\n"
+            "• Du kannst mit Text oder Sprachnachricht antworten\n"
+            "• Ich speichere deine Momente und erinnere dich bei Bedarf\n\n"
+            "⚙️ <b>Wichtig:</b> Stelle <b>Zeitzone</b> und <b>Nachrichtenrhythmus</b> "
+            "unter ⚙️ Einstellungen ein.\n\n"
+            "🔒 Deine Daten sind sicher. Mehr: /privacy"
+        ),
+        "address_formal_confirm": (
+            "Verstanden. Ich werde Sie «Sie» nennen 😊\n\n"
+            "So funktioniert es:\n\n"
+            "• Alle paar Stunden frage ich: „Was war heute schön?“\n"
+            "• Sie können mit Text oder Sprachnachricht antworten\n"
+            "• Ich speichere Ihre Momente und erinnere Sie bei Bedarf\n\n"
+            "⚙️ <b>Wichtig:</b> Legen Sie <b>Zeitzone</b> und <b>Rhythmus</b> in ⚙️ Einstellungen fest.\n\n"
+            "🔒 Ihre Daten sind sicher. Mehr: /privacy"
+        ),
+        "welcome_with_voice": (
+            "Hallo, {first_name}! 👋\n\n"
+            "Ich bin dein Assistent für positives Denken. "
+            "Jeden Tag frage ich dich nach dem Guten, "
+            "damit wir gemeinsam die schönen Momente bemerken. ✨\n\n"
+            "💬 Du kannst mit Text oder Sprachnachrichten antworten – beides verstehe ich!\n\n"
+            "Lass uns starten! Wie soll ich dich ansprechen?"
+        ),
+        "onboarding_select_gender": (
+            "Super! «Du» 😊\n\n"
+            "Wähle, wie ich dich nennen soll:\n\n"
+            "Das hilft mir, passendere Fragen zu stellen."
+        ),
+        "onboarding_select_gender_formal": (
+            "Verstanden. «Sie» 😊\n\n"
+            "Bitte wählen Sie, wie ich Sie ansprechen soll.\n\n"
+            "Das hilft mir bei der Personalisierung."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Wichtig: Zeitzone</b>\n\n"
+            "Ohne die richtige Zeitzone könnte ich dir nachts schreiben. 😴\n\n"
+            "Ich schreibe nur in aktiven Stunden (Standard 9–21 Uhr). "
+            "Dafür brauche ich deine Zeitzone.\n\n"
+            "Bitte wähle deine Zeitzone:"
+        ),
+        "onboarding_ready_confirm": (
+            "Alles bereit! 🎉\n\n"
+            "Ich werde dich nach den schönen Momenten des Tages fragen.\n\n"
+            "Bereit? Oder zuerst Zeitzone und Intervall einstellen?"
+        ),
+        "onboarding_complete": (
+            "Alles klar! 🎉\n\n"
+            "• Alle paar Stunden: „Was war heute schön?“\n"
+            "• Antworte mit Text oder Sprachnachricht\n"
+            "• Ich speichere deine Momente und erinnere dich\n\n"
+            "📝 <b>Beispiele:</b> „Spaziergang im Park“, „Treffen mit Freunden“, „Projekt abgeschlossen“.\n\n"
+            "🔒 Deine Daten sind sicher. Mehr: /privacy"
+        ),
+    },
+    "fr": {
+        "address_informal_button": "En «tu» 😊",
+        "address_formal_button": "En «vous» 🤝",
+        "address_informal_confirm": (
+            "Parfait ! Je te tutoierai 😊\n\n"
+            "Comment ça marche :\n\n"
+            "• Toutes les quelques heures je demanderai : « Quoi de bon aujourd'hui ? »\n"
+            "• Tu peux répondre par texte ou message vocal\n"
+            "• Je sauvegarde tes moments et te rappellerai quand tu auras besoin de soutien\n\n"
+            "⚙️ <b>Important :</b> Règle ta <b>fuseau horaire</b> et la <b>fréquence des messages</b> "
+            "dans ⚙️ Paramètres.\n\n"
+            "🔒 Tes données sont protégées. En savoir plus : /privacy"
+        ),
+        "address_formal_confirm": (
+            "Très bien. Je vous vouvoyerai 😊\n\n"
+            "Comment ça marche :\n\n"
+            "• Toutes les quelques heures je demanderai : « Quoi de bon aujourd'hui ? »\n"
+            "• Vous pouvez répondre par texte ou message vocal\n"
+            "• Je sauvegarde vos moments et vous rappellerai si besoin\n\n"
+            "⚙️ <b>Important :</b> Réglage du <b>fuseau</b> et de la <b>fréquence</b> dans ⚙️ Paramètres.\n\n"
+            "🔒 Vos données sont protégées. /privacy"
+        ),
+        "welcome_with_voice": (
+            "Salut, {first_name} ! 👋\n\n"
+            "Je suis ton assistant pour la pensée positive. "
+            "Chaque jour je te demanderai ce qui va bien "
+            "pour repérer ensemble les moments joyeux. ✨\n\n"
+            "💬 Tu peux répondre par texte ou vocal, je comprends les deux !\n\n"
+            "C'est parti ! Tu préfères qu'on se tutoie ou qu'on se vouvoie ?"
+        ),
+        "onboarding_select_gender": (
+            "Parfait ! Tutoiement 😊\n\n"
+            "Choisis comment tu préfères que je t'appelle :\n\n"
+            "Ça m'aide à poser des questions plus personnalisées."
+        ),
+        "onboarding_select_gender_formal": (
+            "Très bien. Vouvoiement 😊\n\n"
+            "Choisissez comment vous préférez que je vous appelle.\n\n"
+            "Ça m'aide à personnaliser les questions."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Important : fuseau horaire</b>\n\n"
+            "Sans le bon fuseau, je pourrais t'écrire la nuit. 😴\n\n"
+            "J'écris seulement en heures actives (9h–21h par défaut). "
+            "Il me faut ton fuseau.\n\n"
+            "Choisis ton fuseau horaire :"
+        ),
+        "onboarding_ready_confirm": (
+            "Tout est prêt ! 🎉\n\n"
+            "Je te demanderai les bons moments de la journée.\n\n"
+            "On commence ? Ou tu veux d'abord réglage fuseau et fréquence ?"
+        ),
+        "onboarding_complete": (
+            "Tout est prêt ! 🎉\n\n"
+            "• Toutes les quelques heures : « Quoi de bon ? »\n"
+            "• Réponds par texte ou vocal\n"
+            "• Je sauvegarde tes moments et te rappellerai\n\n"
+            "📝 <b>Exemples :</b> « Balade au parc », « Café avec des amis », « Projet terminé ».\n\n"
+            "🔒 Données protégées. /privacy"
+        ),
+    },
+    "pt": {
+        "address_informal_button": "Por «tu» 😊",
+        "address_formal_button": "Por «você» 🤝",
+        "address_informal_confirm": (
+            "Ótimo! Vou falar contigo por «tu» 😊\n\n"
+            "Assim funciona:\n\n"
+            "• De tantas em tantas horas pergunto: «O que correu bem?»\n"
+            "• Podes responder por texto ou voz\n"
+            "• Guardo os teus momentos e lembro-te quando precisares de apoio\n\n"
+            "⚙️ <b>Importante:</b> Configura <b>fuso horário</b> e <b>frequência</b> em ⚙️ Definições.\n\n"
+            "🔒 Os teus dados estão seguros. Mais: /privacy"
+        ),
+        "address_formal_confirm": (
+            "Entendido. «Você» 😊\n\n"
+            "Assim funciona:\n\n"
+            "• De tantas em tantas horas pergunto: «O que correu bem?»\n"
+            "• Pode responder por texto ou voz\n"
+            "• Guardo os seus momentos e lembro-o quando precisar\n\n"
+            "⚙️ <b>Importante:</b> Configurar fuso e frequência em ⚙️ Definições.\n\n"
+            "🔒 Dados seguros. /privacy"
+        ),
+        "welcome_with_voice": (
+            "Olá, {first_name}! 👋\n\n"
+            "Sou o teu assistente para o pensamento positivo. "
+            "Todos os dias pergunto pelo que correu bem "
+            "para notarmos juntos os momentos bons. ✨\n\n"
+            "💬 Podes responder por texto ou voz – percebo os dois!\n\n"
+            "Vamos começar! Como prefires que te trate?"
+        ),
+        "onboarding_select_gender": (
+            "Ótimo! «Tu» 😊\n\n"
+            "Escolhe como prefires ser tratado:\n\n"
+            "Assim faço perguntas mais personalizadas."
+        ),
+        "onboarding_select_gender_formal": (
+            "Entendido. «Você» 😊\n\n"
+            "Escolha como prefere ser tratado.\n\n"
+            "Ajuda a personalizar as perguntas."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Importante: fuso horário</b>\n\n"
+            "Sem o fuso certo, posso enviar mensagens de noite. 😴\n\n"
+            "Escrevo só em horas ativas (9h–21h). Preciso do teu fuso.\n\n"
+            "Escolhe o teu fuso:"
+        ),
+        "onboarding_ready_confirm": (
+            "Tudo pronto! 🎉\n\n"
+            "Vou perguntar pelos bons momentos do dia.\n\n"
+            "Começamos? Ou preferes configurar fuso e intervalo primeiro?"
+        ),
+        "onboarding_complete": (
+            "Tudo pronto! 🎉\n\n"
+            "• De tantas em tantas horas: «O que correu bem?»\n"
+            "• Responde por texto ou voz\n"
+            "• Guardo os teus momentos e lembro-te\n\n"
+            "📝 <b>Exemplos:</b> «Passeio no parque», «Café com amigos», «Projeto concluído».\n\n"
+            "🔒 Dados seguros. /privacy"
+        ),
+    },
+    "it": {
+        "address_informal_button": "Di «tu» 😊",
+        "address_formal_button": "Di «Lei» 🤝",
+        "address_informal_confirm": (
+            "Perfetto! Mi rivolgerò a te con il «tu» 😊\n\n"
+            "Come funziona:\n\n"
+            "• Ogni tanto chiederò: «Cosa è andato bene oggi?»\n"
+            "• Puoi rispondere con testo o messaggio vocale\n"
+            "• Salverò i tuoi momenti e te li ricorderò quando servirà supporto\n\n"
+            "⚙️ <b>Importante:</b> Imposta <b>fuso orario</b> e <b>frequenza messaggi</b> in ⚙️ Impostazioni.\n\n"
+            "🔒 I tuoi dati sono al sicuro. Maggiori info: /privacy"
+        ),
+        "address_formal_confirm": (
+            "Capito. Mi rivolgerò a Lei con il «Lei» 😊\n\n"
+            "Come funziona:\n\n"
+            "• Ogni tanto chiederò: «Cosa è andato bene oggi?»\n"
+            "• Può rispondere con testo o messaggio vocale\n"
+            "• Salverò i Suoi momenti e glieli ricorderò se necessario\n\n"
+            "⚙️ <b>Importante:</b> Impostare fuso e frequenza in ⚙️ Impostazioni.\n\n"
+            "🔒 Dati al sicuro. /privacy"
+        ),
+        "welcome_with_voice": (
+            "Ciao, {first_name}! 👋\n\n"
+            "Sono il tuo assistente per il pensiero positivo. "
+            "Ogni giorno ti chiederò del buono "
+            "per notare insieme i momenti belli. ✨\n\n"
+            "💬 Puoi rispondere con testo o vocali – capisco entrambi!\n\n"
+            "Iniziamo! Preferisci il «tu» o il «Lei»?"
+        ),
+        "onboarding_select_gender": (
+            "Perfetto! «Tu» 😊\n\n"
+            "Scegli come preferisci essere chiamato:\n\n"
+            "Mi aiuta a fare domande più personalizzate."
+        ),
+        "onboarding_select_gender_formal": (
+            "Capito. «Lei» 😊\n\n"
+            "Scelga come preferisce essere chiamato.\n\n"
+            "Aiuta a personalizzare le domande."
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>Importante: fuso orario</b>\n\n"
+            "Senza il fuso corretto potrei scriverti di notte. 😴\n\n"
+            "Scrivo solo in ore attive (9–21). Mi serve il tuo fuso.\n\n"
+            "Scegli il fuso orario:"
+        ),
+        "onboarding_ready_confirm": (
+            "Tutto pronto! 🎉\n\n"
+            "Ti chiederò dei bei momenti della giornata.\n\n"
+            "Partiamo? O preferisci prima fuso e intervallo?"
+        ),
+        "onboarding_complete": (
+            "Tutto pronto! 🎉\n\n"
+            "• Ogni tanto: «Cosa è andato bene?»\n"
+            "• Rispondi con testo o vocale\n"
+            "• Salvo i tuoi momenti e te li ricordo\n\n"
+            "📝 <b>Esempi:</b> «Passeggiata al parco», «Caffè con amici», «Progetto finito».\n\n"
+            "🔒 Dati al sicuro. /privacy"
+        ),
+    },
+    "zh": {
+        "address_informal_button": "随意 😊",
+        "address_formal_button": "正式 🤝",
+        "address_informal_confirm": (
+            "好的！我们随意交流 😊\n\n"
+            "使用方式：\n\n"
+            "• 每隔几小时我会问：「今天有什么好事？」\n"
+            "• 你可以用文字或语音回复\n"
+            "• 我会保存你的美好时刻，在需要时提醒你\n\n"
+            "⚙️ <b>重要：</b>请在 ⚙️ 设置 中配置 <b>时区</b> 和 <b>发送频率</b>。\n\n"
+            "🔒 你的数据安全，仅用于我们的交流。详情：/privacy"
+        ),
+        "address_formal_confirm": (
+            "好的！我们正式交流 😊\n\n"
+            "使用方式：\n\n"
+            "• 每隔几小时我会问：「今天有什么好事？」\n"
+            "• 您可以用文字或语音回复\n"
+            "• 我会保存您的美好时刻并在需要时提醒\n\n"
+            "⚙️ <b>重要：</b>请在设置中配置时区与频率。\n\n"
+            "🔒 数据安全。/privacy"
+        ),
+        "welcome_with_voice": (
+            "你好，{first_name}！👋\n\n"
+            "我是你的积极思维小助手。"
+            "每天我会问你今天的好事，"
+            "一起发现生活中的快乐时刻。✨\n\n"
+            "💬 你可以用文字或语音回复，我都能理解！\n\n"
+            "开始吧！你希望怎么交流？"
+        ),
+        "onboarding_select_gender": (
+            "好的！随意 😊\n\n"
+            "请选择你希望的称呼方式：\n\n"
+            "这样我可以更贴心地提问。"
+        ),
+        "onboarding_select_gender_formal": (
+            "好的！正式 😊\n\n"
+            "请选择您希望的称呼方式。\n\n"
+            "以便更好地个性化问题。"
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>重要：时区</b>\n\n"
+            "时区不对，我可能在夜里发消息。😴\n\n"
+            "我只在活跃时段（默认 9:00–21:00）发消息，需要知道你的时区。\n\n"
+            "请选择你的时区："
+        ),
+        "onboarding_ready_confirm": (
+            "一切就绪！🎉\n\n"
+            "我会问你今天的好时刻。\n\n"
+            "要开始吗？还是先设置时区和间隔？"
+        ),
+        "onboarding_complete": (
+            "一切就绪！🎉\n\n"
+            "• 每隔几小时问：「今天有什么好事？」\n"
+            "• 文字或语音回复均可\n"
+            "• 我会保存并适时提醒\n\n"
+            "📝 <b>示例：</b>「今天逛了公园」「和朋友喝咖啡」「完成了一个项目」。\n\n"
+            "🔒 数据安全。/privacy"
+        ),
+    },
+    "ja": {
+        "address_informal_button": "カジュアルに 😊",
+        "address_formal_button": "丁寧に 🤝",
+        "address_informal_confirm": (
+            "了解！カジュアルに話します 😊\n\n"
+            "使い方：\n\n"
+            "• 数時間ごとに「今日いいことあった？」と聞きます\n"
+            "• テキストか音声で返答できます\n"
+            "• いい瞬間を保存し、必要なときに思い出します\n\n"
+            "⚙️ <b>重要：</b>⚙️ 設定 で <b>タイムゾーン</b> と <b>送信頻度</b> を設定してください。\n\n"
+            "🔒 データは安全に保管。詳細：/privacy"
+        ),
+        "address_formal_confirm": (
+            "了解！丁寧に話します 😊\n\n"
+            "使い方：\n\n"
+            "• 数時間ごとに「今日いいことあった？」と聞きます\n"
+            "• テキストか音声で返答できます\n"
+            "• いい瞬間を保存し、必要なときに思い出します\n\n"
+            "⚙️ <b>重要：</b>設定でタイムゾーン・頻度を設定してください。\n\n"
+            "🔒 データは安全。/privacy"
+        ),
+        "welcome_with_voice": (
+            "こんにちは、{first_name}！👋\n\n"
+            "ポジティブ思考のアシスタントです。"
+            "毎日「いいこと」を聞いて、"
+            "一緒にうれしい瞬間を見つけます。✨\n\n"
+            "💬 テキストも音声もOKです！\n\n"
+            "始めましょう！どんな話し方にする？"
+        ),
+        "onboarding_select_gender": (
+            "了解！カジュアル 😊\n\n"
+            "呼び方を選んでください：\n\n"
+            "よりパーソナルな質問ができます。"
+        ),
+        "onboarding_select_gender_formal": (
+            "了解！丁寧に 😊\n\n"
+            "呼び方を選んでください。\n\n"
+            "質問のパーソナライズに使います。"
+        ),
+        "onboarding_timezone_important": (
+            "🌍 <b>重要：タイムゾーン</b>\n\n"
+            "タイムゾーンが違うと夜中に送信するかもしれません。😴\n\n"
+            "アクティブ時間（既定 9–21時）にのみ送ります。タイムゾーンが必要です。\n\n"
+            "タイムゾーンを選んでください："
+        ),
+        "onboarding_ready_confirm": (
+            "準備完了！🎉\n\n"
+            "今日のいい瞬間について聞きます。\n\n"
+            "始めますか？それともタイムゾーンと間隔を先に設定しますか？"
+        ),
+        "onboarding_complete": (
+            "準備完了！🎉\n\n"
+            "• 数時間ごとに「今日いいことあった？」\n"
+            "• テキストか音声で返信\n"
+            "• いい瞬間を保存して思い出します\n\n"
+            "📝 <b>例：</b>「公園を散歩」「友達とコーヒー」「プロジェクト完了」。\n\n"
+            "🔒 データは安全。/privacy"
+        ),
+    },
 }
 
 
@@ -2503,6 +2924,22 @@ SYSTEM_MESSAGES = {
         "summary_not_enough_weekly": "📅 週次サマリーに十分な瞬間がありません。\n\nもっと記録が増えたら、素敵なレビューを作成できます！ 🌟",
         "summary_not_enough_monthly": "🗓 月次サマリーに十分な瞬間がありません。\n\nもっと記録が増えたら、素敵なレビューを作成できます！ 🌟",
         "stats_empty": "📊 統計はまだ利用できません。\n質問に答え始めると、ここにあなたの進捗が表示されます！ ✨",
+        "question_1_informal": "今日いいことはあった？ 🌟",
+        "question_2_informal": "教えて、何が嬉しかった？ ✨",
+        "question_3_informal": "今日何か嬉しいことあった？ 😊",
+        "question_4_informal": "今日いちばんよかった瞬間は？ 💫",
+        "question_5_informal": "今日やる気が出たこと、何だった？ 🌈",
+        "question_6_informal": "今日の小さな喜びを教えて！ 💝",
+        "question_7_informal": "今日いいなと思ったこと、何かあった？ 🌻",
+        "question_8_informal": "今日何に笑った？ 😄",
+        "question_1_formal": "今日いいことはありましたか？ 🌟",
+        "question_2_formal": "教えてください、何が嬉しかったですか？ ✨",
+        "question_3_formal": "今日何か嬉しいことはありましたか？ 😊",
+        "question_4_formal": "今日いちばんよかった瞬間は何ですか？ 💫",
+        "question_5_formal": "今日やる気が出たことは何でしたか？ 🌈",
+        "question_6_formal": "今日の小さな喜びを教えてください！ 💝",
+        "question_7_formal": "今日いいなと思ったことはありますか？ 🌻",
+        "question_8_formal": "今日何に笑いましたか？ 😄",
         "please_start_first": "まずは /start コマンドでボットを起動してください",
     },
     "zh": {
@@ -2656,6 +3093,22 @@ SYSTEM_MESSAGES = {
         "summary_not_enough_weekly": "📅 每周总结的时刻不足。\n\n当您有更多记录时，我将能够创建一个漂亮的概述！🌟",
         "summary_not_enough_monthly": "🗓 每月总结的时刻不足。\n\n当您有更多记录时，我将能够创建一个漂亮的概述！🌟",
         "stats_empty": "📊 统计数据暂时不可用。\n开始回答问题，这里将显示您的进展！✨",
+        "question_1_informal": "今天有什么好事？ 🌟",
+        "question_2_informal": "说说看，什么让你开心？ ✨",
+        "question_3_informal": "今天有什么开心事？ 😊",
+        "question_4_informal": "今天最特别的时刻是？ 💫",
+        "question_5_informal": "今天什么给了你灵感？ 🌈",
+        "question_6_informal": "分享今天的一个小确幸吧！ 💝",
+        "question_7_informal": "今天你留意到什么好事？ 🌻",
+        "question_8_informal": "今天为什么笑了？ 😄",
+        "question_1_formal": "今天有什么好事？ 🌟",
+        "question_2_formal": "请说说，什么让您开心？ ✨",
+        "question_3_formal": "今天有什么开心事？ 😊",
+        "question_4_formal": "今天最特别的时刻是什么？ 💫",
+        "question_5_formal": "今天什么给了您灵感？ 🌈",
+        "question_6_formal": "请分享今天的一个小确幸！ 💝",
+        "question_7_formal": "今天您留意到什么好事？ 🌻",
+        "question_8_formal": "今天为什么笑了？ 😄",
         "please_start_first": "请先通过 /start 启动机器人",
     },
     "it": {
@@ -2809,6 +3262,22 @@ SYSTEM_MESSAGES = {
         "summary_not_enough_weekly": "📅 Non ci sono abbastanza momenti per il riepilogo settimanale.\n\nQuando avrai più registrazioni, potrò creare una bella panoramica! 🌟",
         "summary_not_enough_monthly": "🗓 Non ci sono abbastanza momenti per il riepilogo mensile.\n\nQuando avrai più registrazioni, potrò creare una bella panoramica! 🌟",
         "stats_empty": "📊 Le statistiche non sono disponibili per ora.\nInizia a rispondere alle domande e qui apparirà il tuo progresso! ✨",
+        "question_1_informal": "Cosa è andato bene oggi? 🌟",
+        "question_2_informal": "Raccontami, cosa ti ha fatto felice? ✨",
+        "question_3_informal": "Cosa di bello è successo oggi? 😊",
+        "question_4_informal": "Quale momento di oggi è stato speciale? 💫",
+        "question_5_informal": "Cosa ti ha ispirato oggi? 🌈",
+        "question_6_informal": "Raccontami una piccola gioia di oggi! 💝",
+        "question_7_informal": "Cosa di bello hai notato oggi? 🌻",
+        "question_8_informal": "Per cosa hai sorriso oggi? 😄",
+        "question_1_formal": "Cosa è andato bene oggi? 🌟",
+        "question_2_formal": "Racconti, cosa La ha resa felice? ✨",
+        "question_3_formal": "Cosa di bello è successo oggi? 😊",
+        "question_4_formal": "Quale momento di oggi è stato speciale? 💫",
+        "question_5_formal": "Cosa L'ha ispirata oggi? 🌈",
+        "question_6_formal": "Racconti una piccola gioia di oggi! 💝",
+        "question_7_formal": "Cosa di bello ha notato oggi? 🌻",
+        "question_8_formal": "Per cosa ha sorriso oggi? 😄",
         "please_start_first": "Per favore, avvia prima il bot con il comando /start",
     },
     "pt": {
@@ -2962,6 +3431,22 @@ SYSTEM_MESSAGES = {
         "summary_not_enough_weekly": "📅 Momentos insuficientes para resumo semanal.\n\nQuando você tiver mais registros, poderei criar uma bela visão geral! 🌟",
         "summary_not_enough_monthly": "🗓 Momentos insuficientes para resumo mensal.\n\nQuando você tiver mais registros, poderei criar uma bela visão geral! 🌟",
         "stats_empty": "📊 Estatísticas ainda não disponíveis.\nComece a responder às perguntas e seu progresso aparecerá aqui! ✨",
+        "question_1_informal": "O que correu bem hoje? 🌟",
+        "question_2_informal": "Conta-me, o que te deixou feliz? ✨",
+        "question_3_informal": "O que de bom aconteceu hoje? 😊",
+        "question_4_informal": "Que momento de hoje foi especial? 💫",
+        "question_5_informal": "O que te inspirou hoje? 🌈",
+        "question_6_informal": "Conta uma pequena alegria de hoje! 💝",
+        "question_7_informal": "O que de bom reparaste hoje? 🌻",
+        "question_8_informal": "Por que razão sorriste hoje? 😄",
+        "question_1_formal": "O que correu bem hoje? 🌟",
+        "question_2_formal": "Conte-me, o que o(a) deixou feliz? ✨",
+        "question_3_formal": "O que de bom aconteceu hoje? 😊",
+        "question_4_formal": "Que momento de hoje foi especial? 💫",
+        "question_5_formal": "O que o(a) inspirou hoje? 🌈",
+        "question_6_formal": "Conte uma pequena alegria de hoje! 💝",
+        "question_7_formal": "O que de bom reparou hoje? 🌻",
+        "question_8_formal": "Por que razão sorriu hoje? 😄",
         "please_start_first": "Por favor, inicie o bot primeiro com o comando /start",
     },
     "fr": {
@@ -3115,6 +3600,22 @@ SYSTEM_MESSAGES = {
         "summary_not_enough_weekly": "📅 Pas assez de moments pour un résumé hebdomadaire.\n\nQuand tu auras plus d'enregistrements, je pourrai créer un joli aperçu ! 🌟",
         "summary_not_enough_monthly": "🗓 Pas assez de moments pour un résumé mensuel.\n\nQuand tu auras plus d'enregistrements, je pourrai créer un joli aperçu ! 🌟",
         "stats_empty": "📊 Statistiques non disponibles pour le moment.\nCommence à répondre aux questions, et ton progrès apparaîtra ici ! ✨",
+        "question_1_informal": "Qu'est-ce qui s'est bien passé aujourd'hui ? 🌟",
+        "question_2_informal": "Dis-moi, qu'est-ce qui t'a rendu heureux(se) ? ✨",
+        "question_3_informal": "Quoi de plaisant aujourd'hui ? 😊",
+        "question_4_informal": "Quel moment d'aujourd'hui était spécial ? 💫",
+        "question_5_informal": "Qu'est-ce qui t'a inspiré aujourd'hui ? 🌈",
+        "question_6_informal": "Raconte une petite joie du jour ! 💝",
+        "question_7_informal": "Quoi de bien as-tu remarqué aujourd'hui ? 🌻",
+        "question_8_informal": "Pourquoi as-tu souri aujourd'hui ? 😄",
+        "question_1_formal": "Qu'est-ce qui s'est bien passé aujourd'hui ? 🌟",
+        "question_2_formal": "Dites-moi, qu'est-ce qui vous a rendu heureux(se) ? ✨",
+        "question_3_formal": "Quoi de plaisant aujourd'hui ? 😊",
+        "question_4_formal": "Quel moment d'aujourd'hui était spécial ? 💫",
+        "question_5_formal": "Qu'est-ce qui vous a inspiré aujourd'hui ? 🌈",
+        "question_6_formal": "Racontez une petite joie du jour ! 💝",
+        "question_7_formal": "Quoi de bien avez-vous remarqué aujourd'hui ? 🌻",
+        "question_8_formal": "Pourquoi avez-vous souri aujourd'hui ? 😄",
         "please_start_first": "Veuillez d'abord démarrer le bot avec la commande /start",
     },
     "de": {
@@ -3268,6 +3769,22 @@ SYSTEM_MESSAGES = {
         "summary_not_enough_weekly": "📅 Nicht genügend Momente für eine wöchentliche Zusammenfassung.\n\nWenn du mehr Einträge hast, kann ich eine schöne Übersicht erstellen! 🌟",
         "summary_not_enough_monthly": "🗓 Nicht genügend Momente für eine monatliche Zusammenfassung.\n\nWenn du mehr Einträge hast, kann ich eine schöne Übersicht erstellen! 🌟",
         "stats_empty": "📊 Statistik derzeit nicht verfügbar.\nBeginne, auf die Fragen zu antworten, und hier wird dein Fortschritt erscheinen! ✨",
+        "question_1_informal": "Was war heute schön? 🌟",
+        "question_2_informal": "Erzähl mal, was hat dich gefreut? ✨",
+        "question_3_informal": "Was Angenehmes ist heute passiert? 😊",
+        "question_4_informal": "Welcher Moment heute war besonders? 💫",
+        "question_5_informal": "Was hat dich heute inspiriert? 🌈",
+        "question_6_informal": "Erzähl von einer kleinen Freude heute! 💝",
+        "question_7_informal": "Was Schönes hast du heute bemerkt? 🌻",
+        "question_8_informal": "Worum hast du heute gelacht? 😄",
+        "question_1_formal": "Was war heute schön? 🌟",
+        "question_2_formal": "Erzählen Sie, was Sie gefreut hat? ✨",
+        "question_3_formal": "Was Angenehmes ist heute passiert? 😊",
+        "question_4_formal": "Welcher Moment heute war besonders? 💫",
+        "question_5_formal": "Was hat Sie heute inspiriert? 🌈",
+        "question_6_formal": "Erzählen Sie von einer kleinen Freude heute! 💝",
+        "question_7_formal": "Was Schönes haben Sie heute bemerkt? 🌻",
+        "question_8_formal": "Worum haben Sie heute gelacht? 😄",
         "please_start_first": "Bitte starte zuerst den Bot mit dem Befehl /start",
     },
     "es": {
@@ -3421,6 +3938,22 @@ SYSTEM_MESSAGES = {
         "summary_not_enough_weekly": "📅 No hay suficientes momentos para un resumen semanal.\n\nCuando tengas más registros, podré crear una hermosa revisión. 🌟",
         "summary_not_enough_monthly": "🗓 No hay suficientes momentos para un resumen mensual.\n\nCuando tengas más registros, podré crear una hermosa revisión. 🌟",
         "stats_empty": "📊 Estadísticas no disponibles por ahora.\n¡Comienza a responder preguntas y aquí aparecerá tu progreso! ✨",
+        "question_1_informal": "¿Qué bueno pasó hoy? 🌟",
+        "question_2_informal": "Cuéntame, ¿qué te alegró? ✨",
+        "question_3_informal": "¿Qué cosa agradable pasó hoy? 😊",
+        "question_4_informal": "¿Qué momento de hoy fue especial? 💫",
+        "question_5_informal": "¿Qué te inspiró hoy? 🌈",
+        "question_6_informal": "¡Cuéntame una pequeña alegría del día! 💝",
+        "question_7_informal": "¿Qué bueno notaste hoy? 🌻",
+        "question_8_informal": "¿Por qué sonreíste hoy? 😄",
+        "question_1_formal": "¿Qué bueno pasó hoy? 🌟",
+        "question_2_formal": "Cuénteme, ¿qué le alegró? ✨",
+        "question_3_formal": "¿Qué cosa agradable pasó hoy? 😊",
+        "question_4_formal": "¿Qué momento de hoy fue especial? 💫",
+        "question_5_formal": "¿Qué le inspiró hoy? 🌈",
+        "question_6_formal": "¡Cuénteme una pequeña alegría del día! 💝",
+        "question_7_formal": "¿Qué bueno notó hoy? 🌻",
+        "question_8_formal": "¿Por qué sonrió hoy? 😄",
         "please_start_first": "Por favor, primero inicia el bot con el comando /start",
     },}
 
