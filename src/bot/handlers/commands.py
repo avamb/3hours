@@ -13,7 +13,7 @@ from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
 from src.db.repositories.user_repository import UserRepository
 from src.services.user_service import UserService
-from src.utils.localization import get_system_message, get_onboarding_text, t
+from src.utils.localization import get_system_message, get_onboarding_text, get_language_code, t
 
 logger = logging.getLogger(__name__)
 router = Router(name="commands")
@@ -54,21 +54,26 @@ def get_localized_welcome_text(first_name: str, language_code: str) -> str:
 
 def get_localized_welcome_back_text(first_name: str, language_code: str) -> str:
     """Get welcome back text in user's language"""
-    if language_code and language_code.startswith("en"):
+    lang = get_language_code(language_code) if language_code else "ru"
+    if lang == "en":
         return (
             f"Welcome back, {first_name}! 💝\n\n"
             "Good to see you again. How can I help?"
         )
-    elif language_code and language_code.startswith("uk"):
+    if lang == "uk":
         return (
             f"З поверненням, {first_name}! 💝\n\n"
             "Радий знову тебе бачити. Чим можу допомогти?"
         )
-    else:  # Default to Russian
+    if lang == "he":
         return (
-            f"С возвращением, {first_name}! 💝\n\n"
-            "Рад снова тебя видеть. Чем могу помочь?"
+            f"ברוך שובך, {first_name}! 💝\n\n"
+            "טוב לראות אותך שוב. איך אני יכול לעזור?"
         )
+    return (
+        f"С возвращением, {first_name}! 💝\n\n"
+        "Рад снова тебя видеть. Чем могу помочь?"
+    )
 
 
 @router.message(CommandStart())
@@ -80,7 +85,7 @@ async def cmd_start(message: Message) -> None:
     """
     user_service = UserService()
     user = await user_service.get_or_create_user(message.from_user)
-    language_code = user.language_code if user else "ru"
+    language_code = get_language_code(user.language_code) if user else "ru"
 
     if not user.onboarding_completed:
         # New user - send welcome image first
