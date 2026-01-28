@@ -219,7 +219,7 @@ class SocialProfileService:
             field_name = field_map.get(network)
             if field_name:
                 setattr(profile, field_name, normalized_url)
-                profile.updated_at = datetime.now(timezone.utc).replace(tzinfo=None).replace(tzinfo=None)
+                profile.updated_at = datetime.now(timezone.utc)
                 await session.commit()
 
                 network_names = {
@@ -293,7 +293,7 @@ class SocialProfileService:
             field_name = field_map.get(network.lower())
             if field_name:
                 setattr(profile, field_name, None)
-                profile.updated_at = datetime.now(timezone.utc).replace(tzinfo=None).replace(tzinfo=None)
+                profile.updated_at = datetime.now(timezone.utc)
                 await session.commit()
                 success_msg = get_system_message("social_link_removed", lang, formal=formal)
                 return True, success_msg
@@ -331,7 +331,7 @@ class SocialProfileService:
                 session.add(profile)
 
             profile.bio_text = bio_text
-            profile.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            profile.updated_at = datetime.now(timezone.utc)
             await session.commit()
 
             success_msg = get_system_message("social_bio_updated", lang, formal=formal)
@@ -432,7 +432,7 @@ IMPORTANT: The user's language is {lang_name}. Return interests ONLY in {lang_na
 
                     if profile:
                         profile.interests = interests
-                        profile.last_parsed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                        profile.last_parsed_at = datetime.now(timezone.utc)
                         await session.commit()
 
             return True, interests

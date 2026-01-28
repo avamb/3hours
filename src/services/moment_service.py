@@ -101,7 +101,7 @@ class MomentService:
 
             # Apply period filter
             # Use timezone-naive datetime for database compatibility
-            now = datetime.now(timezone.utc).replace(tzinfo=None)
+            now = datetime.now(timezone.utc)
             if period == "today":
                 start = now.replace(hour=0, minute=0, second=0, microsecond=0)
                 query = query.where(Moment.created_at >= start)

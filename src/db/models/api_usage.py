@@ -43,7 +43,7 @@ class APIUsage(Base):
     extra_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
 
     # Relationship
     user = relationship("User", backref="api_usage")

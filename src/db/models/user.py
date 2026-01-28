@@ -27,12 +27,12 @@ class User(Base):
     notification_interval_hours: Mapped[int] = mapped_column(Integer, default=3)
     notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     timezone: Mapped[str] = mapped_column(String(50), default="UTC")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    last_active_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    last_active_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
-    notifications_paused_until: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
+    notifications_paused_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     is_in_dialog: Mapped[bool] = mapped_column(Boolean, default=False)  # Track dialog state in DB
 
     # Tracking field for incremental memory indexing

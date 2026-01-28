@@ -94,8 +94,8 @@ def upgrade() -> None:
     # 8. API usage table
     op.execute("""
         ALTER TABLE api_usage
-        ALTER COLUMN timestamp TYPE TIMESTAMP WITH TIME ZONE
-            USING timestamp AT TIME ZONE 'UTC'
+        ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE
+            USING created_at AT TIME ZONE 'UTC'
     """)
 
     # 9. System logs table
@@ -123,13 +123,23 @@ def upgrade() -> None:
             USING updated_at AT TIME ZONE 'UTC'
     """)
 
-    # 12. Scheduled notifications table
+    # 12. Scheduled notifications table (if exists)
     op.execute("""
-        ALTER TABLE scheduled_notifications
-        ALTER COLUMN scheduled_for TYPE TIMESTAMP WITH TIME ZONE
-            USING scheduled_for AT TIME ZONE 'UTC',
-        ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE
-            USING created_at AT TIME ZONE 'UTC'
+        DO $$
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'scheduled_notifications') THEN
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'scheduled_notifications' AND column_name = 'scheduled_for') THEN
+                    ALTER TABLE scheduled_notifications
+                    ALTER COLUMN scheduled_for TYPE TIMESTAMP WITH TIME ZONE
+                        USING scheduled_for AT TIME ZONE 'UTC';
+                END IF;
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'scheduled_notifications' AND column_name = 'created_at') THEN
+                    ALTER TABLE scheduled_notifications
+                    ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE
+                        USING created_at AT TIME ZONE 'UTC';
+                END IF;
+            END IF;
+        END $$;
     """)
 
     # 13. Campaign activities table (if exists)
@@ -233,8 +243,8 @@ def downgrade() -> None:
     # 8. API usage table
     op.execute("""
         ALTER TABLE api_usage
-        ALTER COLUMN timestamp TYPE TIMESTAMP WITHOUT TIME ZONE
-            USING timestamp AT TIME ZONE 'UTC'
+        ALTER COLUMN created_at TYPE TIMESTAMP WITHOUT TIME ZONE
+            USING created_at AT TIME ZONE 'UTC'
     """)
 
     # 9. System logs table
@@ -262,13 +272,23 @@ def downgrade() -> None:
             USING updated_at AT TIME ZONE 'UTC'
     """)
 
-    # 12. Scheduled notifications table
+    # 12. Scheduled notifications table (if exists)
     op.execute("""
-        ALTER TABLE scheduled_notifications
-        ALTER COLUMN scheduled_for TYPE TIMESTAMP WITHOUT TIME ZONE
-            USING scheduled_for AT TIME ZONE 'UTC',
-        ALTER COLUMN created_at TYPE TIMESTAMP WITHOUT TIME ZONE
-            USING created_at AT TIME ZONE 'UTC'
+        DO $$
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'scheduled_notifications') THEN
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'scheduled_notifications' AND column_name = 'scheduled_for') THEN
+                    ALTER TABLE scheduled_notifications
+                    ALTER COLUMN scheduled_for TYPE TIMESTAMP WITHOUT TIME ZONE
+                        USING scheduled_for AT TIME ZONE 'UTC';
+                END IF;
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'scheduled_notifications' AND column_name = 'created_at') THEN
+                    ALTER TABLE scheduled_notifications
+                    ALTER COLUMN created_at TYPE TIMESTAMP WITHOUT TIME ZONE
+                        USING created_at AT TIME ZONE 'UTC';
+                END IF;
+            END IF;
+        END $$;
     """)
 
     # 13. Campaign activities table (if exists)

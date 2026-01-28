@@ -966,7 +966,7 @@ async def callback_filter_today(callback: CallbackQuery) -> None:
     
     # Get today's moments (last 24 hours)
     # Use timezone-naive datetime for database compatibility
-    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=1)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -1005,7 +1005,7 @@ async def callback_filter_week(callback: CallbackQuery) -> None:
     
     # Get week's moments (last 7 days)
     # Use timezone-naive datetime for database compatibility
-    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=7)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -1044,7 +1044,7 @@ async def callback_filter_month(callback: CallbackQuery) -> None:
     
     # Get month's moments (last 30 days)
     # Use timezone-naive datetime for database compatibility
-    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=30)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -1324,7 +1324,7 @@ async def _set_pause(callback: CallbackQuery, days: int) -> None:
         )
         db_user = result.scalar_one_or_none()
         if db_user:
-            db_user.notifications_paused_until = pause_until.replace(tzinfo=None)
+            db_user.notifications_paused_until = pause_until
             await session.commit()
     
     # Format date for display

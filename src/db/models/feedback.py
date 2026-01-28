@@ -21,8 +21,8 @@ class Feedback(Base):
     category: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # 'suggestion', 'bug', 'complaint', 'other'
     status: Mapped[str] = mapped_column(String(20), default="new")  # 'new', 'reviewed', 'implemented', 'rejected'
     admin_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     user = relationship("User", back_populates="feedback")

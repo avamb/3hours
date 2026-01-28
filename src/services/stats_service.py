@@ -80,7 +80,7 @@ class StatsService:
 
         stats.last_response_date = today
         stats.total_questions_answered += 1
-        stats.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        stats.updated_at = datetime.now(timezone.utc)
 
         logger.debug(f"Updated stats for user {user_id}: streak={stats.current_streak}")
 
@@ -94,7 +94,7 @@ class StatsService:
 
             if stats:
                 stats.total_questions_sent += 1
-                stats.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                stats.updated_at = datetime.now(timezone.utc)
                 await session.commit()
 
     async def get_weekly_stats(self, telegram_id: int) -> dict:
@@ -110,7 +110,7 @@ class StatsService:
                 return {}
 
             # Calculate week boundaries
-            today = datetime.now(timezone.utc).replace(tzinfo=None)
+            today = datetime.now(timezone.utc)
             week_start = today - timedelta(days=today.weekday())
             week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -143,7 +143,7 @@ class StatsService:
                 return {}
 
             # Calculate month boundaries
-            today = datetime.now(timezone.utc).replace(tzinfo=None)
+            today = datetime.now(timezone.utc)
             month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
             # Count moments this month

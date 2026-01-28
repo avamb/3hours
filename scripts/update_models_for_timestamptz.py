@@ -117,7 +117,7 @@ def process_model_file(filepath):
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
 
-        print(f"  ✓ Updated {filepath.name} (backup: {backup_path.name})")
+        print(f"  [OK] Updated {filepath.name} (backup: {backup_path.name})")
         return True
     else:
         print(f"  - No changes needed in {filepath.name}")
@@ -151,7 +151,7 @@ def process_service_file(filepath):
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
 
-        print(f"  ✓ Updated {filepath.name} (backup: {backup_path.name})")
+        print(f"  [OK] Updated {filepath.name} (backup: {backup_path.name})")
         return True
     else:
         print(f"  - No changes needed in {filepath.name}")
