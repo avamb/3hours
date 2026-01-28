@@ -219,7 +219,8 @@ class DialogService:
 
             # Get recent conversations (last 24 hours for better context)
             # Extended from 1 hour to 24 hours to avoid empty context after restarts
-            one_day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
+            # Use timezone-naive datetime for database compatibility
+            one_day_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
 
             result = await session.execute(
                 select(Conversation)

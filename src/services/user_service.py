@@ -73,7 +73,7 @@ class UserService:
 
             if user:
                 # Update last active
-                user.last_active_at = datetime.now(timezone.utc)
+                user.last_active_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
                 # If user was blocked but sent a message, they unblocked the bot
                 if user.is_blocked:
@@ -209,7 +209,7 @@ class UserService:
             if gender is not None:
                 user.gender = gender
 
-            user.updated_at = datetime.now(timezone.utc)
+            user.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
             await session.commit()
 
             logger.info(f"Updated settings for user {telegram_id}")
@@ -227,7 +227,7 @@ class UserService:
                 return False
 
             user.onboarding_completed = True
-            user.updated_at = datetime.now(timezone.utc)
+            user.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
             await session.commit()
 
             logger.info(f"Onboarding completed for user {telegram_id}")
@@ -251,7 +251,7 @@ class UserService:
             user.active_hours_end = time(21, 0)
             user.notification_interval_hours = 3
             user.notifications_enabled = True
-            user.updated_at = datetime.now(timezone.utc)
+            user.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
             await session.commit()
             logger.info(f"Reset settings for user {telegram_id}")
