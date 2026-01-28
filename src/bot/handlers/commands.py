@@ -364,8 +364,12 @@ async def cmd_delete_data(message: Message) -> None:
 
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
-    language_code = user.language_code if user else "ru"
-    formal = user.formal_address if user else False
+    if not user:
+        lang = get_language_code(getattr(message.from_user, "language_code", None) or "ru")
+        await message.answer(get_system_message("please_start_first", lang))
+        return
+    language_code = get_language_code(user.language_code)
+    formal = user.formal_address
 
     # Build localized confirmation message
     title = get_system_message("delete_data_title", language_code)

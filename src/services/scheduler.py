@@ -373,13 +373,14 @@ class NotificationScheduler:
 
             # Get question text
             question = self._get_question(user)
+            lang = get_language_code(user.language_code)
 
             # Send message
             try:
                 sent_message = await self.bot.send_message(
                     chat_id=user.telegram_id,
                     text=question,
-                    reply_markup=get_question_keyboard(),
+                    reply_markup=get_question_keyboard(lang),
                 )
                 # Store the message_id as pending prompt for future deletion
                 user.last_pending_prompt_message_id = sent_message.message_id
@@ -563,12 +564,13 @@ class NotificationScheduler:
 
                 # Get a question
                 question = self._get_question(user)
+                lang = get_language_code(user.language_code)
 
                 # Send the message
                 sent_message = await self.bot.send_message(
                     chat_id=user.telegram_id,
                     text=question,
-                    reply_markup=get_question_keyboard(),
+                    reply_markup=get_question_keyboard(lang),
                 )
                 # Store the message_id as pending prompt for future deletion
                 user.last_pending_prompt_message_id = sent_message.message_id
