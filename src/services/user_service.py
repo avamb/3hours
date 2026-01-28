@@ -18,6 +18,7 @@ except ImportError:
 from src.db.database import get_session
 from src.db.models import User, UserStats, ScheduledNotification
 from src.utils.gender_detection import detect_user_gender
+from src.utils.localization import get_language_code
 
 logger = logging.getLogger(__name__)
 
@@ -105,13 +106,14 @@ class UserService:
                 username=telegram_user.username
             )
 
-            # Create new user
+            raw_lang = telegram_user.language_code or "ru"
+            normalized_lang = get_language_code(raw_lang)
             user = User(
                 telegram_id=telegram_user.id,
                 username=telegram_user.username,
                 first_name=telegram_user.first_name or "Друг",
                 gender=detected_gender,
-                language_code=telegram_user.language_code or "ru",
+                language_code=normalized_lang,
             )
             session.add(user)
             await session.flush()
@@ -121,7 +123,10 @@ class UserService:
             session.add(stats)
 
             await session.commit()
-            logger.info(f"Created new user: {user.telegram_id} (gender: {detected_gender})")
+            logger.info(
+                f"Created new user: {user.telegram_id} (gender: {detected_gender}, "
+                f"language: telegram={raw_lang!r} -> {normalized_lang!r})"
+            )
 
             return user
 
