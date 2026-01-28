@@ -153,7 +153,7 @@ class UserService:
         notification_interval_hours: Optional[int] = None,
         notifications_enabled: Optional[bool] = None,
         language_code: Optional[str] = None,
-        timezone: Optional[str] = None,
+        user_timezone: Optional[str] = None,
         gender: Optional[str] = None,
     ) -> Optional[User]:
         """Update user settings"""
@@ -188,19 +188,19 @@ class UserService:
             if language_code is not None:
                 user.language_code = language_code
 
-            if timezone is not None:
+            if user_timezone is not None:
                 # Validate timezone format
-                if not validate_timezone(timezone):
-                    logger.warning(f"Invalid timezone format: {timezone}")
-                    raise ValueError(f"Invalid timezone: {timezone}")
+                if not validate_timezone(user_timezone):
+                    logger.warning(f"Invalid timezone format: {user_timezone}")
+                    raise ValueError(f"Invalid timezone: {user_timezone}")
 
                 old_timezone = user.timezone
-                user.timezone = timezone
+                user.timezone = user_timezone
 
                 # If timezone changed, delete pending notifications so they get rescheduled
-                if old_timezone != timezone:
+                if old_timezone != user_timezone:
                     logger.info(
-                        f"Timezone changed for user {telegram_id}: {old_timezone} -> {timezone}, "
+                        f"Timezone changed for user {telegram_id}: {old_timezone} -> {user_timezone}, "
                         "deleting pending notifications for reschedule"
                     )
                     await session.execute(

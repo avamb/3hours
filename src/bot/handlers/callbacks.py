@@ -536,7 +536,7 @@ async def callback_set_timezone(callback: CallbackQuery) -> None:
     try:
         await user_service.update_user_settings(
             telegram_id=callback.from_user.id,
-            timezone=timezone
+            user_timezone=timezone
         )
 
         # Check if onboarding is in progress
