@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - User model
 Stores Telegram user information and settings
 """
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from typing import Optional
 
 from sqlalchemy import BigInteger, Boolean, String, Time, Integer, DateTime
@@ -27,12 +27,13 @@ class User(Base):
     notification_interval_hours: Mapped[int] = mapped_column(Integer, default=3)
     notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     timezone: Mapped[str] = mapped_column(String(50), default="UTC")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     last_active_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
     notifications_paused_until: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
+    is_in_dialog: Mapped[bool] = mapped_column(Boolean, default=False)  # Track dialog state in DB
 
     # Tracking field for incremental memory indexing
     last_memory_indexed_conversation_id: Mapped[int] = mapped_column(Integer, default=0)

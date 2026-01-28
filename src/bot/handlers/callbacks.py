@@ -902,7 +902,7 @@ async def callback_dialog_exit(callback: CallbackQuery) -> None:
     from src.services.dialog_service import DialogService
 
     language_code = await get_user_language(callback.from_user.id)
-    DialogService.get_instance().end_dialog(callback.from_user.id)
+    await DialogService.get_instance().end_dialog(callback.from_user.id)
     exit_text = get_system_message("dialog_exit_confirm", language_code)
     await callback.message.answer(
         exit_text,

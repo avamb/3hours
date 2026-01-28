@@ -4,7 +4,10 @@
       "Bash(git checkout:*)",
       "Bash(python:*)",
       "Bash(del fix_datetime_utcnow.py)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(alembic revision:*)",
+      "Bash(pip show:*)"
     ],
     "deny": [],
     "ask": []

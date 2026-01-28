@@ -394,11 +394,11 @@ async def handle_text_message(message: Message) -> None:
     # Dialog mode: route to DialogService (persists to conversations)
     # Автоматически активируем диалог, если пользователь не в диалоге
     # Это позволяет обрабатывать все сообщения через RAG
-    if not dialog_service.is_in_dialog(message.from_user.id):
-        dialog_service.start_dialog(message.from_user.id)
+    if not await dialog_service.is_in_dialog(message.from_user.id):
+        await dialog_service.start_dialog(message.from_user.id)
         logger.info(f"Auto-activated dialog for user {message.from_user.id}")
-    
-    if dialog_service.is_in_dialog(message.from_user.id):
+
+    if await dialog_service.is_in_dialog(message.from_user.id):
         from src.bot.keyboards.inline import get_dialog_keyboard
         # Show typing indicator while generating AI response
         await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
