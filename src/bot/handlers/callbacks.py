@@ -552,7 +552,7 @@ async def callback_settings_social(callback: CallbackQuery) -> None:
     """Show social profile settings"""
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
-    language_code = user.language_code if user else "ru"
+    language_code = get_language_code(user.language_code) if user else "ru"
     formal = user.formal_address if user else False
     social_service = SocialProfileService()
     summary = await social_service.get_profile_summary(callback.from_user.id, language_code, formal)
@@ -641,7 +641,7 @@ async def callback_social_delete(callback: CallbackQuery) -> None:
     """Delete a social network link"""
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
-    language_code = user.language_code if user else "ru"
+    language_code = get_language_code(user.language_code) if user else "ru"
     formal = user.formal_address if user else False
     network = callback.data.replace("social_del_", "")
 
@@ -671,7 +671,7 @@ async def callback_social_back(callback: CallbackQuery) -> None:
     """Go back to social profile menu"""
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
-    language_code = user.language_code if user else "ru"
+    language_code = get_language_code(user.language_code) if user else "ru"
     formal = user.formal_address if user else False
     social_service = SocialProfileService()
     summary = await social_service.get_profile_summary(callback.from_user.id, language_code, formal)

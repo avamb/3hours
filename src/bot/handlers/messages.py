@@ -93,7 +93,7 @@ async def cancel_social_profile_state(message: Message, state: FSMContext) -> No
     from src.services.user_service import UserService
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
-    language_code = user.language_code if user else "ru"
+    language_code = get_language_code(user.language_code) if user else "ru"
 
     await state.clear()
     social_service = SocialProfileService()
@@ -161,7 +161,7 @@ async def handle_bio_input(message: Message, state: FSMContext) -> None:
     from src.services.user_service import UserService
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
-    language_code = user.language_code if user else "ru"
+    language_code = get_language_code(user.language_code) if user else "ru"
     formal = user.formal_address if user else False
 
     bio_text = message.text.strip()
