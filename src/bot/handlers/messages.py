@@ -120,6 +120,13 @@ async def handle_social_link_input(message: Message, state: FSMContext) -> None:
     language_code = user.language_code if user else "ru"
     formal = user.formal_address if user else False
 
+    # Check if message contains text
+    if not message.text:
+        from src.utils.localization import get_system_message
+        text_only_message = get_system_message("please_send_text", language_code)
+        await message.answer(text_only_message)
+        return
+
     url = message.text.strip()
 
     social_service = SocialProfileService()
@@ -163,6 +170,13 @@ async def handle_bio_input(message: Message, state: FSMContext) -> None:
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = get_language_code(user.language_code) if user else "ru"
     formal = user.formal_address if user else False
+
+    # Check if message contains text
+    if not message.text:
+        from src.utils.localization import get_system_message
+        text_only_message = get_system_message("please_send_text", language_code)
+        await message.answer(text_only_message)
+        return
 
     bio_text = message.text.strip()
 
@@ -350,6 +364,11 @@ async def handle_text_message(message: Message) -> None:
     - Could be feedback input
     - Could be any other text input
     """
+    # Safety check for text, although F.text filter should ensure it exists
+    if not message.text:
+        logger.warning(f"Received non-text message in text handler from user {message.from_user.id}")
+        return
+
     logger.info(
         f"Received text message from user {message.from_user.id} "
         f"in chat {message.chat.id} ({message.chat.type}): {message.text[:100]}"
