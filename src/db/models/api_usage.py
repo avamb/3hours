@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - API Usage model
 Tracks token usage and costs for all API calls
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional, Dict, Any
 

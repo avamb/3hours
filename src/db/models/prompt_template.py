@@ -8,7 +8,7 @@ Features:
 - Active version flag for production use
 - Notes for change documentation
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Integer, String, Text, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column

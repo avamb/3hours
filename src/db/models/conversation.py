@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - Conversation model
 Stores all conversation messages for context
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
 from sqlalchemy import Integer, String, Text, DateTime, ForeignKey

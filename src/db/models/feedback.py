@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - Feedback model
 Stores user feedback and suggestions for new features
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import Integer, Text, String, DateTime, ForeignKey, Boolean

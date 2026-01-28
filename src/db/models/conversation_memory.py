@@ -3,7 +3,7 @@ MINDSETHAPPYBOT - Conversation Memory model
 Stores extracted memory-worthy facts from user conversations.
 Used for per-user isolated vector memory retrieval.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 
 from sqlalchemy import Integer, String, Text, Float, DateTime, ForeignKey, ARRAY

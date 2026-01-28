@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - UserStats model
 Stores aggregated statistics for each user
 """
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional
 
 from sqlalchemy import Integer, DateTime, Date, ForeignKey

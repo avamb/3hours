@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - QuestionTemplate model
 Stores question templates for various languages and contexts
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Integer, String, Text, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column

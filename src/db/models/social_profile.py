@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - Social Profile model
 Stores user's social network profiles and parsed interests
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 
 from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, ARRAY
