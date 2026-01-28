@@ -45,39 +45,34 @@ class SpeechToTextService:
             Tuple of (transcribed_text, detected_language_code) or (None, None) if failed
             Language code is ISO 639-1 format (e.g., "ru", "en", "uk")
         """
-        temp_file = None
         start_time = time.time()
         success = True
         error_msg = None
         # Whisper pricing is per minute, but we estimate based on file size
         # The API doesn't return token counts, so we use duration estimation
 
-        try:
-            # Build download URL from file path
-            file_url = f"https://api.telegram.org/file/bot{bot.token}/{file_path}"
+        # Use context manager for automatic cleanup
+        with tempfile.NamedTemporaryFile(suffix=".ogg", delete=True) as temp_file:
+            try:
+                # Build download URL from file path
+                file_url = f"https://api.telegram.org/file/bot{bot.token}/{file_path}"
 
-            # Download to temp file
-            async with aiohttp.ClientSession() as session:
-                async with session.get(file_url) as response:
-                    if response.status != 200:
-                        logger.error(f"Failed to download voice: HTTP {response.status}")
-                        success = False
-                        error_msg = f"HTTP {response.status}"
-                        return None, None
+                # Download to temp file
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(file_url) as response:
+                        if response.status != 200:
+                            logger.error(f"Failed to download voice: HTTP {response.status}")
+                            success = False
+                            error_msg = f"HTTP {response.status}"
+                            return None, None
 
-                    # Create temp file with .ogg extension
-                    temp_file = tempfile.NamedTemporaryFile(
-                        suffix=".ogg",
-                        delete=False,
-                    )
+                        file_content = await response.read()
+                        async with aiofiles.open(temp_file.name, "wb") as f:
+                            await f.write(file_content)
 
-                    file_content = await response.read()
-                    async with aiofiles.open(temp_file.name, "wb") as f:
-                        await f.write(file_content)
-
-            # Transcribe using Whisper with auto-language detection
-            # Using verbose_json response format to get the detected language
-            with open(temp_file.name, "rb") as audio_file:
+                # Transcribe using Whisper with auto-language detection
+                # Using verbose_json response format to get the detected language
+                with open(temp_file.name, "rb") as audio_file:
                 transcript = await self.client.audio.transcriptions.create(
                     model="whisper-1",
                     file=audio_file,
@@ -116,35 +111,28 @@ class SpeechToTextService:
             else:
                 lang_code = 'ru'  # Fallback to Russian
 
-            logger.info(f"Transcribed voice (lang={lang_code}): {transcribed_text[:50]}...")
-            return transcribed_text, lang_code
+                logger.info(f"Transcribed voice (lang={lang_code}): {transcribed_text[:50]}...")
+                return transcribed_text, lang_code
 
-        except Exception as e:
-            logger.error(f"Voice transcription failed: {e}")
-            success = False
-            error_msg = str(e)
-            return None, None
+            except Exception as e:
+                logger.error(f"Voice transcription failed: {e}", exc_info=True)
+                success = False
+                error_msg = str(e)
+                return None, None
 
-        finally:
-            # Clean up temp file
-            if temp_file and os.path.exists(temp_file.name):
-                try:
-                    os.unlink(temp_file.name)
-                except Exception as e:
-                    logger.warning(f"Failed to delete temp file: {e}")
-
-            # Log API usage
-            # Whisper pricing is $0.006/minute, we log as a single request
-            # with duration converted to estimate tokens (approx 150 tokens/sec for speech)
-            duration_ms = int((time.time() - start_time) * 1000)
-            await APIUsageService.log_usage(
-                api_provider="openai",
-                model="whisper-1",
-                operation_type="transcription",
-                input_tokens=0,  # Whisper doesn't use token counts
-                output_tokens=0,
-                duration_ms=duration_ms,
-                telegram_id=telegram_id,
-                success=success,
-                error_message=error_msg,
-            )
+            finally:
+                # Log API usage
+                # Whisper pricing is $0.006/minute, we log as a single request
+                # with duration converted to estimate tokens (approx 150 tokens/sec for speech)
+                duration_ms = int((time.time() - start_time) * 1000)
+                await APIUsageService.log_usage(
+                    api_provider="openai",
+                    model="whisper-1",
+                    operation_type="transcription",
+                    input_tokens=0,  # Whisper doesn't use token counts
+                    output_tokens=0,
+                    duration_ms=duration_ms,
+                    telegram_id=telegram_id,
+                    success=success,
+                    error_message=error_msg,
+                )
