@@ -73,43 +73,43 @@ class SpeechToTextService:
                 # Transcribe using Whisper with auto-language detection
                 # Using verbose_json response format to get the detected language
                 with open(temp_file.name, "rb") as audio_file:
-                transcript = await self.client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    response_format="verbose_json",
-                    # No language parameter - let Whisper auto-detect
-                )
+                    transcript = await self.client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        response_format="verbose_json",
+                        # No language parameter - let Whisper auto-detect
+                    )
 
-            # Extract detected language from response
-            detected_language = getattr(transcript, 'language', None)
-            transcribed_text = transcript.text
+                # Extract detected language from response
+                detected_language = getattr(transcript, 'language', None)
+                transcribed_text = transcript.text
 
-            # Map Whisper language names to ISO codes if needed
-            language_map = {
-                'russian': 'ru',
-                'english': 'en',
-                'ukrainian': 'uk',
-                'spanish': 'es',
-                'german': 'de',
-                'french': 'fr',
-                'italian': 'it',
-                'portuguese': 'pt',
-                'chinese': 'zh',
-                'japanese': 'ja',
-                'korean': 'ko',
-            }
+                # Map Whisper language names to ISO codes if needed
+                language_map = {
+                    'russian': 'ru',
+                    'english': 'en',
+                    'ukrainian': 'uk',
+                    'spanish': 'es',
+                    'german': 'de',
+                    'french': 'fr',
+                    'italian': 'it',
+                    'portuguese': 'pt',
+                    'chinese': 'zh',
+                    'japanese': 'ja',
+                    'korean': 'ko',
+                }
 
-            # Normalize the detected language to ISO code
-            if detected_language:
-                detected_language = detected_language.lower()
-                # If it's already a 2-letter code, use it
-                if len(detected_language) == 2:
-                    lang_code = detected_language
+                # Normalize the detected language to ISO code
+                if detected_language:
+                    detected_language = detected_language.lower()
+                    # If it's already a 2-letter code, use it
+                    if len(detected_language) == 2:
+                        lang_code = detected_language
+                    else:
+                        # Try to map from full name to code
+                        lang_code = language_map.get(detected_language, detected_language[:2] if len(detected_language) >= 2 else 'ru')
                 else:
-                    # Try to map from full name to code
-                    lang_code = language_map.get(detected_language, detected_language[:2] if len(detected_language) >= 2 else 'ru')
-            else:
-                lang_code = 'ru'  # Fallback to Russian
+                    lang_code = 'ru'  # Fallback to Russian
 
                 logger.info(f"Transcribed voice (lang={lang_code}): {transcribed_text[:50]}...")
                 return transcribed_text, lang_code
