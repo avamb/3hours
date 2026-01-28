@@ -7,7 +7,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(alembic revision:*)",
-      "Bash(pip show:*)"
+      "Bash(pip show:*)",
+      "Bash(docker cp:*)",
+      "Bash(docker exec:*)"
     ],
     "deny": [],
     "ask": []
