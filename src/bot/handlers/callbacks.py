@@ -93,6 +93,8 @@ async def _show_onboarding_timezone(callback: CallbackQuery, language_code: str)
 @router.callback_query(F.data == "address_informal")
 async def callback_address_informal(callback: CallbackQuery) -> None:
     """Set informal address (ты)"""
+    logger.info(f"address_informal callback triggered for user {callback.from_user.id}")
+
     user_service = UserService()
     await user_service.update_user_settings(
         telegram_id=callback.from_user.id,
@@ -102,33 +104,40 @@ async def callback_address_informal(callback: CallbackQuery) -> None:
     # Get user's language for localized response
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     language_code = user.language_code if user else "ru"
+
+    logger.info(f"User {callback.from_user.id} settings updated: formal_address=False, onboarding_completed={user.onboarding_completed if user else None}")
     
     # Check if onboarding is in progress
-    if user and not user.onboarding_completed:
-        # Show gender selection during onboarding
-        # Use appropriate text based on formality
-        if user.formal_address:
-            prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+    try:
+        if user and not user.onboarding_completed:
+            # Show gender selection during onboarding
+            # Use appropriate text based on formality
+            if user.formal_address:
+                prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+            else:
+                prompt = get_onboarding_text("onboarding_select_gender", language_code)
+            await callback.message.edit_text(
+                prompt,
+                reply_markup=get_gender_keyboard(language_code, include_neutral=True)
+            )
         else:
-            prompt = get_onboarding_text("onboarding_select_gender", language_code)
-        await callback.message.edit_text(
-            prompt,
-            reply_markup=get_gender_keyboard(language_code, include_neutral=True)
-        )
-    else:
-        # Existing user changing settings
-        confirm_text = get_onboarding_text("address_informal_confirm", language_code)
-        await callback.message.edit_text(
-            confirm_text,
-            reply_markup=get_main_menu_inline(language_code)
-        )
-    
+            # Existing user changing settings
+            confirm_text = get_onboarding_text("address_informal_confirm", language_code)
+            await callback.message.edit_text(
+                confirm_text,
+                reply_markup=get_main_menu_inline(language_code)
+            )
+    except Exception as e:
+        logger.error(f"Error in address_informal callback: {e}", exc_info=True)
+
     await callback.answer()
 
 
 @router.callback_query(F.data == "address_formal")
 async def callback_address_formal(callback: CallbackQuery) -> None:
     """Set formal address (вы)"""
+    logger.info(f"address_formal callback triggered for user {callback.from_user.id}")
+
     user_service = UserService()
     await user_service.update_user_settings(
         telegram_id=callback.from_user.id,
@@ -138,27 +147,32 @@ async def callback_address_formal(callback: CallbackQuery) -> None:
     # Get user's language for localized response
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     language_code = user.language_code if user else "ru"
+
+    logger.info(f"User {callback.from_user.id} settings updated: formal_address=True, onboarding_completed={user.onboarding_completed if user else None}")
     
     # Check if onboarding is in progress
-    if user and not user.onboarding_completed:
-        # Show gender selection during onboarding
-        # Use appropriate text based on formality
-        if user.formal_address:
-            prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+    try:
+        if user and not user.onboarding_completed:
+            # Show gender selection during onboarding
+            # Use appropriate text based on formality
+            if user.formal_address:
+                prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+            else:
+                prompt = get_onboarding_text("onboarding_select_gender", language_code)
+            await callback.message.edit_text(
+                prompt,
+                reply_markup=get_gender_keyboard(language_code, include_neutral=True)
+            )
         else:
-            prompt = get_onboarding_text("onboarding_select_gender", language_code)
-        await callback.message.edit_text(
-            prompt,
-            reply_markup=get_gender_keyboard(language_code, include_neutral=True)
-        )
-    else:
-        # Existing user changing settings
-        confirm_text = get_onboarding_text("address_formal_confirm", language_code)
-        await callback.message.edit_text(
-            confirm_text,
-            reply_markup=get_main_menu_inline(language_code)
-        )
-    
+            # Existing user changing settings
+            confirm_text = get_onboarding_text("address_formal_confirm", language_code)
+            await callback.message.edit_text(
+                confirm_text,
+                reply_markup=get_main_menu_inline(language_code)
+            )
+    except Exception as e:
+        logger.error(f"Error in address_formal callback: {e}", exc_info=True)
+
     await callback.answer()
 
 
