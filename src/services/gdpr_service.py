@@ -4,7 +4,7 @@ Handles data export and deletion for GDPR compliance
 """
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 import io
 
@@ -39,7 +39,7 @@ class GDPRService:
 
             # Collect all data
             export_data = {
-                "export_date": datetime.utcnow().isoformat(),
+                "export_date": datetime.now(timezone.utc).isoformat(),
                 "user": {
                     "telegram_id": user.telegram_id,
                     "username": user.username,
@@ -108,7 +108,7 @@ class GDPRService:
             json_data = json.dumps(export_data, ensure_ascii=False, indent=2)
             file_bytes = json_data.encode("utf-8")
 
-            filename = f"mindsethappybot_data_{telegram_id}_{datetime.utcnow().strftime('%Y%m%d')}.json"
+            filename = f"mindsethappybot_data_{telegram_id}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.json"
 
             return BufferedInputFile(file_bytes, filename=filename)
 

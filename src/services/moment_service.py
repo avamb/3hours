@@ -4,7 +4,7 @@ Business logic for managing positive moments
 """
 import logging
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 
 from sqlalchemy import select, func
@@ -100,7 +100,7 @@ class MomentService:
             query = select(Moment).where(Moment.user_id == user.id)
 
             # Apply period filter
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             if period == "today":
                 start = now.replace(hour=0, minute=0, second=0, microsecond=0)
                 query = query.where(Moment.created_at >= start)

@@ -958,14 +958,14 @@ async def callback_menu_moments(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "filter_today")
 async def callback_filter_today(callback: CallbackQuery) -> None:
     """Filter moments for today"""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
     moment_service = MomentService()
     
     # Get today's moments (last 24 hours)
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=1)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -996,14 +996,14 @@ async def callback_filter_today(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "filter_week")
 async def callback_filter_week(callback: CallbackQuery) -> None:
     """Filter moments for last 7 days"""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
     moment_service = MomentService()
     
     # Get week's moments (last 7 days)
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=7)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -1034,14 +1034,14 @@ async def callback_filter_week(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "filter_month")
 async def callback_filter_month(callback: CallbackQuery) -> None:
     """Filter moments for last 30 days"""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
     moment_service = MomentService()
     
     # Get month's moments (last 30 days)
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=30)
     
     moments = await moment_service.get_user_moments_by_date(

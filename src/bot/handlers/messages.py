@@ -458,7 +458,7 @@ async def handle_text_message(message: Message) -> None:
         treat the next user message as continuation even if it doesn't look like a request.
         """
         try:
-            from datetime import datetime, timedelta
+            from datetime import datetime, timedelta, timezone
             from sqlalchemy import select, and_
             from src.db.database import get_session
             from src.db.models import User, Conversation
@@ -469,7 +469,7 @@ async def handle_text_message(message: Message) -> None:
                 if not u:
                     return False
 
-                since = datetime.utcnow() - timedelta(minutes=10)
+                since = datetime.now(timezone.utc) - timedelta(minutes=10)
                 res = await session.execute(
                     select(Conversation)
                     .where(

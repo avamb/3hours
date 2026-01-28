@@ -4,7 +4,7 @@ Manages free dialog conversations and context
 """
 import logging
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, and_
 
@@ -201,7 +201,7 @@ class DialogService:
 
             # Get recent conversations (last 24 hours for better context)
             # Extended from 1 hour to 24 hours to avoid empty context after restarts
-            one_day_ago = datetime.utcnow() - timedelta(hours=24)
+            one_day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
 
             result = await session.execute(
                 select(Conversation)

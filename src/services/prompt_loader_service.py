@@ -11,7 +11,7 @@ Features:
 import logging
 import time
 from typing import Optional, Dict, List, Any, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -288,8 +288,8 @@ class PromptLoaderService:
                     content=DEFAULT_PROMPTS[key],
                     is_active=True,  # Virtual default is "active"
                     notes="System default (readonly)",
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
                 ))
 
             return versions

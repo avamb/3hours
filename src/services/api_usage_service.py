@@ -4,7 +4,7 @@ Tracks and calculates costs for API usage
 """
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional, Dict, Any
 from functools import wraps
@@ -126,9 +126,9 @@ class APIUsageService:
     ) -> Dict[str, Any]:
         """Get aggregated usage statistics"""
         if not start_date:
-            start_date = datetime.utcnow() - timedelta(days=30)
+            start_date = datetime.now(timezone.utc) - timedelta(days=30)
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
 
         async with get_session() as session:
             # Total stats
