@@ -118,29 +118,51 @@ async def cmd_start(message: Message) -> None:
     - For new users: Start onboarding flow with welcome image
     - For existing users: Show welcome back message
     """
-    user_service = UserService()
-    user = await user_service.get_or_create_user(message.from_user)
-    language_code = get_language_code(user.language_code) if user else "ru"
+    try:
+        logger.info(f"Start command received from user {message.from_user.id} (@{message.from_user.username})")
 
-    if not user.onboarding_completed:
-        # New user - send welcome image first
-        await send_welcome_image(message)
+        user_service = UserService()
+        user = await user_service.get_or_create_user(message.from_user)
+        logger.info(f"User {message.from_user.id}: onboarding_completed={user.onboarding_completed}, language={user.language_code}")
 
-        # Get localized welcome text based on user's language
-        welcome_text = get_localized_welcome_text(user.first_name, language_code)
+        language_code = get_language_code(user.language_code) if user else "ru"
 
-        await message.answer(
-            welcome_text,
-            reply_markup=get_onboarding_keyboard(language_code)
-        )
-    else:
-        # Existing user - welcome back
-        welcome_back_text = get_localized_welcome_back_text(user.first_name, language_code)
+        if not user.onboarding_completed:
+            logger.info(f"Starting onboarding for new user {message.from_user.id}")
 
-        await message.answer(
-            welcome_back_text,
-            reply_markup=get_main_menu_keyboard(language_code)
-        )
+            # New user - send welcome image first
+            image_sent = await send_welcome_image(message)
+            logger.info(f"Welcome image sent: {image_sent}")
+
+            # Get localized welcome text based on user's language
+            welcome_text = get_localized_welcome_text(user.first_name, language_code)
+            logger.info(f"Sending welcome text with onboarding keyboard for user {message.from_user.id}")
+
+            await message.answer(
+                welcome_text,
+                reply_markup=get_onboarding_keyboard(language_code)
+            )
+            logger.info(f"Onboarding message sent successfully to user {message.from_user.id}")
+        else:
+            logger.info(f"Welcome back existing user {message.from_user.id}")
+
+            # Existing user - welcome back
+            welcome_back_text = get_localized_welcome_back_text(user.first_name, language_code)
+
+            await message.answer(
+                welcome_back_text,
+                reply_markup=get_main_menu_keyboard(language_code)
+            )
+            logger.info(f"Welcome back message sent successfully to user {message.from_user.id}")
+    except Exception as e:
+        logger.error(f"Error in /start command for user {message.from_user.id}: {e}", exc_info=True)
+        try:
+            await message.answer(
+                "❌ An error occurred. Please try again later or contact support.",
+                reply_markup=get_main_menu_keyboard("en")
+            )
+        except Exception as fallback_error:
+            logger.error(f"Failed to send error message: {fallback_error}", exc_info=True)
 
 
 @router.message(Command("help"))

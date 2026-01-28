@@ -64,12 +64,14 @@ class UserService:
         """
         Get existing user or create new one from Telegram user object
         """
+        logger.info(f"get_or_create_user called for telegram_id={telegram_user.id}, username={telegram_user.username}")
         async with get_session() as session:
             # Try to find existing user
             result = await session.execute(
                 select(User).where(User.telegram_id == telegram_user.id)
             )
             user = result.scalar_one_or_none()
+            logger.info(f"Existing user found for {telegram_user.id}: {user is not None}")
 
             if user:
                 # Update last active
@@ -108,6 +110,8 @@ class UserService:
 
             raw_lang = telegram_user.language_code or "ru"
             normalized_lang = get_language_code(raw_lang)
+            logger.info(f"Creating new user {telegram_user.id} with language {raw_lang} -> {normalized_lang}")
+
             user = User(
                 telegram_id=telegram_user.id,
                 username=telegram_user.username,
@@ -117,14 +121,16 @@ class UserService:
             )
             session.add(user)
             await session.flush()
+            logger.info(f"User record created with id={user.id}")
 
             # Create user stats
             stats = UserStats(user_id=user.id)
             session.add(stats)
+            logger.info(f"User stats record created for user_id={user.id}")
 
             await session.commit()
             logger.info(
-                f"Created new user: {user.telegram_id} (gender: {detected_gender}, "
+                f"Successfully created new user: {user.telegram_id} (gender: {detected_gender}, "
                 f"language: telegram={raw_lang!r} -> {normalized_lang!r})"
             )
 

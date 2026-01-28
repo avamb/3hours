@@ -119,6 +119,7 @@ class GDPRService:
         Returns:
             True if deletion was successful, False if user not found
         """
+        logger.info(f"Starting GDPR data deletion for telegram_id={telegram_id}")
         async with get_session() as session:
             # Get user
             result = await session.execute(
@@ -127,15 +128,17 @@ class GDPRService:
             user = result.scalar_one_or_none()
 
             if not user:
+                logger.warning(f"User {telegram_id} not found for deletion")
                 return False
 
             user_id = user.id
+            logger.info(f"Found user with id={user_id} for telegram_id={telegram_id}")
 
             # Delete in order (respecting foreign keys)
             # Note: With ON DELETE CASCADE, we only need to delete the user
 
             # But let's be explicit for logging purposes
-            logger.info(f"Deleting all data for user {telegram_id}")
+            logger.info(f"Deleting all data for user {telegram_id} (user_id={user_id})")
 
             # Delete scheduled notifications
             await session.execute(
