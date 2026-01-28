@@ -965,7 +965,8 @@ async def callback_filter_today(callback: CallbackQuery) -> None:
     moment_service = MomentService()
     
     # Get today's moments (last 24 hours)
-    end_date = datetime.now(timezone.utc)
+    # Use timezone-naive datetime for database compatibility
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=1)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -1003,7 +1004,8 @@ async def callback_filter_week(callback: CallbackQuery) -> None:
     moment_service = MomentService()
     
     # Get week's moments (last 7 days)
-    end_date = datetime.now(timezone.utc)
+    # Use timezone-naive datetime for database compatibility
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=7)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -1041,7 +1043,8 @@ async def callback_filter_month(callback: CallbackQuery) -> None:
     moment_service = MomentService()
     
     # Get month's moments (last 30 days)
-    end_date = datetime.now(timezone.utc)
+    # Use timezone-naive datetime for database compatibility
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=30)
     
     moments = await moment_service.get_user_moments_by_date(
