@@ -13,7 +13,7 @@ from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
 from src.db.repositories.user_repository import UserRepository
 from src.services.user_service import UserService
-from src.utils.localization import get_system_message, get_onboarding_text, t
+from src.utils.localization import get_system_message, get_onboarding_text, get_language_code, t
 
 logger = logging.getLogger(__name__)
 router = Router(name="commands")
@@ -54,21 +54,61 @@ def get_localized_welcome_text(first_name: str, language_code: str) -> str:
 
 def get_localized_welcome_back_text(first_name: str, language_code: str) -> str:
     """Get welcome back text in user's language"""
-    if language_code and language_code.startswith("en"):
+    lang = get_language_code(language_code) if language_code else "ru"
+    if lang == "en":
         return (
             f"Welcome back, {first_name}! 💝\n\n"
             "Good to see you again. How can I help?"
         )
-    elif language_code and language_code.startswith("uk"):
+    if lang == "uk":
         return (
             f"З поверненням, {first_name}! 💝\n\n"
             "Радий знову тебе бачити. Чим можу допомогти?"
         )
-    else:  # Default to Russian
+    if lang == "he":
         return (
-            f"С возвращением, {first_name}! 💝\n\n"
-            "Рад снова тебя видеть. Чем могу помочь?"
+            f"ברוך שובך, {first_name}! 💝\n\n"
+            "טוב לראות אותך שוב. איך אני יכול לעזור?"
         )
+    if lang == "es":
+        return (
+            f"¡Bienvenido de nuevo, {first_name}! 💝\n\n"
+            "Me alegra verte otra vez. ¿En qué puedo ayudarte?"
+        )
+    if lang == "de":
+        return (
+            f"Willkommen zurück, {first_name}! 💝\n\n"
+            "Schön, dich wiederzusehen. Womit kann ich helfen?"
+        )
+    if lang == "fr":
+        return (
+            f"Ravi de te revoir, {first_name}! 💝\n\n"
+            "Comment puis-je t'aider?"
+        )
+    if lang == "pt":
+        return (
+            f"Bem-vindo de volta, {first_name}! 💝\n\n"
+            "Que bom ver-te outra vez. Em que posso ajudar?"
+        )
+    if lang == "it":
+        return (
+            f"Bentornato, {first_name}! 💝\n\n"
+            "Che piacere rivederti. Come posso aiutarti?"
+        )
+    if lang == "zh":
+        return (
+            f"欢迎回来，{first_name}！💝\n\n"
+            "很高兴再见到你。需要什么帮助？"
+        )
+    if lang == "ja":
+        return (
+            f"おかえり、{first_name}！💝\n\n"
+            "また会えてうれしい。何か手伝うことある？"
+        )
+    return (
+        f"С возвращением, {first_name}! 💝\n\n"
+        "Рад снова тебя видеть. Чем могу помочь?"
+    )
 
 
 @router.message(CommandStart())
@@ -80,7 +120,7 @@ async def cmd_start(message: Message) -> None:
     """
     user_service = UserService()
     user = await user_service.get_or_create_user(message.from_user)
-    language_code = user.language_code if user else "ru"
+    language_code = get_language_code(user.language_code) if user else "ru"
 
     if not user.onboarding_completed:
         # New user - send welcome image first
@@ -324,8 +364,12 @@ async def cmd_delete_data(message: Message) -> None:
 
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
-    language_code = user.language_code if user else "ru"
-    formal = user.formal_address if user else False
+    if not user:
+        lang = get_language_code(getattr(message.from_user, "language_code", None) or "ru")
+        await message.answer(get_system_message("please_start_first", lang))
+        return
+    language_code = get_language_code(user.language_code)
+    formal = user.formal_address
 
     # Build localized confirmation message
     title = get_system_message("delete_data_title", language_code)

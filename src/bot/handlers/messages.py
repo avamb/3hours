@@ -93,7 +93,7 @@ async def cancel_social_profile_state(message: Message, state: FSMContext) -> No
     from src.services.user_service import UserService
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
-    language_code = user.language_code if user else "ru"
+    language_code = get_language_code(user.language_code) if user else "ru"
 
     await state.clear()
     social_service = SocialProfileService()
@@ -161,7 +161,7 @@ async def handle_bio_input(message: Message, state: FSMContext) -> None:
     from src.services.user_service import UserService
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
-    language_code = user.language_code if user else "ru"
+    language_code = get_language_code(user.language_code) if user else "ru"
     formal = user.formal_address if user else False
 
     bio_text = message.text.strip()
@@ -204,26 +204,33 @@ async def handle_voice_message(message: Message) -> None:
     - Download voice file
     - Transcribe using Whisper API with auto language detection
     - Respond in the same language as the voice message
+    - UI (status, menu) always in user's interface language; reply in voice language
     """
     from src.services.user_service import UserService
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
-    language_code = user.language_code if user else "ru"
+    ui_lang = get_language_code(user.language_code) if user else "ru"
 
     # Clear pending prompt when user replies via voice
     if user and getattr(user, 'last_pending_prompt_message_id', None):
         await user_service.clear_pending_prompt(message.from_user.id)
         logger.debug(f"Cleared pending prompt for user {message.from_user.id} (voice)")
 
-    # Processing messages in different languages
+    # Processing message — always in user's UI language
     processing_messages = {
         "ru": "🎙 Распознаю голосовое сообщение...",
         "en": "🎙 Recognizing voice message...",
         "uk": "🎙 Розпізнаю голосове повідомлення...",
-        "es": "🎙 Reconociendo mensaje de voz...",
+        "he": "🎙 מזהה הודעת קול...",
+        "ja": "🎙 音声メッセージを認識しています...",
+        "zh": "🎙 正在识别语音消息...",
+        "it": "🎙 Riconoscimento messaggio vocale...",
+        "pt": "🎙 Reconhecendo mensagem de voz...",
+        "fr": "🎙 Reconnaissance du message vocal...",
         "de": "🎙 Sprachnachricht wird erkannt...",
+        "es": "🎙 Reconociendo mensaje de voz...",
     }
-    await message.answer(processing_messages.get(language_code, processing_messages["ru"]))
+    await message.answer(processing_messages.get(ui_lang, processing_messages["ru"]))
 
     speech_service = SpeechToTextService()
 
@@ -241,31 +248,24 @@ async def handle_voice_message(message: Message) -> None:
         )
 
         if not transcribed_text or transcribed_text.strip() == "":
-            # Error messages in different languages
             error_messages = {
                 "ru": "😔 Не удалось распознать голос. Попробуй ещё раз или напиши текстом.",
                 "en": "😔 Couldn't recognize voice. Please try again or type your message.",
                 "uk": "😔 Не вдалося розпізнати голос. Спробуй ще раз або напиши текстом.",
-                "es": "😔 No se pudo reconocer la voz. Intenta de nuevo o escribe tu mensaje.",
+                "he": "😔 לא הצלחתי לזהות את הקול. נסה שוב או כתוב הודעה.",
+                "ja": "😔 音声を認識できませんでした。もう一度お試しか、文字で送ってください。",
+                "zh": "😔 无法识别语音。请重试或输入文字。",
+                "it": "😔 Impossibile riconoscere la voce. Riprova o scrivi il messaggio.",
+                "pt": "😔 Não foi possível reconhecer a voz. Tente de novo ou escreva sua mensagem.",
+                "fr": "😔 Impossible de reconnaître la voix. Réessaie ou écris ton message.",
                 "de": "😔 Spracherkennung fehlgeschlagen. Bitte versuche es erneut oder schreibe.",
+                "es": "😔 No se pudo reconocer la voz. Intenta de nuevo o escribe tu mensaje.",
             }
-            await message.answer(error_messages.get(language_code, error_messages["ru"]))
+            await message.answer(error_messages.get(ui_lang, error_messages["ru"]))
             return
 
-        # Update user's language preference based on the voice message language
-        # This ensures responses match the language the user spoke in
-        voice_language = get_language_code(detected_language) if detected_language else language_code
-
-        # Update user language if it differs from detected voice language
-        if detected_language and voice_language != language_code:
-            await user_service.update_user_settings(
-                telegram_id=message.from_user.id,
-                language_code=voice_language
-            )
-            logger.info(f"Updated user {message.from_user.id} language to {voice_language} based on voice message")
-
-        # Use the detected language for responses
-        response_language = voice_language
+        # Reply in detected voice language; do NOT overwrite user's UI language
+        response_language = get_language_code(detected_language) if detected_language else ui_lang
 
         # Process as moment
         moment_service = MomentService()
@@ -295,19 +295,25 @@ async def handle_voice_message(message: Message) -> None:
             override_language=response_language  # Force response in voice message language
         )
 
-        # "Recognized" prefix in different languages
+        # "Recognized" prefix — UI language (user's interface), not voice language
         recognized_prefix = {
             "ru": "✅ Распознано",
             "en": "✅ Recognized",
             "uk": "✅ Розпізнано",
-            "es": "✅ Reconocido",
+            "he": "✅ זוהה",
+            "ja": "✅ 認識しました",
+            "zh": "✅ 已识别",
+            "it": "✅ Riconosciuto",
+            "pt": "✅ Reconhecido",
+            "fr": "✅ Reconnu",
             "de": "✅ Erkannt",
+            "es": "✅ Reconocido",
         }
-        prefix = recognized_prefix.get(response_language, recognized_prefix["ru"])
+        prefix = recognized_prefix.get(ui_lang, recognized_prefix["ru"])
 
         await message.answer(
             f"{prefix}: «{transcribed_text}»\n\n{response}",
-            reply_markup=get_main_menu_keyboard(response_language)
+            reply_markup=get_main_menu_keyboard(ui_lang)
         )
 
         await conversation_log.log(
@@ -319,15 +325,20 @@ async def handle_voice_message(message: Message) -> None:
 
     except Exception as e:
         logger.error(f"Voice processing error: {e}")
-        # Error messages in different languages
         error_messages = {
             "ru": "😔 Произошла ошибка при обработке голосового сообщения. Попробуй ещё раз или напиши текстом.",
             "en": "😔 An error occurred while processing the voice message. Please try again or type your message.",
             "uk": "😔 Сталася помилка при обробці голосового повідомлення. Спробуй ще раз або напиши текстом.",
-            "es": "😔 Ocurrió un error al procesar el mensaje de voz. Intenta de nuevo o escribe tu mensaje.",
+            "he": "😔 אירעה שגיאה בעת עיבוד ההודעה הקולית. נסה שוב או כתוב הודעה.",
+            "ja": "😔 音声メッセージの処理中にエラーが発生しました。もう一度お試しか、文字で送ってください。",
+            "zh": "😔 处理语音消息时出错。请重试或输入文字。",
+            "it": "😔 Errore durante l'elaborazione del messaggio vocale. Riprova o scrivi il messaggio.",
+            "pt": "😔 Ocorreu um erro ao processar a mensagem de voz. Tente de novo ou escreva sua mensagem.",
+            "fr": "😔 Erreur lors du traitement du message vocal. Réessaie ou écris ton message.",
             "de": "😔 Bei der Verarbeitung der Sprachnachricht ist ein Fehler aufgetreten. Bitte versuche es erneut oder schreibe.",
+            "es": "😔 Ocurrió un error al procesar el mensaje de voz. Intenta de nuevo o escribe tu mensaje.",
         }
-        await message.answer(error_messages.get(language_code, error_messages["ru"]))
+        await message.answer(error_messages.get(ui_lang, error_messages["ru"]))
 
 
 @router.message(F.text)
