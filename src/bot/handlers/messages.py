@@ -551,14 +551,16 @@ async def handle_text_message(message: Message) -> None:
             response = await personalization_service.generate_supportive_response(
                 telegram_id=message.from_user.id,
                 current_text=text,
-                past_moments=similar_moments
+                past_moments=similar_moments,
+                override_language=language_code  # Pass detected language
             )
         else:
             # Refresh typing indicator before generating response
             await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
             response = await personalization_service.generate_empathetic_response(
                 telegram_id=message.from_user.id,
-                text=text
+                text=text,
+                override_language=language_code  # Pass detected language
             )
 
         await message.answer(response, reply_markup=get_main_menu_keyboard(language_code))
@@ -582,7 +584,8 @@ async def handle_text_message(message: Message) -> None:
         # Generate personalized positive response
         response = await personalization_service.generate_response(
             telegram_id=message.from_user.id,
-            moment_content=text
+            moment_content=text,
+            override_language=language_code  # Pass detected language
         )
 
         await message.answer(response, reply_markup=get_main_menu_keyboard(language_code))
