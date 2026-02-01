@@ -37,9 +37,21 @@ class User(Base):
 
     # Tracking field for incremental memory indexing
     last_memory_indexed_conversation_id: Mapped[int] = mapped_column(Integer, default=0)
-    
+
     # Track last pending scheduled prompt for deletion (prevents message accumulation)
     last_pending_prompt_message_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True, default=None)
+
+    # Attribution tracking (first-touch)
+    first_source: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
+    first_campaign: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
+    first_start_payload: Mapped[Optional[str]] = mapped_column(String(500), nullable=True, default=None)
+    first_started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+
+    # Attribution tracking (last-touch)
+    last_source: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
+    last_campaign: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
+    last_start_payload: Mapped[Optional[str]] = mapped_column(String(500), nullable=True, default=None)
+    last_started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     # Relationships
     moments = relationship("Moment", back_populates="user", cascade="all, delete-orphan")
@@ -49,6 +61,7 @@ class User(Base):
     feedback = relationship("Feedback", back_populates="user", cascade="all, delete-orphan")
     social_profile = relationship("SocialProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     conversation_memories = relationship("ConversationMemory", back_populates="user", cascade="all, delete-orphan")
+    start_events = relationship("StartEvent", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, telegram_id={self.telegram_id}, username={self.username})>"

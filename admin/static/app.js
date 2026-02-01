@@ -180,6 +180,9 @@ function navigateTo(page) {
         case 'analytics':
             loadAnalyticsPage();
             break;
+        case 'attribution':
+            loadAttributionPage();
+            break;
         case 'settings':
             loadSettingsPage();
             break;
@@ -2602,6 +2605,137 @@ document.getElementById('users-chart-period')?.addEventListener('change', (e) =>
 
 // Analytics refresh button
 document.getElementById('refresh-analytics')?.addEventListener('click', loadAnalyticsPage);
+
+
+// ============ Attribution Page ============
+async function loadAttributionPage() {
+    await Promise.all([
+        loadAttributionStats(),
+        loadAttributionBySource(),
+        loadAttributionByCampaign(),
+        loadAttributionConversions(),
+        loadAttributionRecent(),
+    ]);
+}
+
+async function loadAttributionStats() {
+    try {
+        const stats = await api('/attribution/stats');
+        document.getElementById('attr-total-starts').textContent = stats.total_starts || '0';
+        document.getElementById('attr-unique-users').textContent = stats.unique_users || '0';
+        document.getElementById('attr-attributed').textContent = stats.attributed_starts || '0';
+        document.getElementById('attr-sources').textContent = stats.unique_sources || '0';
+    } catch (error) {
+        console.error('Error loading attribution stats:', error);
+    }
+}
+
+async function loadAttributionBySource() {
+    const tbody = document.getElementById('attribution-by-source-body');
+    if (!tbody) return;
+
+    try {
+        const data = await api('/attribution/by-source');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty">No data yet</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.map(row => `
+            <tr>
+                <td><strong>${escapeHtml(row.source)}</strong></td>
+                <td>${row.total_starts}</td>
+                <td>${row.unique_users}</td>
+                <td>${formatDate(row.first_start)}</td>
+                <td>${formatDate(row.last_start)}</td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading attribution by source:', error);
+        tbody.innerHTML = '<tr><td colspan="5" class="error">Error loading data</td></tr>';
+    }
+}
+
+async function loadAttributionByCampaign() {
+    const tbody = document.getElementById('attribution-by-campaign-body');
+    if (!tbody) return;
+
+    try {
+        const data = await api('/attribution/by-campaign');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">No campaigns yet</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.map(row => `
+            <tr>
+                <td>${escapeHtml(row.source)}</td>
+                <td><strong>${escapeHtml(row.campaign || '-')}</strong></td>
+                <td>${row.total_starts}</td>
+                <td>${row.unique_users}</td>
+                <td>${formatDate(row.first_start)}</td>
+                <td>${formatDate(row.last_start)}</td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading attribution by campaign:', error);
+        tbody.innerHTML = '<tr><td colspan="6" class="error">Error loading data</td></tr>';
+    }
+}
+
+async function loadAttributionConversions() {
+    const tbody = document.getElementById('attribution-conversions-body');
+    if (!tbody) return;
+
+    try {
+        const data = await api('/attribution/conversions');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty">No data yet</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.map(row => `
+            <tr>
+                <td><strong>${escapeHtml(row.source)}</strong></td>
+                <td>${row.total_users}</td>
+                <td>${row.onboarded_users}</td>
+                <td>${row.onboarding_rate || 0}%</td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading attribution conversions:', error);
+        tbody.innerHTML = '<tr><td colspan="4" class="error">Error loading data</td></tr>';
+    }
+}
+
+async function loadAttributionRecent() {
+    const tbody = document.getElementById('attribution-recent-body');
+    if (!tbody) return;
+
+    try {
+        const data = await api('/attribution/recent');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty">No recent starts</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.map(row => `
+            <tr>
+                <td>${formatDate(row.created_at)}</td>
+                <td>${escapeHtml(row.username || row.first_name || row.telegram_id)}</td>
+                <td>${escapeHtml(row.source)}</td>
+                <td>${escapeHtml(row.campaign || '-')}</td>
+                <td title="${escapeHtml(row.raw_payload || '')}">${escapeHtml((row.raw_payload || '-').substring(0, 30))}</td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading recent starts:', error);
+        tbody.innerHTML = '<tr><td colspan="5" class="error">Error loading data</td></tr>';
+    }
+}
+
+// Attribution refresh button
+document.getElementById('refresh-attribution')?.addEventListener('click', loadAttributionPage);
 
 // ============ Settings Page ============
 async function loadSettingsPage() {

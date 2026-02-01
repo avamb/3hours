@@ -4,15 +4,17 @@ Handles all bot commands: /start, /help, /settings, /moments, /stats, etc.
 """
 import logging
 from pathlib import Path
+from typing import Optional
 
 from aiogram import Router, F
 from aiogram.types import Message, FSInputFile, URLInputFile
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command, CommandStart, CommandObject
 
 from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
 from src.db.repositories.user_repository import UserRepository
 from src.services.user_service import UserService
+from src.services.attribution_service import AttributionService
 from src.utils.localization import get_system_message, get_onboarding_text, get_language_code, t
 
 logger = logging.getLogger(__name__)
@@ -112,18 +114,37 @@ def get_localized_welcome_back_text(first_name: str, language_code: str) -> str:
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message) -> None:
+async def cmd_start(message: Message, command: CommandObject) -> None:
     """
     Handle /start command
     - For new users: Start onboarding flow with welcome image
     - For existing users: Show welcome back message
+    - Captures deep link payload for attribution tracking
     """
     try:
-        logger.info(f"Start command received from user {message.from_user.id} (@{message.from_user.username})")
+        # Extract deep link payload (e.g., from t.me/bot?start=reddit_campaign)
+        deep_link_payload: Optional[str] = command.args if command else None
+
+        logger.info(
+            f"Start command received from user {message.from_user.id} "
+            f"(@{message.from_user.username}), payload={deep_link_payload}"
+        )
 
         user_service = UserService()
         user = await user_service.get_or_create_user(message.from_user)
         logger.info(f"User {message.from_user.id}: onboarding_completed={user.onboarding_completed}, language={user.language_code}")
+
+        # Record attribution (always, for both new and returning users)
+        try:
+            attribution_service = AttributionService()
+            await attribution_service.record_start_event(
+                user_id=user.id,
+                telegram_id=message.from_user.id,
+                payload=deep_link_payload,
+            )
+        except Exception as attr_error:
+            # Attribution tracking should never block the main flow
+            logger.warning(f"Attribution tracking failed: {attr_error}")
 
         language_code = get_language_code(user.language_code) if user else "ru"
 
