@@ -5,7 +5,7 @@ Business logic for user management
 import logging
 import re
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from aiogram.types import User as TelegramUser
 from sqlalchemy import select, and_, delete
@@ -64,16 +64,18 @@ class UserService:
         """
         Get existing user or create new one from Telegram user object
         """
+        logger.info(f"get_or_create_user called for telegram_id={telegram_user.id}, username={telegram_user.username}")
         async with get_session() as session:
             # Try to find existing user
             result = await session.execute(
                 select(User).where(User.telegram_id == telegram_user.id)
             )
             user = result.scalar_one_or_none()
+            logger.info(f"Existing user found for {telegram_user.id}: {user is not None}")
 
             if user:
                 # Update last active
-                user.last_active_at = datetime.utcnow()
+                user.last_active_at = datetime.now(timezone.utc)
 
                 # If user was blocked but sent a message, they unblocked the bot
                 if user.is_blocked:
@@ -108,6 +110,8 @@ class UserService:
 
             raw_lang = telegram_user.language_code or "ru"
             normalized_lang = get_language_code(raw_lang)
+            logger.info(f"Creating new user {telegram_user.id} with language {raw_lang} -> {normalized_lang}")
+
             user = User(
                 telegram_id=telegram_user.id,
                 username=telegram_user.username,
@@ -117,14 +121,16 @@ class UserService:
             )
             session.add(user)
             await session.flush()
+            logger.info(f"User record created with id={user.id}")
 
             # Create user stats
             stats = UserStats(user_id=user.id)
             session.add(stats)
+            logger.info(f"User stats record created for user_id={user.id}")
 
             await session.commit()
             logger.info(
-                f"Created new user: {user.telegram_id} (gender: {detected_gender}, "
+                f"Successfully created new user: {user.telegram_id} (gender: {detected_gender}, "
                 f"language: telegram={raw_lang!r} -> {normalized_lang!r})"
             )
 
@@ -147,7 +153,7 @@ class UserService:
         notification_interval_hours: Optional[int] = None,
         notifications_enabled: Optional[bool] = None,
         language_code: Optional[str] = None,
-        timezone: Optional[str] = None,
+        user_timezone: Optional[str] = None,
         gender: Optional[str] = None,
     ) -> Optional[User]:
         """Update user settings"""
@@ -182,19 +188,19 @@ class UserService:
             if language_code is not None:
                 user.language_code = language_code
 
-            if timezone is not None:
+            if user_timezone is not None:
                 # Validate timezone format
-                if not validate_timezone(timezone):
-                    logger.warning(f"Invalid timezone format: {timezone}")
-                    raise ValueError(f"Invalid timezone: {timezone}")
+                if not validate_timezone(user_timezone):
+                    logger.warning(f"Invalid timezone format: {user_timezone}")
+                    raise ValueError(f"Invalid timezone: {user_timezone}")
 
                 old_timezone = user.timezone
-                user.timezone = timezone
+                user.timezone = user_timezone
 
                 # If timezone changed, delete pending notifications so they get rescheduled
-                if old_timezone != timezone:
+                if old_timezone != user_timezone:
                     logger.info(
-                        f"Timezone changed for user {telegram_id}: {old_timezone} -> {timezone}, "
+                        f"Timezone changed for user {telegram_id}: {old_timezone} -> {user_timezone}, "
                         "deleting pending notifications for reschedule"
                     )
                     await session.execute(
@@ -209,7 +215,7 @@ class UserService:
             if gender is not None:
                 user.gender = gender
 
-            user.updated_at = datetime.utcnow()
+            user.updated_at = datetime.now(timezone.utc)
             await session.commit()
 
             logger.info(f"Updated settings for user {telegram_id}")
@@ -227,7 +233,7 @@ class UserService:
                 return False
 
             user.onboarding_completed = True
-            user.updated_at = datetime.utcnow()
+            user.updated_at = datetime.now(timezone.utc)
             await session.commit()
 
             logger.info(f"Onboarding completed for user {telegram_id}")
@@ -251,7 +257,7 @@ class UserService:
             user.active_hours_end = time(21, 0)
             user.notification_interval_hours = 3
             user.notifications_enabled = True
-            user.updated_at = datetime.utcnow()
+            user.updated_at = datetime.now(timezone.utc)
 
             await session.commit()
             logger.info(f"Reset settings for user {telegram_id}")

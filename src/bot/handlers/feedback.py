@@ -265,7 +265,13 @@ async def handle_feedback_text(message: Message) -> bool:
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
     formal = user.formal_address if user else False
-    
+
+    # Check if message contains text
+    if not message.text:
+        text_only = get_system_message("please_send_text", language_code)
+        await message.answer(text_only)
+        return True
+
     content = message.text.strip()
     if not content:
         empty_text = get_system_message("feedback_empty_formal" if formal else "feedback_empty", language_code, formal=formal)

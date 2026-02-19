@@ -17,7 +17,7 @@ import time
 import json
 from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from openai import AsyncOpenAI
 from sqlalchemy import select, and_, text
@@ -698,11 +698,11 @@ If message is just greeting/pleasantry/question with no personal facts, return:
             rows = result.fetchall()
 
             if not rows:
-                return [], datetime.utcnow()
+                return [], datetime.now(timezone.utc)
 
             # Map to ConversationMemory objects
             memories = []
-            oldest_time = datetime.utcnow()
+            oldest_time = datetime.now(timezone.utc)
 
             for row in rows:
                 mem = ConversationMemory(
@@ -742,7 +742,7 @@ If message is just greeting/pleasantry/question with no personal facts, return:
             return True, memories[:SUMMARY_BATCH_SIZE]
 
         # Check if oldest message is old enough
-        age_hours = (datetime.utcnow() - oldest_time).total_seconds() / 3600
+        age_hours = (datetime.now(timezone.utc) - oldest_time).total_seconds() / 3600
         if age_hours >= SUMMARY_MAX_AGE_HOURS:
             return True, memories
 

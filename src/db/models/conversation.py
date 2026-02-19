@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - Conversation model
 Stores all conversation messages for context
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
 from sqlalchemy import Integer, String, Text, DateTime, ForeignKey
@@ -22,7 +22,7 @@ class Conversation(Base):
     # Types: 'bot_question', 'user_response', 'free_dialog', 'bot_reply'
     content: Mapped[str] = mapped_column(Text, nullable=False)
     message_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column("metadata", JSONB, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
 
     # Relationships
     user = relationship("User", back_populates="conversations")

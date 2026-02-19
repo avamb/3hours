@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - Social Profile model
 Stores user's social network profiles and parsed interests
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 
 from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, ARRAY
@@ -35,9 +35,9 @@ class SocialProfile(Base):
     communication_style: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     # Timestamps
-    last_parsed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_parsed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationship
     user = relationship("User", back_populates="social_profile")

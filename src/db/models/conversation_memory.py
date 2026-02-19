@@ -3,7 +3,7 @@ MINDSETHAPPYBOT - Conversation Memory model
 Stores extracted memory-worthy facts from user conversations.
 Used for per-user isolated vector memory retrieval.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 
 from sqlalchemy import Integer, String, Text, Float, DateTime, ForeignKey, ARRAY
@@ -64,8 +64,8 @@ class ConversationMemory(Base):
     fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Additional metadata
     # Can include: lang, confidence, expires_at, original_text_snippet

@@ -5,7 +5,7 @@ Standalone FastAPI server providing admin dashboard functionality
 import os
 import sys
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -139,7 +139,7 @@ async def login(request: LoginRequest):
 async def get_stats(db: Session = Depends(get_db)):
     """Get overall statistics"""
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_ago = now - timedelta(days=7)
         day_ago = now - timedelta(days=1)
@@ -462,7 +462,7 @@ async def system_health(db: Session = Depends(get_db)):
     return {
         "status": "healthy" if db_status == "healthy" else "unhealthy",
         "database": db_status,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 
@@ -503,14 +503,14 @@ async def get_system_logs(
                 continue
 
             logs.append({
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "level": log_level,
                 "message": line[:500],
                 "source": "bot"
             })
     except Exception as e:
         logs.append({
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": "WARNING",
             "message": f"Could not read bot logs: {str(e)}",
             "source": "admin"

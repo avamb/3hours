@@ -248,7 +248,7 @@ class NotificationScheduler:
     async def _process_notifications(self) -> None:
         """Process pending notifications that are due"""
         # Use UTC-aware datetime, then convert to naive for DB comparison
-        utc_now = datetime.now(dt_timezone.utc).replace(tzinfo=None)
+        utc_now = datetime.now(dt_timezone.utc)
 
         async with get_session() as session:
             # Find unsent notifications that are due, excluding blocked and paused users
@@ -274,7 +274,7 @@ class NotificationScheduler:
                 try:
                     await self._send_notification(notification)
                     notification.sent = True
-                    notification.sent_at = datetime.now(dt_timezone.utc).replace(tzinfo=None)
+                    notification.sent_at = datetime.now(dt_timezone.utc)
                 except Exception as e:
                     logger.error(f"Failed to send notification {notification.id}: {e}")
 
@@ -352,7 +352,7 @@ class NotificationScheduler:
             # Check if notifications are paused
             if user.notifications_paused_until:
                 from datetime import datetime, timezone as dt_timezone
-                utc_now = datetime.now(dt_timezone.utc).replace(tzinfo=None)
+                utc_now = datetime.now(dt_timezone.utc)
                 if user.notifications_paused_until > utc_now:
                     logger.debug(f"User {user.telegram_id} notifications paused until {user.notifications_paused_until}, skipping")
                     return
@@ -543,7 +543,7 @@ class NotificationScheduler:
 
                 # Check if notifications are paused
                 if user.notifications_paused_until:
-                    utc_now = datetime.now(dt_timezone.utc).replace(tzinfo=None)
+                    utc_now = datetime.now(dt_timezone.utc)
                     if user.notifications_paused_until > utc_now:
                         logger.info(f"Notifications paused for user {telegram_id} until {user.notifications_paused_until}")
                         return False
@@ -610,7 +610,7 @@ class NotificationScheduler:
                         User.is_blocked == False,
                         or_(
                             User.notifications_paused_until.is_(None),
-                            User.notifications_paused_until <= datetime.now(dt_timezone.utc).replace(tzinfo=None),
+                            User.notifications_paused_until <= datetime.now(dt_timezone.utc),
                         ),
                     )
                 )
@@ -637,7 +637,7 @@ class NotificationScheduler:
                 and_(
                     ScheduledNotification.user_id == user.id,
                     ScheduledNotification.sent == False,
-                    ScheduledNotification.scheduled_time > utc_now.replace(tzinfo=None),
+                    ScheduledNotification.scheduled_time > utc_now,
                 )
             )
             .limit(1)
@@ -675,7 +675,7 @@ class NotificationScheduler:
             )
 
         # Convert to UTC for storage (naive datetime for DB compatibility)
-        next_time_utc = next_time_local.astimezone(dt_timezone.utc).replace(tzinfo=None)
+        next_time_utc = next_time_local.astimezone(dt_timezone.utc)
 
         # Create notification
         notification = ScheduledNotification(
@@ -719,7 +719,7 @@ class NotificationScheduler:
                         User.is_blocked == False,
                         or_(
                             User.notifications_paused_until.is_(None),
-                            User.notifications_paused_until <= datetime.now(dt_timezone.utc).replace(tzinfo=None),
+                            User.notifications_paused_until <= datetime.now(dt_timezone.utc),
                         ),
                     )
                 )
@@ -927,7 +927,7 @@ class NotificationScheduler:
                         User.is_blocked == False,
                         or_(
                             User.notifications_paused_until.is_(None),
-                            User.notifications_paused_until <= datetime.now(dt_timezone.utc).replace(tzinfo=None),
+                            User.notifications_paused_until <= datetime.now(dt_timezone.utc),
                         ),
                     )
                 )

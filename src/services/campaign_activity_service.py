@@ -4,7 +4,7 @@ Handles sending campaign messages when users become active
 """
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import text
@@ -105,7 +105,7 @@ class CampaignActivityDeliveryService:
                     cooldown_minutes = delivery_params.get('cooldown_minutes', 60)
                     if target.last_activity_triggered_at:
                         cooldown_end = target.last_activity_triggered_at + timedelta(minutes=cooldown_minutes)
-                        if datetime.utcnow() < cooldown_end:
+                        if datetime.now(timezone.utc) < cooldown_end:
                             logger.debug(
                                 f"Campaign {target.campaign_id}: User {telegram_id} is in cooldown "
                                 f"(until {cooldown_end})"
