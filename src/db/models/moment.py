@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - Moment model
 Stores user's positive moments with vector embeddings
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 
 from sqlalchemy import Integer, String, Text, Float, DateTime, ForeignKey, ARRAY
@@ -24,7 +24,7 @@ class Moment(Base):
     embedding = mapped_column(Vector(1536), nullable=True)  # OpenAI text-embedding-3-small dimension
     mood_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # -1 to 1
     topics: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
 
     # Relationships
     user = relationship("User", back_populates="moments")

@@ -120,6 +120,13 @@ async def handle_social_link_input(message: Message, state: FSMContext) -> None:
     language_code = user.language_code if user else "ru"
     formal = user.formal_address if user else False
 
+    # Check if message contains text
+    if not message.text:
+        from src.utils.localization import get_system_message
+        text_only_message = get_system_message("please_send_text", language_code)
+        await message.answer(text_only_message)
+        return
+
     url = message.text.strip()
 
     social_service = SocialProfileService()
@@ -163,6 +170,13 @@ async def handle_bio_input(message: Message, state: FSMContext) -> None:
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = get_language_code(user.language_code) if user else "ru"
     formal = user.formal_address if user else False
+
+    # Check if message contains text
+    if not message.text:
+        from src.utils.localization import get_system_message
+        text_only_message = get_system_message("please_send_text", language_code)
+        await message.answer(text_only_message)
+        return
 
     bio_text = message.text.strip()
 
@@ -350,6 +364,11 @@ async def handle_text_message(message: Message) -> None:
     - Could be feedback input
     - Could be any other text input
     """
+    # Safety check for text, although F.text filter should ensure it exists
+    if not message.text:
+        logger.warning(f"Received non-text message in text handler from user {message.from_user.id}")
+        return
+
     logger.info(
         f"Received text message from user {message.from_user.id} "
         f"in chat {message.chat.id} ({message.chat.type}): {message.text[:100]}"
@@ -394,11 +413,11 @@ async def handle_text_message(message: Message) -> None:
     # Dialog mode: route to DialogService (persists to conversations)
     # Автоматически активируем диалог, если пользователь не в диалоге
     # Это позволяет обрабатывать все сообщения через RAG
-    if not dialog_service.is_in_dialog(message.from_user.id):
-        dialog_service.start_dialog(message.from_user.id)
+    if not await dialog_service.is_in_dialog(message.from_user.id):
+        await dialog_service.start_dialog(message.from_user.id)
         logger.info(f"Auto-activated dialog for user {message.from_user.id}")
-    
-    if dialog_service.is_in_dialog(message.from_user.id):
+
+    if await dialog_service.is_in_dialog(message.from_user.id):
         from src.bot.keyboards.inline import get_dialog_keyboard
         # Show typing indicator while generating AI response
         await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
@@ -458,7 +477,7 @@ async def handle_text_message(message: Message) -> None:
         treat the next user message as continuation even if it doesn't look like a request.
         """
         try:
-            from datetime import datetime, timedelta
+            from datetime import datetime, timedelta, timezone
             from sqlalchemy import select, and_
             from src.db.database import get_session
             from src.db.models import User, Conversation
@@ -469,7 +488,7 @@ async def handle_text_message(message: Message) -> None:
                 if not u:
                     return False
 
-                since = datetime.utcnow() - timedelta(minutes=10)
+                since = datetime.now(timezone.utc) - timedelta(minutes=10)
                 res = await session.execute(
                     select(Conversation)
                     .where(
@@ -532,14 +551,16 @@ async def handle_text_message(message: Message) -> None:
             response = await personalization_service.generate_supportive_response(
                 telegram_id=message.from_user.id,
                 current_text=text,
-                past_moments=similar_moments
+                past_moments=similar_moments,
+                override_language=language_code  # Pass detected language
             )
         else:
             # Refresh typing indicator before generating response
             await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
             response = await personalization_service.generate_empathetic_response(
                 telegram_id=message.from_user.id,
-                text=text
+                text=text,
+                override_language=language_code  # Pass detected language
             )
 
         await message.answer(response, reply_markup=get_main_menu_keyboard(language_code))
@@ -563,7 +584,8 @@ async def handle_text_message(message: Message) -> None:
         # Generate personalized positive response
         response = await personalization_service.generate_response(
             telegram_id=message.from_user.id,
-            moment_content=text
+            moment_content=text,
+            override_language=language_code  # Pass detected language
         )
 
         await message.answer(response, reply_markup=get_main_menu_keyboard(language_code))

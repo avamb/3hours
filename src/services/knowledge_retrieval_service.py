@@ -20,7 +20,7 @@ import re
 import time
 from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from openai import AsyncOpenAI
 from sqlalchemy import text, select, and_
@@ -314,7 +314,7 @@ Reply with ONLY a single letter: A, B, or C."""
 
             # Filter by threshold and apply recency boost
             moments = []
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             recency_cutoff = now - timedelta(days=RECENCY_BOOST_DAYS)
 
             for row in rows:

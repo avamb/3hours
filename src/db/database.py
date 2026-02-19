@@ -59,15 +59,22 @@ async def close_db() -> None:
 
 
 @asynccontextmanager
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """Get async database session"""
+async def get_session(auto_commit: bool = True) -> AsyncGenerator[AsyncSession, None]:
+    """
+    Get async database session.
+
+    Args:
+        auto_commit: If True, automatically commits on success. Default is True for backwards compatibility.
+                    Set to False for manual transaction control.
+    """
     if _async_session_factory is None:
         raise RuntimeError("Database not initialized. Call init_db() first.")
 
     async with _async_session_factory() as session:
         try:
             yield session
-            await session.commit()
+            if auto_commit:
+                await session.commit()
         except Exception:
             await session.rollback()
             raise

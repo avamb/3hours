@@ -53,6 +53,7 @@
                 <li><a href="#" data-page="dialogs" class="nav-link">Dialogs</a></li>
                 <li><a href="#" data-page="messages" class="nav-link">Messages</a></li>
                 <li><a href="#" data-page="analytics" class="nav-link">Analytics</a></li>
+                <li><a href="#" data-page="attribution" class="nav-link">Attribution</a></li>
                 <li><a href="#" data-page="logs" class="nav-link">Logs</a></li>
                 <li><a href="#" data-page="notifications" class="nav-link">Notifications</a></li>
                 <li><a href="#" data-page="feedback" class="nav-link">Feedback</a></li>
@@ -793,6 +794,121 @@
 
                 <div class="toolbar analytics-toolbar">
                     <button id="refresh-analytics" class="btn btn-secondary">Refresh Analytics</button>
+                </div>
+            </div>
+
+
+            <!-- Attribution Page -->
+            <div id="page-attribution" class="page">
+                <h2>Acquisition Attribution</h2>
+                <p class="page-description">Track user acquisition from /start deep links (e.g., Reddit campaigns)</p>
+
+                <!-- Attribution Stats Cards -->
+                <div class="stats-grid attribution-stats" id="attribution-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Starts</div>
+                        <div class="stat-value" id="attr-total-starts">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Unique Users</div>
+                        <div class="stat-value" id="attr-unique-users">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Attributed</div>
+                        <div class="stat-value" id="attr-attributed">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Sources</div>
+                        <div class="stat-value" id="attr-sources">-</div>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <button id="refresh-attribution" class="btn btn-secondary">Refresh Data</button>
+                </div>
+
+                <!-- By Source Table -->
+                <div class="section-header">
+                    <h3>Starts by Source</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="attribution-by-source-table">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Total Starts</th>
+                                <th>Unique Users</th>
+                                <th>First Start</th>
+                                <th>Last Start</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attribution-by-source-body">
+                            <tr><td colspan="5" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- By Campaign Table -->
+                <div class="section-header">
+                    <h3>Starts by Campaign</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="attribution-by-campaign-table">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Campaign</th>
+                                <th>Total Starts</th>
+                                <th>Unique Users</th>
+                                <th>First Start</th>
+                                <th>Last Start</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attribution-by-campaign-body">
+                            <tr><td colspan="6" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Conversion Rates Table -->
+                <div class="section-header">
+                    <h3>Conversion Rates by Source</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="attribution-conversions-table">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Total Users</th>
+                                <th>Onboarded</th>
+                                <th>Onboarding Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attribution-conversions-body">
+                            <tr><td colspan="4" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Recent Starts Table -->
+                <div class="section-header">
+                    <h3>Recent /start Events</h3>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="attribution-recent-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Source</th>
+                                <th>Campaign</th>
+                                <th>Payload</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attribution-recent-body">
+                            <tr><td colspan="5" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

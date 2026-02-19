@@ -93,6 +93,8 @@ async def _show_onboarding_timezone(callback: CallbackQuery, language_code: str)
 @router.callback_query(F.data == "address_informal")
 async def callback_address_informal(callback: CallbackQuery) -> None:
     """Set informal address (ты)"""
+    logger.info(f"address_informal callback triggered for user {callback.from_user.id}")
+
     user_service = UserService()
     await user_service.update_user_settings(
         telegram_id=callback.from_user.id,
@@ -102,33 +104,40 @@ async def callback_address_informal(callback: CallbackQuery) -> None:
     # Get user's language for localized response
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     language_code = user.language_code if user else "ru"
+
+    logger.info(f"User {callback.from_user.id} settings updated: formal_address=False, onboarding_completed={user.onboarding_completed if user else None}")
     
     # Check if onboarding is in progress
-    if user and not user.onboarding_completed:
-        # Show gender selection during onboarding
-        # Use appropriate text based on formality
-        if user.formal_address:
-            prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+    try:
+        if user and not user.onboarding_completed:
+            # Show gender selection during onboarding
+            # Use appropriate text based on formality
+            if user.formal_address:
+                prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+            else:
+                prompt = get_onboarding_text("onboarding_select_gender", language_code)
+            await callback.message.edit_text(
+                prompt,
+                reply_markup=get_gender_keyboard(language_code, include_neutral=True)
+            )
         else:
-            prompt = get_onboarding_text("onboarding_select_gender", language_code)
-        await callback.message.edit_text(
-            prompt,
-            reply_markup=get_gender_keyboard(language_code, include_neutral=True)
-        )
-    else:
-        # Existing user changing settings
-        confirm_text = get_onboarding_text("address_informal_confirm", language_code)
-        await callback.message.edit_text(
-            confirm_text,
-            reply_markup=get_main_menu_inline(language_code)
-        )
-    
+            # Existing user changing settings
+            confirm_text = get_onboarding_text("address_informal_confirm", language_code)
+            await callback.message.edit_text(
+                confirm_text,
+                reply_markup=get_main_menu_inline(language_code)
+            )
+    except Exception as e:
+        logger.error(f"Error in address_informal callback: {e}", exc_info=True)
+
     await callback.answer()
 
 
 @router.callback_query(F.data == "address_formal")
 async def callback_address_formal(callback: CallbackQuery) -> None:
     """Set formal address (вы)"""
+    logger.info(f"address_formal callback triggered for user {callback.from_user.id}")
+
     user_service = UserService()
     await user_service.update_user_settings(
         telegram_id=callback.from_user.id,
@@ -138,27 +147,32 @@ async def callback_address_formal(callback: CallbackQuery) -> None:
     # Get user's language for localized response
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     language_code = user.language_code if user else "ru"
+
+    logger.info(f"User {callback.from_user.id} settings updated: formal_address=True, onboarding_completed={user.onboarding_completed if user else None}")
     
     # Check if onboarding is in progress
-    if user and not user.onboarding_completed:
-        # Show gender selection during onboarding
-        # Use appropriate text based on formality
-        if user.formal_address:
-            prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+    try:
+        if user and not user.onboarding_completed:
+            # Show gender selection during onboarding
+            # Use appropriate text based on formality
+            if user.formal_address:
+                prompt = get_onboarding_text("onboarding_select_gender_formal", language_code)
+            else:
+                prompt = get_onboarding_text("onboarding_select_gender", language_code)
+            await callback.message.edit_text(
+                prompt,
+                reply_markup=get_gender_keyboard(language_code, include_neutral=True)
+            )
         else:
-            prompt = get_onboarding_text("onboarding_select_gender", language_code)
-        await callback.message.edit_text(
-            prompt,
-            reply_markup=get_gender_keyboard(language_code, include_neutral=True)
-        )
-    else:
-        # Existing user changing settings
-        confirm_text = get_onboarding_text("address_formal_confirm", language_code)
-        await callback.message.edit_text(
-            confirm_text,
-            reply_markup=get_main_menu_inline(language_code)
-        )
-    
+            # Existing user changing settings
+            confirm_text = get_onboarding_text("address_formal_confirm", language_code)
+            await callback.message.edit_text(
+                confirm_text,
+                reply_markup=get_main_menu_inline(language_code)
+            )
+    except Exception as e:
+        logger.error(f"Error in address_formal callback: {e}", exc_info=True)
+
     await callback.answer()
 
 
@@ -522,7 +536,7 @@ async def callback_set_timezone(callback: CallbackQuery) -> None:
     try:
         await user_service.update_user_settings(
             telegram_id=callback.from_user.id,
-            timezone=timezone
+            user_timezone=timezone
         )
 
         # Check if onboarding is in progress
@@ -902,7 +916,7 @@ async def callback_dialog_exit(callback: CallbackQuery) -> None:
     from src.services.dialog_service import DialogService
 
     language_code = await get_user_language(callback.from_user.id)
-    DialogService.get_instance().end_dialog(callback.from_user.id)
+    await DialogService.get_instance().end_dialog(callback.from_user.id)
     exit_text = get_system_message("dialog_exit_confirm", language_code)
     await callback.message.answer(
         exit_text,
@@ -958,14 +972,15 @@ async def callback_menu_moments(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "filter_today")
 async def callback_filter_today(callback: CallbackQuery) -> None:
     """Filter moments for today"""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
     moment_service = MomentService()
     
     # Get today's moments (last 24 hours)
-    end_date = datetime.utcnow()
+    # Use timezone-naive datetime for database compatibility
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=1)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -996,14 +1011,15 @@ async def callback_filter_today(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "filter_week")
 async def callback_filter_week(callback: CallbackQuery) -> None:
     """Filter moments for last 7 days"""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
     moment_service = MomentService()
     
     # Get week's moments (last 7 days)
-    end_date = datetime.utcnow()
+    # Use timezone-naive datetime for database compatibility
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=7)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -1034,14 +1050,15 @@ async def callback_filter_week(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "filter_month")
 async def callback_filter_month(callback: CallbackQuery) -> None:
     """Filter moments for last 30 days"""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
     moment_service = MomentService()
     
     # Get month's moments (last 30 days)
-    end_date = datetime.utcnow()
+    # Use timezone-naive datetime for database compatibility
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=30)
     
     moments = await moment_service.get_user_moments_by_date(
@@ -1321,7 +1338,7 @@ async def _set_pause(callback: CallbackQuery, days: int) -> None:
         )
         db_user = result.scalar_one_or_none()
         if db_user:
-            db_user.notifications_paused_until = pause_until.replace(tzinfo=None)
+            db_user.notifications_paused_until = pause_until
             await session.commit()
     
     # Format date for display
