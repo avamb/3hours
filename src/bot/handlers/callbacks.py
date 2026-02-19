@@ -3,10 +3,8 @@ MINDSETHAPPYBOT - Callback query handlers
 Handles inline button presses and navigation
 """
 import logging
-import asyncio
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
-from aiogram.enums import ChatAction
 
 from aiogram.fsm.context import FSMContext
 
@@ -23,7 +21,6 @@ from src.bot.keyboards.inline import (
     get_language_keyboard,
     get_social_profile_keyboard,
     get_social_remove_keyboard,
-    get_pause_period_keyboard,
 )
 from src.bot.states.social_profile import SocialProfileStates
 from src.services.user_service import UserService
@@ -551,7 +548,7 @@ async def callback_set_timezone(callback: CallbackQuery) -> None:
                 reply_markup=get_settings_keyboard(language_code)
             )
             await callback.answer(get_system_message("saved", language_code))
-    except ValueError as e:
+    except ValueError:
         error_text = get_system_message("timezone_invalid", language_code)
         await callback.message.edit_text(
             error_text,
@@ -701,7 +698,6 @@ async def callback_social_back(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "settings_back")
 async def callback_settings_back(callback: CallbackQuery) -> None:
     """Go back to settings menu"""
-    from src.bot.handlers.commands import cmd_settings
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     language_code = user.language_code if user else "ru"
@@ -1163,7 +1159,7 @@ async def callback_menu_talk(callback: CallbackQuery) -> None:
     from src.services.dialog_service import DialogService
 
     language_code = await get_user_language(callback.from_user.id)
-    DialogService.get_instance().start_dialog(callback.from_user.id)
+    await DialogService.get_instance().start_dialog(callback.from_user.id)
     dialog_intro = get_system_message("dialog_intro", language_code)
     await callback.message.edit_text(dialog_intro, reply_markup=get_dialog_keyboard(language_code))
     await callback.answer()

@@ -7,8 +7,8 @@ All ranges are timezone-aware and return:
 - end: End of the period (23:59:59.999999 in user's timezone)
 """
 import logging
-from datetime import datetime, timedelta, time as dt_time, timezone as dt_timezone
-from typing import Tuple, Optional
+from datetime import datetime, timedelta, timezone as dt_timezone
+from typing import Optional
 from dataclasses import dataclass
 import calendar
 

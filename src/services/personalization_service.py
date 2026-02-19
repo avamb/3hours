@@ -20,7 +20,6 @@ from src.utils.text_filters import (
     FORBIDDEN_SYMBOLS_RULE_RU,
     apply_all_filters,
 )
-from src.utils.localization import get_language_code
 from src.services.api_usage_service import APIUsageService
 from src.services.knowledge_retrieval_service import (
     KnowledgeRetrievalService,
@@ -185,7 +184,7 @@ def _fallback_dialog_reply(user_message: str, address: str = "ты") -> str:
         [
             f"Поняла. Давай по делу: что именно {obj} сейчас нужно — совет, текст, список идей или просто поддержка? "
             f"Если опишешь в двух фразах контекст, я отвечу точнее.",
-            f"Ок. Я рядом. Скажи, какая сейчас главная мысль/вопрос — и я разложу это по полочкам в 4–5 предложениях.",
+            "Ок. Я рядом. Скажи, какая сейчас главная мысль/вопрос — и я разложу это по полочкам в 4–5 предложениях.",
             f"Слышу. Давай сделаем проще: {obj} сейчас нужно, чтобы я (а) объяснил(а), (б) предложил(а) варианты, "
             f"или (в) написал(а) вдохновляющий текст? Выбери один пункт.",
             f"Понял(а), {address}. Сейчас у меня временные ограничения, но я здесь. "

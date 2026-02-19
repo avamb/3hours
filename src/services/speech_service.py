@@ -4,7 +4,6 @@ Transcribes voice messages using OpenAI Whisper API
 """
 import logging
 import tempfile
-import os
 import time
 from typing import Optional, Tuple
 

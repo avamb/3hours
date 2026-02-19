@@ -48,6 +48,6 @@ class UserRepository:
     async def get_all_active(self) -> List[User]:
         """Get all users with notifications enabled"""
         result = await self.session.execute(
-            select(User).where(User.notifications_enabled == True)
+            select(User).where(User.notifications_enabled)
         )
         return list(result.scalars().all())

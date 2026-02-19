@@ -11,7 +11,6 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select, and_, or_, delete
 
 try:
@@ -20,7 +19,7 @@ except ImportError:
     from backports.zoneinfo import ZoneInfo
 
 from src.db.database import get_session
-from src.db.models import User, ScheduledNotification, QuestionTemplate, Conversation
+from src.db.models import User, ScheduledNotification, Conversation
 from src.bot.keyboards.inline import get_question_keyboard
 from src.services.conversation_log_service import ConversationLogService
 from src.services.memory_indexer_job import index_conversation_memories, create_dialog_summaries
@@ -257,9 +256,9 @@ class NotificationScheduler:
                 .join(User, ScheduledNotification.user_id == User.id)
                 .where(
                     and_(
-                        ScheduledNotification.sent == False,
+                        ScheduledNotification.sent.is_(False),
                         ScheduledNotification.scheduled_time <= utc_now,
-                        User.is_blocked == False,
+                        User.is_blocked.is_(False),
                         or_(
                             User.notifications_paused_until.is_(None),
                             User.notifications_paused_until <= utc_now,
@@ -423,7 +422,7 @@ class NotificationScheduler:
                                 delete(ScheduledNotification).where(
                                     and_(
                                         ScheduledNotification.user_id == user.id,
-                                        ScheduledNotification.sent == False,
+                                        ScheduledNotification.sent.is_(False),
                                     )
                                 )
                             )
@@ -445,7 +444,7 @@ class NotificationScheduler:
                             select(ScheduledNotification).where(
                                 and_(
                                     ScheduledNotification.user_id == user.id,
-                                    ScheduledNotification.sent == False,
+                                    ScheduledNotification.sent.is_(False),
                                 )
                             )
                         )
@@ -605,9 +604,9 @@ class NotificationScheduler:
             result = await session.execute(
                 select(User).where(
                     and_(
-                        User.notifications_enabled == True,
-                        User.onboarding_completed == True,
-                        User.is_blocked == False,
+                        User.notifications_enabled.is_(True),
+                        User.onboarding_completed.is_(True),
+                        User.is_blocked.is_(False),
                         or_(
                             User.notifications_paused_until.is_(None),
                             User.notifications_paused_until <= datetime.now(dt_timezone.utc),
@@ -636,7 +635,7 @@ class NotificationScheduler:
             .where(
                 and_(
                     ScheduledNotification.user_id == user.id,
-                    ScheduledNotification.sent == False,
+                    ScheduledNotification.sent.is_(False),
                     ScheduledNotification.scheduled_time > utc_now,
                 )
             )
@@ -714,9 +713,9 @@ class NotificationScheduler:
             result = await session.execute(
                 select(User).where(
                     and_(
-                        User.notifications_enabled == True,
-                        User.onboarding_completed == True,
-                        User.is_blocked == False,
+                        User.notifications_enabled.is_(True),
+                        User.onboarding_completed.is_(True),
+                        User.is_blocked.is_(False),
                         or_(
                             User.notifications_paused_until.is_(None),
                             User.notifications_paused_until <= datetime.now(dt_timezone.utc),
@@ -742,8 +741,13 @@ class NotificationScheduler:
                     if local_day_of_week == 6:
                         # Check if it's at least 10:00 local time
                         is_after_10am = local_hour > 10 or (local_hour == 10 and local_minute >= 0)
-                        
-                        if not is_after_10am:
+                        # If active hours end before 10:00, allow delivery in that window,
+                        # otherwise weekly summary may never be delivered.
+                        active_hours_end_before_10 = (
+                            (user.active_hours_end.hour, user.active_hours_end.minute) < (10, 0)
+                        )
+
+                        if not is_after_10am and not active_hours_end_before_10:
                             logger.debug(f"User {user.telegram_id} local time is {local_hour}:{local_minute:02d}, before 10:00, skipping weekly summary")
                             continue
 
@@ -862,13 +866,15 @@ class NotificationScheduler:
         week_start_utc = convert_to_utc(week_start, user.timezone)
 
         # Check if there's a weekly summary message this week using metadata
-        # Weekly summaries are logged with metadata={"source": "weekly_summary"}
+        # Weekly summaries are logged with metadata source:
+        # - weekly_summary
+        # - weekly_summary_fallback
         result = await session.execute(
             select(Conversation)
             .where(Conversation.user_id == user.id)
             .where(Conversation.created_at >= week_start_utc)
             .where(Conversation.message_type == 'bot_reply')
-            .where(text("metadata->>'source' = 'weekly_summary'"))
+            .where(text("metadata->>'source' IN ('weekly_summary', 'weekly_summary_fallback')"))
             .order_by(Conversation.created_at.desc())
             .limit(1)
         )
@@ -922,9 +928,9 @@ class NotificationScheduler:
             result = await session.execute(
                 select(User).where(
                     and_(
-                        User.notifications_enabled == True,
-                        User.onboarding_completed == True,
-                        User.is_blocked == False,
+                        User.notifications_enabled.is_(True),
+                        User.onboarding_completed.is_(True),
+                        User.is_blocked.is_(False),
                         or_(
                             User.notifications_paused_until.is_(None),
                             User.notifications_paused_until <= datetime.now(dt_timezone.utc),
@@ -955,7 +961,10 @@ class NotificationScheduler:
                                     f"Fallback: Weekly summary was not sent to user {user.telegram_id} on Sunday, "
                                     f"sending on Monday morning (local time: {user_local_now.strftime('%Y-%m-%d %H:%M')})"
                                 )
-                                summary = await summary_service.generate_weekly_summary(user.telegram_id)
+                                summary = await summary_service.generate_weekly_summary(
+                                    user.telegram_id,
+                                    use_previous_week=True,
+                                )
                                 if summary:
                                     await self.bot.send_message(
                                         chat_id=user.telegram_id,

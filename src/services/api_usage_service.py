@@ -272,18 +272,14 @@ def track_openai_usage(operation_type: str):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             start_time = time.time()
-            error_msg = None
-            success = True
 
             try:
                 result = await func(*args, **kwargs)
                 return result
-            except Exception as e:
-                error_msg = str(e)
-                success = False
+            except Exception:
                 raise
             finally:
-                duration_ms = int((time.time() - start_time) * 1000)
+                _duration_ms = int((time.time() - start_time) * 1000)
 
                 # Try to extract usage info from the result
                 # This depends on how OpenAI client returns data

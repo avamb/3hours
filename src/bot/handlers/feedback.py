@@ -9,15 +9,13 @@ from dataclasses import dataclass
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 
-from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import (
     get_feedback_category_keyboard,
-    get_feedback_confirm_keyboard,
     get_feedback_thanks_keyboard,
 )
 from src.services.feedback_service import FeedbackService
 from src.services.user_service import UserService
-from src.utils.localization import get_all_menu_button_texts, get_system_message
+from src.utils.localization import get_system_message
 
 logger = logging.getLogger(__name__)
 router = Router(name="feedback")

@@ -4,7 +4,7 @@ Handles text messages and voice messages from users
 """
 import logging
 from aiogram import Router, F
-from aiogram.types import Message, ContentType
+from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command, StateFilter
 from aiogram.enums import ChatAction
@@ -113,7 +113,6 @@ async def cancel_social_profile_state(message: Message, state: FSMContext) -> No
 async def handle_social_link_input(message: Message, state: FSMContext) -> None:
     """Handle social network link input"""
     from src.services.user_service import UserService
-    from src.utils.localization import get_menu_text
 
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
@@ -292,7 +291,7 @@ async def handle_voice_message(message: Message) -> None:
             metadata={"source": "voice", "voice_file_id": voice.file_id, "detected_language": detected_language},
         )
 
-        moment = await moment_service.create_moment(
+        await moment_service.create_moment(
             telegram_id=message.from_user.id,
             content=transcribed_text,
             source_type="voice",
@@ -572,7 +571,7 @@ async def handle_text_message(message: Message) -> None:
         )
     else:
         # Save as positive moment
-        moment = await moment_service.create_moment(
+        await moment_service.create_moment(
             telegram_id=message.from_user.id,
             content=text,
             source_type="text"

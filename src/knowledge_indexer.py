@@ -13,7 +13,7 @@ Run inside Docker bot container:
 
 import asyncio
 import logging
-from typing import Iterable, List, Optional, Tuple
+from typing import List, Tuple
 
 from sqlalchemy import text
 
