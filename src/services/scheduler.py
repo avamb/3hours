@@ -741,8 +741,13 @@ class NotificationScheduler:
                     if local_day_of_week == 6:
                         # Check if it's at least 10:00 local time
                         is_after_10am = local_hour > 10 or (local_hour == 10 and local_minute >= 0)
-                        
-                        if not is_after_10am:
+                        # If active hours end before 10:00, allow delivery in that window,
+                        # otherwise weekly summary may never be delivered.
+                        active_hours_end_before_10 = (
+                            (user.active_hours_end.hour, user.active_hours_end.minute) < (10, 0)
+                        )
+
+                        if not is_after_10am and not active_hours_end_before_10:
                             logger.debug(f"User {user.telegram_id} local time is {local_hour}:{local_minute:02d}, before 10:00, skipping weekly summary")
                             continue
 
@@ -861,13 +866,15 @@ class NotificationScheduler:
         week_start_utc = convert_to_utc(week_start, user.timezone)
 
         # Check if there's a weekly summary message this week using metadata
-        # Weekly summaries are logged with metadata={"source": "weekly_summary"}
+        # Weekly summaries are logged with metadata source:
+        # - weekly_summary
+        # - weekly_summary_fallback
         result = await session.execute(
             select(Conversation)
             .where(Conversation.user_id == user.id)
             .where(Conversation.created_at >= week_start_utc)
             .where(Conversation.message_type == 'bot_reply')
-            .where(text("metadata->>'source' = 'weekly_summary'"))
+            .where(text("metadata->>'source' IN ('weekly_summary', 'weekly_summary_fallback')"))
             .order_by(Conversation.created_at.desc())
             .limit(1)
         )
@@ -954,7 +961,10 @@ class NotificationScheduler:
                                     f"Fallback: Weekly summary was not sent to user {user.telegram_id} on Sunday, "
                                     f"sending on Monday morning (local time: {user_local_now.strftime('%Y-%m-%d %H:%M')})"
                                 )
-                                summary = await summary_service.generate_weekly_summary(user.telegram_id)
+                                summary = await summary_service.generate_weekly_summary(
+                                    user.telegram_id,
+                                    use_previous_week=True,
+                                )
                                 if summary:
                                     await self.bot.send_message(
                                         chat_id=user.telegram_id,

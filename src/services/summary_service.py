@@ -29,6 +29,7 @@ from src.utils.text_filters import (
 from src.utils.date_ranges import (
     get_today_range,
     get_week_range,
+    get_previous_week_range,
     get_month_range,
     format_summary_header,
 )
@@ -204,10 +205,13 @@ Be brief but warm (maximum 3-4 sentences).
     async def generate_weekly_summary(
         self,
         telegram_id: int,
+        use_previous_week: bool = False,
     ) -> Optional[str]:
         """
         Generate a weekly summary of user's positive moments.
-        Uses calendar-based range: Monday 00:00 to Sunday 23:59 in user's timezone.
+        Uses calendar-based range in user's timezone:
+        - current week (Mon-Sun) by default
+        - previous week (Mon-Sun) when use_previous_week=True
         """
         start_time = time.time()
         success = True
@@ -227,7 +231,11 @@ Be brief but warm (maximum 3-4 sentences).
                     return None
 
                 # Calculate week boundaries using user's timezone (calendar-based: Mon-Sun)
-                date_range = get_week_range(user.timezone)
+                date_range = (
+                    get_previous_week_range(user.timezone)
+                    if use_previous_week
+                    else get_week_range(user.timezone)
+                )
                 start_date = date_range.start_utc
                 end_date = date_range.end_utc
 
