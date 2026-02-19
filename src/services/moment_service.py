@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, timezone
 import random
 
 from sqlalchemy import select, func
-from sqlalchemy.orm import joinedload
 
 from src.db.database import get_session
 from src.db.models import Moment, User
@@ -181,7 +180,7 @@ class MomentService:
             count_result = await session.execute(
                 select(func.count(Moment.id)).where(Moment.user_id == user.id)
             )
-            count = count_result.scalar()
+            count = count_result.scalar() or 0
 
             if count == 0:
                 return None

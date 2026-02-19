@@ -12,11 +12,11 @@ All ranges are timezone-aware and respect user's timezone setting.
 import logging
 import time
 from typing import Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import Counter
 
 from openai import AsyncOpenAI
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, and_
 
 from src.config import get_settings
 from src.db.database import get_session
@@ -31,7 +31,6 @@ from src.utils.date_ranges import (
     get_week_range,
     get_month_range,
     format_summary_header,
-    DateRange,
 )
 from src.services.personalization_service import LANGUAGE_INSTRUCTION, PROMPT_PROTECTION, get_gender_instruction
 from src.services.api_usage_service import APIUsageService
@@ -244,23 +243,10 @@ Be brief but warm (maximum 3-4 sentences).
                     logger.info(f"No moments found for weekly summary for user {telegram_id}")
                     return None
 
-                result = await session.execute(
-                    select(UserStats).where(UserStats.user_id == user.id)
-                )
-                stats = result.scalar_one_or_none()
-
                 address = "вы" if user.formal_address else "ты"
                 name = user.first_name or "друг"
                 gender = user.gender if user.gender else "unknown"
                 gender_instruction = get_gender_instruction(gender)
-
-                all_topics = []
-                for m in moments:
-                    if m.topics:
-                        all_topics.extend(m.topics)
-
-                topic_counts = Counter(all_topics)
-                top_topics = [topic for topic, _ in topic_counts.most_common(5)]
 
                 moments_text = "\n".join([
                     f"- {m.content}" for m in moments[:15]
@@ -406,9 +392,6 @@ Be brief but warm (maximum 5-7 sentences).
 
                 topic_counts = Counter(all_topics)
                 top_topics = [topic for topic, _ in topic_counts.most_common(7)]
-
-                moods = [m.mood_score for m in moments if m.mood_score is not None]
-                avg_mood = sum(moods) / len(moods) if moods else None
 
                 sample_moments = moments[:20]
                 moments_text = "\n".join([

@@ -3,7 +3,7 @@ MINDSETHAPPYBOT - Dialog service
 Manages free dialog conversations and context
 """
 import logging
-from typing import List, Optional
+from typing import List
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, and_

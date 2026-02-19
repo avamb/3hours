@@ -11,7 +11,6 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramAPIError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select, and_, or_, delete
 
 try:
@@ -20,7 +19,7 @@ except ImportError:
     from backports.zoneinfo import ZoneInfo
 
 from src.db.database import get_session
-from src.db.models import User, ScheduledNotification, QuestionTemplate, Conversation
+from src.db.models import User, ScheduledNotification, Conversation
 from src.bot.keyboards.inline import get_question_keyboard
 from src.services.conversation_log_service import ConversationLogService
 from src.services.memory_indexer_job import index_conversation_memories, create_dialog_summaries
@@ -257,9 +256,9 @@ class NotificationScheduler:
                 .join(User, ScheduledNotification.user_id == User.id)
                 .where(
                     and_(
-                        ScheduledNotification.sent == False,
+                        ScheduledNotification.sent.is_(False),
                         ScheduledNotification.scheduled_time <= utc_now,
-                        User.is_blocked == False,
+                        User.is_blocked.is_(False),
                         or_(
                             User.notifications_paused_until.is_(None),
                             User.notifications_paused_until <= utc_now,
@@ -423,7 +422,7 @@ class NotificationScheduler:
                                 delete(ScheduledNotification).where(
                                     and_(
                                         ScheduledNotification.user_id == user.id,
-                                        ScheduledNotification.sent == False,
+                                        ScheduledNotification.sent.is_(False),
                                     )
                                 )
                             )
@@ -445,7 +444,7 @@ class NotificationScheduler:
                             select(ScheduledNotification).where(
                                 and_(
                                     ScheduledNotification.user_id == user.id,
-                                    ScheduledNotification.sent == False,
+                                    ScheduledNotification.sent.is_(False),
                                 )
                             )
                         )
@@ -605,9 +604,9 @@ class NotificationScheduler:
             result = await session.execute(
                 select(User).where(
                     and_(
-                        User.notifications_enabled == True,
-                        User.onboarding_completed == True,
-                        User.is_blocked == False,
+                        User.notifications_enabled.is_(True),
+                        User.onboarding_completed.is_(True),
+                        User.is_blocked.is_(False),
                         or_(
                             User.notifications_paused_until.is_(None),
                             User.notifications_paused_until <= datetime.now(dt_timezone.utc),
@@ -636,7 +635,7 @@ class NotificationScheduler:
             .where(
                 and_(
                     ScheduledNotification.user_id == user.id,
-                    ScheduledNotification.sent == False,
+                    ScheduledNotification.sent.is_(False),
                     ScheduledNotification.scheduled_time > utc_now,
                 )
             )
@@ -714,9 +713,9 @@ class NotificationScheduler:
             result = await session.execute(
                 select(User).where(
                     and_(
-                        User.notifications_enabled == True,
-                        User.onboarding_completed == True,
-                        User.is_blocked == False,
+                        User.notifications_enabled.is_(True),
+                        User.onboarding_completed.is_(True),
+                        User.is_blocked.is_(False),
                         or_(
                             User.notifications_paused_until.is_(None),
                             User.notifications_paused_until <= datetime.now(dt_timezone.utc),
@@ -922,9 +921,9 @@ class NotificationScheduler:
             result = await session.execute(
                 select(User).where(
                     and_(
-                        User.notifications_enabled == True,
-                        User.onboarding_completed == True,
-                        User.is_blocked == False,
+                        User.notifications_enabled.is_(True),
+                        User.onboarding_completed.is_(True),
+                        User.is_blocked.is_(False),
                         or_(
                             User.notifications_paused_until.is_(None),
                             User.notifications_paused_until <= datetime.now(dt_timezone.utc),

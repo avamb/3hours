@@ -44,7 +44,7 @@ class TestLocalizedWelcomeText:
 
     def test_russian_text_for_unknown_language(self):
         """Test that Russian is used as fallback for unknown languages"""
-        result = get_localized_welcome_text("User", "de")
+        result = get_localized_welcome_text("User", "xx")
         assert "Привет, User!" in result
 
     def test_russian_text_for_none_language(self):

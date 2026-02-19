@@ -6,13 +6,12 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from aiogram import Router, F
+from aiogram import Router
 from aiogram.types import Message, FSInputFile, URLInputFile
 from aiogram.filters import Command, CommandStart, CommandObject
 
 from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
-from src.db.repositories.user_repository import UserRepository
 from src.services.user_service import UserService
 from src.services.attribution_service import AttributionService
 from src.utils.localization import get_system_message, get_onboarding_text, get_language_code, t
@@ -114,7 +113,7 @@ def get_localized_welcome_back_text(first_name: str, language_code: str) -> str:
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, command: CommandObject) -> None:
+async def cmd_start(message: Message, command: Optional[CommandObject] = None) -> None:
     """
     Handle /start command
     - For new users: Start onboarding flow with welcome image
@@ -192,8 +191,6 @@ async def cmd_help(message: Message) -> None:
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
-    formal = user.formal_address if user else False
-
     # Build help text from localized messages
     help_title = get_system_message("help_title", language_code)
     help_start = get_system_message("help_start", language_code)
@@ -362,7 +359,7 @@ async def cmd_talk(message: Message) -> None:
         "но помни — все решения принимаешь ты сам. 💝\n\n"
         "Чтобы выйти из режима диалога, нажми кнопку ниже."
     )
-    DialogService.get_instance().start_dialog(message.from_user.id)
+    await DialogService.get_instance().start_dialog(message.from_user.id)
     await message.answer(dialog_intro, reply_markup=get_dialog_keyboard(language_code))
 
 

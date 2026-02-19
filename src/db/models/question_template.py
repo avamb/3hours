@@ -4,7 +4,7 @@ Stores question templates for various languages and contexts
 """
 from datetime import datetime, timezone
 
-from sqlalchemy import Integer, String, Text, Boolean, DateTime
+from sqlalchemy import String, Text, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import Base

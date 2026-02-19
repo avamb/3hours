@@ -6,7 +6,6 @@ import logging
 import json
 from datetime import datetime, timezone
 from typing import Optional
-import io
 
 from aiogram.types import BufferedInputFile
 from sqlalchemy import select, delete

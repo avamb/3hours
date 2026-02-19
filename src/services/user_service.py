@@ -5,7 +5,7 @@ Business logic for user management
 import logging
 import re
 from typing import Optional
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from aiogram.types import User as TelegramUser
 from sqlalchemy import select, and_, delete
@@ -207,7 +207,7 @@ class UserService:
                         delete(ScheduledNotification).where(
                             and_(
                                 ScheduledNotification.user_id == user.id,
-                                ScheduledNotification.sent == False,
+                                ScheduledNotification.sent.is_(False),
                             )
                         )
                     )

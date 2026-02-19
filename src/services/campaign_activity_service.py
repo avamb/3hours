@@ -5,8 +5,8 @@ Handles sending campaign messages when users become active
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
+from aiogram import Bot
 from sqlalchemy import text
 
 from src.db.database import get_session
@@ -50,7 +50,7 @@ class CampaignActivityDeliveryService:
     async def check_and_deliver_activity_campaigns(
         self,
         telegram_id: int,
-        bot: "aiogram.Bot"
+        bot: Bot
     ) -> int:
         """
         Check for activity-triggered campaigns and deliver pending messages.
