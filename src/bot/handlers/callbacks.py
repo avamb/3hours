@@ -3,6 +3,7 @@ MINDSETHAPPYBOT - Callback query handlers
 Handles inline button presses and navigation
 """
 import logging
+from datetime import datetime, timezone as dt_timezone
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 
@@ -27,6 +28,7 @@ from src.services.user_service import UserService
 from src.services.moment_service import MomentService
 from src.services.gdpr_service import GDPRService
 from src.services.social_profile_service import SocialProfileService
+from src.utils.date_ranges import parse_timezone
 from src.utils.localization import get_onboarding_text, get_system_message, get_menu_text, get_language_code
 
 logger = logging.getLogger(__name__)
@@ -38,6 +40,35 @@ async def get_user_language(telegram_id: int) -> str:
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(telegram_id)
     return get_language_code(user.language_code) if user else "ru"
+
+
+def _to_user_datetime(value: datetime, user_timezone: str) -> datetime:
+    """Convert stored UTC timestamp to user's local timezone."""
+    dt = value if value.tzinfo else value.replace(tzinfo=dt_timezone.utc)
+    return dt.astimezone(parse_timezone(user_timezone))
+
+
+def _system_message_or_fallback(
+    key: str,
+    language_code: str,
+    fallback: str,
+    **kwargs,
+) -> str:
+    """Return localized system message, or fallback when key is missing."""
+    value = get_system_message(key, language_code, **kwargs)
+    return fallback if not value or value == key else value
+
+
+def _period_label(period: str, language_code: str) -> str:
+    """Human period label for moments filter text."""
+    lang = get_language_code(language_code)
+    if period == "today":
+        return _system_message_or_fallback("period_today", language_code, "сегодня")
+    if period == "week":
+        return "last 7 days" if lang == "en" else "за последние 7 дней"
+    if period == "month":
+        return "last 30 days" if lang == "en" else "за последние 30 дней"
+    return period
 
 
 async def _complete_onboarding_flow(callback: CallbackQuery, language_code: str) -> None:
@@ -941,6 +972,8 @@ async def callback_menu_moments(callback: CallbackQuery) -> None:
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     moment_service = MomentService()
     moments = await moment_service.get_user_moments(
         telegram_id=callback.from_user.id,
@@ -957,7 +990,8 @@ async def callback_menu_moments(callback: CallbackQuery) -> None:
         title = get_system_message("moments_title", language_code)
         moments_text = f"{title}\n\n"
         for moment in moments:
-            date_str = moment.created_at.strftime("%d.%m.%Y")
+            local_dt = _to_user_datetime(moment.created_at, user.timezone if user else "UTC")
+            date_str = local_dt.strftime("%d.%m.%Y")
             content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
             moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
         await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
@@ -968,35 +1002,42 @@ async def callback_menu_moments(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "filter_today")
 async def callback_filter_today(callback: CallbackQuery) -> None:
     """Filter moments for today"""
-    from datetime import datetime, timedelta, timezone
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     moment_service = MomentService()
-    
-    # Get today's moments (last 24 hours)
-    # Use timezone-naive datetime for database compatibility
-    end_date = datetime.now(timezone.utc)
-    start_date = end_date - timedelta(days=1)
-    
-    moments = await moment_service.get_user_moments_by_date(
+
+    moments = await moment_service.get_user_moments(
         telegram_id=callback.from_user.id,
-        start_date=start_date,
-        end_date=end_date,
+        period="today",
         limit=10
     )
     
+    period_name = _period_label("today", language_code)
     if not moments:
-        empty_text = get_system_message("moments_empty_today", language_code) or "У тебя пока нет моментов за сегодня."
+        empty_text = _system_message_or_fallback(
+            "no_moments_period",
+            language_code,
+            f"📖 Нет моментов {period_name}.",
+            period=period_name,
+        )
         await callback.message.edit_text(
             empty_text,
             reply_markup=get_moments_keyboard(language_code=language_code)
         )
     else:
-        title = "📖 <b>Моменты за сегодня</b>\n\n"
-        moments_text = title
+        title = _system_message_or_fallback(
+            "moments_period_title",
+            language_code,
+            f"📖 <b>Моменты {period_name}</b>",
+            period=period_name,
+        )
+        moments_text = f"{title}\n\n"
         for moment in moments:
-            date_str = moment.created_at.strftime("%H:%M")
+            local_dt = _to_user_datetime(moment.created_at, user.timezone if user else "UTC")
+            date_str = local_dt.strftime("%H:%M")
             content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
             moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
         await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
@@ -1006,36 +1047,43 @@ async def callback_filter_today(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "filter_week")
 async def callback_filter_week(callback: CallbackQuery) -> None:
-    """Filter moments for last 7 days"""
-    from datetime import datetime, timedelta, timezone
+    """Filter moments for current calendar week"""
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     moment_service = MomentService()
-    
-    # Get week's moments (last 7 days)
-    # Use timezone-naive datetime for database compatibility
-    end_date = datetime.now(timezone.utc)
-    start_date = end_date - timedelta(days=7)
-    
-    moments = await moment_service.get_user_moments_by_date(
+
+    moments = await moment_service.get_user_moments(
         telegram_id=callback.from_user.id,
-        start_date=start_date,
-        end_date=end_date,
+        period="week",
         limit=15
     )
     
+    period_name = _period_label("week", language_code)
     if not moments:
-        empty_text = get_system_message("moments_empty_week", language_code) or "У тебя пока нет моментов за неделю."
+        empty_text = _system_message_or_fallback(
+            "no_moments_period",
+            language_code,
+            f"📖 Нет моментов {period_name}.",
+            period=period_name,
+        )
         await callback.message.edit_text(
             empty_text,
             reply_markup=get_moments_keyboard(language_code=language_code)
         )
     else:
-        title = "📖 <b>Моменты за неделю</b>\n\n"
-        moments_text = title
+        title = _system_message_or_fallback(
+            "moments_period_title",
+            language_code,
+            f"📖 <b>Моменты {period_name}</b>",
+            period=period_name,
+        )
+        moments_text = f"{title}\n\n"
         for moment in moments:
-            date_str = moment.created_at.strftime("%d.%m %H:%M")
+            local_dt = _to_user_datetime(moment.created_at, user.timezone if user else "UTC")
+            date_str = local_dt.strftime("%d.%m %H:%M")
             content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
             moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
         await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
@@ -1045,36 +1093,43 @@ async def callback_filter_week(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "filter_month")
 async def callback_filter_month(callback: CallbackQuery) -> None:
-    """Filter moments for last 30 days"""
-    from datetime import datetime, timedelta, timezone
+    """Filter moments for current calendar month"""
     from src.bot.keyboards.inline import get_moments_keyboard
 
     language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     moment_service = MomentService()
-    
-    # Get month's moments (last 30 days)
-    # Use timezone-naive datetime for database compatibility
-    end_date = datetime.now(timezone.utc)
-    start_date = end_date - timedelta(days=30)
-    
-    moments = await moment_service.get_user_moments_by_date(
+
+    moments = await moment_service.get_user_moments(
         telegram_id=callback.from_user.id,
-        start_date=start_date,
-        end_date=end_date,
+        period="month",
         limit=20
     )
     
+    period_name = _period_label("month", language_code)
     if not moments:
-        empty_text = get_system_message("moments_empty_month", language_code) or "У тебя пока нет моментов за месяц."
+        empty_text = _system_message_or_fallback(
+            "no_moments_period",
+            language_code,
+            f"📖 Нет моментов {period_name}.",
+            period=period_name,
+        )
         await callback.message.edit_text(
             empty_text,
             reply_markup=get_moments_keyboard(language_code=language_code)
         )
     else:
-        title = "📖 <b>Моменты за месяц</b>\n\n"
-        moments_text = title
+        title = _system_message_or_fallback(
+            "moments_period_title",
+            language_code,
+            f"📖 <b>Моменты {period_name}</b>",
+            period=period_name,
+        )
+        moments_text = f"{title}\n\n"
         for moment in moments:
-            date_str = moment.created_at.strftime("%d.%m")
+            local_dt = _to_user_datetime(moment.created_at, user.timezone if user else "UTC")
+            date_str = local_dt.strftime("%d.%m")
             content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
             moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
         await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))
@@ -1170,6 +1225,8 @@ async def callback_menu_talk(callback: CallbackQuery) -> None:
 async def callback_filter_moments(callback: CallbackQuery) -> None:
     """Filter moments by period"""
     language_code = await get_user_language(callback.from_user.id)
+    user_service = UserService()
+    user = await user_service.get_user_by_telegram_id(callback.from_user.id)
     period = callback.data.replace("filter_", "")
     moment_service = MomentService()
     moments = await moment_service.get_user_moments(
@@ -1192,7 +1249,8 @@ async def callback_filter_moments(callback: CallbackQuery) -> None:
         title = get_system_message("moments_period_title", language_code, period=period_name)
         moments_text = f"{title}\n\n"
         for moment in moments:
-            date_str = moment.created_at.strftime("%d.%m.%Y")
+            local_dt = _to_user_datetime(moment.created_at, user.timezone if user else "UTC")
+            date_str = local_dt.strftime("%d.%m.%Y")
             content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
             moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
         await callback.message.edit_text(moments_text, reply_markup=get_moments_keyboard(language_code=language_code))

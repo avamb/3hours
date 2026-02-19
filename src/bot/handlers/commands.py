@@ -3,6 +3,7 @@ MINDSETHAPPYBOT - Command handlers
 Handles all bot commands: /start, /help, /settings, /moments, /stats, etc.
 """
 import logging
+from datetime import datetime, timezone as dt_timezone
 from pathlib import Path
 from typing import Optional
 
@@ -15,6 +16,7 @@ from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keybo
 from src.services.user_service import UserService
 from src.services.attribution_service import AttributionService
 from src.utils.localization import get_system_message, get_onboarding_text, get_language_code, t
+from src.utils.date_ranges import parse_timezone
 
 logger = logging.getLogger(__name__)
 router = Router(name="commands")
@@ -25,6 +27,13 @@ WELCOME_IMAGE_URL = "https://images.unsplash.com/photo-1506905925346-21bda4d32df
 # Path to local welcome image (if exists)
 ASSETS_DIR = Path(__file__).parent.parent.parent.parent / "assets"
 WELCOME_IMAGE_PATH = ASSETS_DIR / "welcome.jpg"
+
+
+def _format_moment_date(created_at: datetime, user_timezone: Optional[str]) -> str:
+    """Format moment timestamp in user's local timezone."""
+    tz = parse_timezone(user_timezone)
+    dt = created_at if created_at.tzinfo else created_at.replace(tzinfo=dt_timezone.utc)
+    return dt.astimezone(tz).strftime("%d.%m.%Y")
 
 
 async def send_welcome_image(message: Message) -> bool:
@@ -304,7 +313,7 @@ async def cmd_moments(message: Message) -> None:
 
     moments_text = "📖 <b>Твои хорошие моменты</b>\n\n"
     for moment in moments:
-        date_str = moment.created_at.strftime("%d.%m.%Y")
+        date_str = _format_moment_date(moment.created_at, user.timezone if user else None)
         content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
         moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
 
