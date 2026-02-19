@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 # Maximum retry attempts for semantic anti-repeat
 MAX_SEMANTIC_RETRY_ATTEMPTS = 2
+# Auto-close stale talk mode after inactivity
+DEFAULT_DIALOG_STALE_MINUTES = 20
 
 
 class DialogService:
@@ -69,6 +71,56 @@ class DialogService:
                 user.is_in_dialog = False
                 await session.commit()
                 logger.info(f"Ended dialog for user {telegram_id}")
+
+    async def expire_stale_dialog(
+        self,
+        telegram_id: int,
+        stale_after_minutes: int = DEFAULT_DIALOG_STALE_MINUTES,
+    ) -> bool:
+        """
+        Auto-close dialog mode if there was no dialog activity for too long.
+
+        Returns:
+            True if dialog was auto-closed, False otherwise.
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+            if not user or not user.is_in_dialog:
+                return False
+
+            last_dialog_res = await session.execute(
+                select(Conversation.created_at)
+                .where(
+                    and_(
+                        Conversation.user_id == user.id,
+                        Conversation.message_type.in_(["free_dialog", "bot_reply"]),
+                    )
+                )
+                .order_by(Conversation.created_at.desc())
+                .limit(1)
+            )
+            last_dialog_activity = last_dialog_res.scalar_one_or_none()
+            reference_dt = last_dialog_activity or user.updated_at or user.created_at
+            if not reference_dt:
+                return False
+
+            now_utc = datetime.now(timezone.utc)
+            stale_since = now_utc - timedelta(minutes=stale_after_minutes)
+            is_stale = reference_dt <= stale_since
+            if not is_stale:
+                return False
+
+            user.is_in_dialog = False
+            await session.commit()
+            logger.info(
+                "Auto-ended stale dialog for user %s after %s minutes of inactivity",
+                telegram_id,
+                stale_after_minutes,
+            )
+            return True
 
     async def process_dialog_message(
         self,

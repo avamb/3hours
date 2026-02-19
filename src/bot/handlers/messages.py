@@ -409,18 +409,6 @@ async def handle_text_message(message: Message) -> None:
     if detected_lang:
         language_code = detected_lang
 
-    # Dialog mode: route to DialogService only when dialog mode is explicitly active.
-    if await dialog_service.is_in_dialog(message.from_user.id):
-        from src.bot.keyboards.inline import get_dialog_keyboard
-        # Show typing indicator while generating AI response
-        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-        response = await dialog_service.process_dialog_message(
-            telegram_id=message.from_user.id,
-            message=text,
-        )
-        await message.answer(response, reply_markup=get_dialog_keyboard(language_code))
-        return
-
     def _looks_like_question_or_request(t: str) -> bool:
         """
         Lightweight intent routing:
@@ -458,9 +446,6 @@ async def handle_text_message(message: Message) -> None:
             "вспомни",
         )
         if low.startswith(request_starts):
-            return True
-        # short "one-word" commands often mean a request ("планка", "балет", etc.)
-        if len(low.split()) <= 2 and len(low) <= 20:
             return True
         return False
 
@@ -502,6 +487,36 @@ async def handle_text_message(message: Message) -> None:
                 return "rag_mode" in meta or "retrieval_used" in meta
         except Exception:
             return False
+
+    # Safety: auto-close stale Talk mode so users don't get stuck in dialog flow.
+    await dialog_service.expire_stale_dialog(message.from_user.id)
+
+    # Dialog mode: route to DialogService only when dialog mode is explicitly active.
+    # To avoid losing user moments, still persist clearly "moment-like" texts.
+    if await dialog_service.is_in_dialog(message.from_user.id):
+        from src.bot.keyboards.inline import get_dialog_keyboard
+        moment_service = MomentService()
+
+        if not _looks_like_question_or_request(text):
+            await moment_service.create_moment(
+                telegram_id=message.from_user.id,
+                content=text,
+                source_type="text",
+            )
+            logger.info(
+                "Saved moment in dialog mode for user %s: %s",
+                message.from_user.id,
+                text[:100],
+            )
+
+        # Show typing indicator while generating AI response
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        response = await dialog_service.process_dialog_message(
+            telegram_id=message.from_user.id,
+            message=text,
+        )
+        await message.answer(response, reply_markup=get_dialog_keyboard(language_code))
+        return
 
     # Normal mode: if user asks a question/request, answer it directly (RAG dialog pipeline).
     if _looks_like_question_or_request(text) or await _should_continue_request_flow(message.from_user.id):
