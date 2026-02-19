@@ -38,12 +38,21 @@ async def index_conversation_memories() -> dict:
         return stats
 
     except Exception as e:
-        logger.error(f"Memory indexing job failed: {e}")
+        logger.error(
+            f"CRITICAL: Memory indexing job failed: {e}",
+            exc_info=True,
+            extra={
+                "job": "index_conversation_memories",
+                "error_type": type(e).__name__,
+            }
+        )
+        # TODO: Consider sending admin notification here
         return {
             "users_processed": 0,
             "conversations_processed": 0,
             "memories_stored": 0,
             "error": str(e),
+            "error_type": type(e).__name__,
         }
 
 
@@ -74,12 +83,21 @@ async def full_reindex_memories() -> dict:
         return stats
 
     except Exception as e:
-        logger.error(f"Full memory reindex failed: {e}")
+        logger.error(
+            f"CRITICAL: Full memory reindex failed: {e}",
+            exc_info=True,
+            extra={
+                "job": "full_reindex_memories",
+                "error_type": type(e).__name__,
+            }
+        )
+        # TODO: Consider sending admin notification here
         return {
             "users_processed": 0,
             "conversations_processed": 0,
             "memories_stored": 0,
             "error": str(e),
+            "error_type": type(e).__name__,
         }
 
 
@@ -112,9 +130,18 @@ async def create_dialog_summaries() -> dict:
         return stats
 
     except Exception as e:
-        logger.error(f"Dialog summary creation job failed: {e}")
+        logger.error(
+            f"CRITICAL: Dialog summary creation job failed: {e}",
+            exc_info=True,
+            extra={
+                "job": "create_dialog_summaries",
+                "error_type": type(e).__name__,
+            }
+        )
+        # TODO: Consider sending admin notification here
         return {
             "users_processed": 0,
             "summaries_created": 0,
             "error": str(e),
+            "error_type": type(e).__name__,
         }

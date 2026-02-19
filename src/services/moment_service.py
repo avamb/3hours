@@ -4,15 +4,15 @@ Business logic for managing positive moments
 """
 import logging
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 import random
 
 from sqlalchemy import select, func
-from sqlalchemy.orm import joinedload
 
 from src.db.database import get_session
 from src.db.models import Moment, User
 from src.services.embedding_service import EmbeddingService
+from src.utils.date_ranges import get_today_range, get_user_local_now
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,11 @@ class MomentService:
 
     def __init__(self):
         self.embedding_service = EmbeddingService()
+
+    @staticmethod
+    def _to_utc_naive(dt: datetime) -> datetime:
+        """Convert aware datetime to UTC naive for DB comparison."""
+        return dt.astimezone(dt_timezone.utc).replace(tzinfo=None)
 
     async def create_moment(
         self,
@@ -99,17 +104,29 @@ class MomentService:
             # Build query
             query = select(Moment).where(Moment.user_id == user.id)
 
-            # Apply period filter
-            now = datetime.utcnow()
+            # Apply period filter (calendar-based in user's timezone)
             if period == "today":
-                start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-                query = query.where(Moment.created_at >= start)
+                date_range = get_today_range(user.timezone)
+                query = query.where(
+                    Moment.created_at >= date_range.start_utc,
+                    Moment.created_at <= date_range.end_utc,
+                )
             elif period == "week":
-                start = now - timedelta(days=7)
-                query = query.where(Moment.created_at >= start)
+                # Rolling window: last 7 days in user's timezone
+                local_now = get_user_local_now(user.timezone)
+                start_local = local_now - timedelta(days=7)
+                query = query.where(
+                    Moment.created_at >= self._to_utc_naive(start_local),
+                    Moment.created_at <= self._to_utc_naive(local_now),
+                )
             elif period == "month":
-                start = now - timedelta(days=30)
-                query = query.where(Moment.created_at >= start)
+                # Rolling window: last 30 days in user's timezone
+                local_now = get_user_local_now(user.timezone)
+                start_local = local_now - timedelta(days=30)
+                query = query.where(
+                    Moment.created_at >= self._to_utc_naive(start_local),
+                    Moment.created_at <= self._to_utc_naive(local_now),
+                )
 
             # Order and paginate
             query = query.order_by(Moment.created_at.desc()).offset(offset).limit(limit)
@@ -180,7 +197,7 @@ class MomentService:
             count_result = await session.execute(
                 select(func.count(Moment.id)).where(Moment.user_id == user.id)
             )
-            count = count_result.scalar()
+            count = count_result.scalar() or 0
 
             if count == 0:
                 return None

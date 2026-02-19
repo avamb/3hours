@@ -3,8 +3,8 @@ MINDSETHAPPYBOT - Dialog service
 Manages free dialog conversations and context
 """
 import logging
-from typing import List, Optional
-from datetime import datetime, timedelta
+from typing import List
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, and_
 
@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 # Maximum retry attempts for semantic anti-repeat
 MAX_SEMANTIC_RETRY_ATTEMPTS = 2
+# Auto-close stale talk mode after inactivity
+DEFAULT_DIALOG_STALE_MINUTES = 20
 
 
 class DialogService:
@@ -28,29 +30,97 @@ class DialogService:
     def __init__(self):
         self.personalization_service = PersonalizationService()
         self.semantic_antirepeat = get_semantic_antirepeat_service()
-        # In-memory state for active dialog sessions
-        self._active_dialogs: dict[int, bool] = {}  # telegram_id -> is_active
+        # Dialog state is now stored in database (User.is_in_dialog)
 
     @classmethod
     def get_instance(cls) -> "DialogService":
-        """Get singleton instance to preserve in-memory dialog state within process."""
+        """Get singleton instance."""
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
 
-    def is_in_dialog(self, telegram_id: int) -> bool:
+    async def is_in_dialog(self, telegram_id: int) -> bool:
         """Check if user is in free dialog mode"""
-        return self._active_dialogs.get(telegram_id, False)
+        async with get_session() as session:
+            result = await session.execute(
+                select(User.is_in_dialog).where(User.telegram_id == telegram_id)
+            )
+            is_in_dialog = result.scalar()
+            return is_in_dialog if is_in_dialog is not None else False
 
-    def start_dialog(self, telegram_id: int) -> None:
+    async def start_dialog(self, telegram_id: int) -> None:
         """Start free dialog mode for user"""
-        self._active_dialogs[telegram_id] = True
-        logger.info(f"Started dialog for user {telegram_id}")
+        async with get_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+            if user:
+                user.is_in_dialog = True
+                await session.commit()
+                logger.info(f"Started dialog for user {telegram_id}")
 
-    def end_dialog(self, telegram_id: int) -> None:
+    async def end_dialog(self, telegram_id: int) -> None:
         """End free dialog mode for user"""
-        self._active_dialogs[telegram_id] = False
-        logger.info(f"Ended dialog for user {telegram_id}")
+        async with get_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+            if user:
+                user.is_in_dialog = False
+                await session.commit()
+                logger.info(f"Ended dialog for user {telegram_id}")
+
+    async def expire_stale_dialog(
+        self,
+        telegram_id: int,
+        stale_after_minutes: int = DEFAULT_DIALOG_STALE_MINUTES,
+    ) -> bool:
+        """
+        Auto-close dialog mode if there was no dialog activity for too long.
+
+        Returns:
+            True if dialog was auto-closed, False otherwise.
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+            if not user or not user.is_in_dialog:
+                return False
+
+            last_dialog_res = await session.execute(
+                select(Conversation.created_at)
+                .where(
+                    and_(
+                        Conversation.user_id == user.id,
+                        Conversation.message_type.in_(["free_dialog", "bot_reply"]),
+                    )
+                )
+                .order_by(Conversation.created_at.desc())
+                .limit(1)
+            )
+            last_dialog_activity = last_dialog_res.scalar_one_or_none()
+            reference_dt = last_dialog_activity or user.updated_at or user.created_at
+            if not reference_dt:
+                return False
+
+            now_utc = datetime.now(timezone.utc)
+            stale_since = now_utc - timedelta(minutes=stale_after_minutes)
+            is_stale = reference_dt <= stale_since
+            if not is_stale:
+                return False
+
+            user.is_in_dialog = False
+            await session.commit()
+            logger.info(
+                "Auto-ended stale dialog for user %s after %s minutes of inactivity",
+                telegram_id,
+                stale_after_minutes,
+            )
+            return True
 
     async def process_dialog_message(
         self,
@@ -201,7 +271,8 @@ class DialogService:
 
             # Get recent conversations (last 24 hours for better context)
             # Extended from 1 hour to 24 hours to avoid empty context after restarts
-            one_day_ago = datetime.utcnow() - timedelta(hours=24)
+            # Use timezone-naive datetime for database compatibility
+            one_day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
 
             result = await session.execute(
                 select(Conversation)

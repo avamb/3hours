@@ -11,6 +11,7 @@ from src.db.models.system_log import SystemLog
 from src.db.models.social_profile import SocialProfile
 from src.db.models.api_usage import APIUsage
 from src.db.models.prompt_template import PromptTemplate
+from src.db.models.start_event import StartEvent
 
 __all__ = [
     "User",
@@ -25,4 +26,5 @@ __all__ = [
     "SocialProfile",
     "APIUsage",
     "PromptTemplate",
+    "StartEvent",
 ]

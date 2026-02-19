@@ -9,15 +9,13 @@ from dataclasses import dataclass
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 
-from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import (
     get_feedback_category_keyboard,
-    get_feedback_confirm_keyboard,
     get_feedback_thanks_keyboard,
 )
 from src.services.feedback_service import FeedbackService
 from src.services.user_service import UserService
-from src.utils.localization import get_all_menu_button_texts, get_system_message
+from src.utils.localization import get_system_message
 
 logger = logging.getLogger(__name__)
 router = Router(name="feedback")
@@ -265,7 +263,13 @@ async def handle_feedback_text(message: Message) -> bool:
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
     formal = user.formal_address if user else False
-    
+
+    # Check if message contains text
+    if not message.text:
+        text_only = get_system_message("please_send_text", language_code)
+        await message.answer(text_only)
+        return True
+
     content = message.text.strip()
     if not content:
         empty_text = get_system_message("feedback_empty_formal" if formal else "feedback_empty", language_code, formal=formal)

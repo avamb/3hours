@@ -11,12 +11,10 @@ Features:
 import logging
 import time
 from typing import Optional, Dict, List, Any, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass
-from functools import lru_cache
 
 from sqlalchemy import select, and_, func, desc
-from sqlalchemy.orm import Session
 
 from src.db.database import get_session
 from src.db.models import PromptTemplate
@@ -146,7 +144,7 @@ class PromptLoaderService:
 
         async with get_session() as session:
             result = await session.execute(
-                select(PromptTemplate).where(PromptTemplate.is_active == True)
+                select(PromptTemplate).where(PromptTemplate.is_active)
             )
             prompts = result.scalars().all()
 
@@ -179,7 +177,7 @@ class PromptLoaderService:
                 .where(
                     and_(
                         PromptTemplate.key == key,
-                        PromptTemplate.is_active == True,
+                        PromptTemplate.is_active,
                     )
                 )
                 .limit(1)
@@ -228,7 +226,7 @@ class PromptLoaderService:
                     .where(
                         and_(
                             PromptTemplate.key == key,
-                            PromptTemplate.is_active == True,
+                            PromptTemplate.is_active,
                         )
                     )
                     .limit(1)
@@ -288,8 +286,8 @@ class PromptLoaderService:
                     content=DEFAULT_PROMPTS[key],
                     is_active=True,  # Virtual default is "active"
                     notes="System default (readonly)",
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
                 ))
 
             return versions
@@ -323,7 +321,7 @@ class PromptLoaderService:
                     .where(
                         and_(
                             PromptTemplate.key == key,
-                            PromptTemplate.is_active == True,
+                            PromptTemplate.is_active,
                         )
                     )
                 )
@@ -334,7 +332,7 @@ class PromptLoaderService:
                     .where(
                         and_(
                             PromptTemplate.key == key,
-                            PromptTemplate.is_active == True,
+                            PromptTemplate.is_active,
                         )
                     )
                     .values(is_active=False)
@@ -399,7 +397,7 @@ class PromptLoaderService:
                 .where(
                     and_(
                         PromptTemplate.key == key,
-                        PromptTemplate.is_active == True,
+                        PromptTemplate.is_active,
                     )
                 )
                 .values(is_active=False)
@@ -444,7 +442,7 @@ class PromptLoaderService:
                 .where(
                     and_(
                         PromptTemplate.key == key,
-                        PromptTemplate.is_active == True,
+                        PromptTemplate.is_active,
                     )
                 )
                 .values(is_active=False)

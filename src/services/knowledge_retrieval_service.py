@@ -18,16 +18,16 @@ import logging
 import hashlib
 import re
 import time
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from openai import AsyncOpenAI
 from sqlalchemy import text, select, and_
 
 from src.config import get_settings
 from src.db.database import get_session
-from src.db.models import User, Moment, Conversation
+from src.db.models import User, Conversation
 from src.services.embedding_service import EmbeddingService
 from src.services.api_usage_service import APIUsageService
 from src.services.conversation_memory_service import (
@@ -314,7 +314,7 @@ Reply with ONLY a single letter: A, B, or C."""
 
             # Filter by threshold and apply recency boost
             moments = []
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             recency_cutoff = now - timedelta(days=RECENCY_BOOST_DAYS)
 
             for row in rows:

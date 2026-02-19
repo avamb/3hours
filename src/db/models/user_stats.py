@@ -2,7 +2,7 @@
 MINDSETHAPPYBOT - UserStats model
 Stores aggregated statistics for each user
 """
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional
 
 from sqlalchemy import Integer, DateTime, Date, ForeignKey
@@ -23,7 +23,7 @@ class UserStats(Base):
     total_questions_sent: Mapped[int] = mapped_column(Integer, default=0)
     total_questions_answered: Mapped[int] = mapped_column(Integer, default=0)
     last_response_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
     user = relationship("User", back_populates="stats")

@@ -8,7 +8,6 @@ rather than waiting for the scheduled batch job.
 
 import logging
 import asyncio
-from typing import Optional
 
 from src.db.models import Conversation
 

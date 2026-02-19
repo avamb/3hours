@@ -3,17 +3,20 @@ MINDSETHAPPYBOT - Command handlers
 Handles all bot commands: /start, /help, /settings, /moments, /stats, etc.
 """
 import logging
+from datetime import datetime, timezone as dt_timezone
 from pathlib import Path
+from typing import Optional
 
-from aiogram import Router, F
+from aiogram import Router
 from aiogram.types import Message, FSInputFile, URLInputFile
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command, CommandStart, CommandObject
 
 from src.bot.keyboards.reply import get_main_menu_keyboard
 from src.bot.keyboards.inline import get_settings_keyboard, get_onboarding_keyboard
-from src.db.repositories.user_repository import UserRepository
 from src.services.user_service import UserService
+from src.services.attribution_service import AttributionService
 from src.utils.localization import get_system_message, get_onboarding_text, get_language_code, t
+from src.utils.date_ranges import parse_timezone
 
 logger = logging.getLogger(__name__)
 router = Router(name="commands")
@@ -24,6 +27,13 @@ WELCOME_IMAGE_URL = "https://images.unsplash.com/photo-1506905925346-21bda4d32df
 # Path to local welcome image (if exists)
 ASSETS_DIR = Path(__file__).parent.parent.parent.parent / "assets"
 WELCOME_IMAGE_PATH = ASSETS_DIR / "welcome.jpg"
+
+
+def _format_moment_date(created_at: datetime, user_timezone: Optional[str]) -> str:
+    """Format moment timestamp in user's local timezone."""
+    tz = parse_timezone(user_timezone)
+    dt = created_at if created_at.tzinfo else created_at.replace(tzinfo=dt_timezone.utc)
+    return dt.astimezone(tz).strftime("%d.%m.%Y")
 
 
 async def send_welcome_image(message: Message) -> bool:
@@ -112,35 +122,76 @@ def get_localized_welcome_back_text(first_name: str, language_code: str) -> str:
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message) -> None:
+async def cmd_start(message: Message, command: Optional[CommandObject] = None) -> None:
     """
     Handle /start command
     - For new users: Start onboarding flow with welcome image
     - For existing users: Show welcome back message
+    - Captures deep link payload for attribution tracking
     """
-    user_service = UserService()
-    user = await user_service.get_or_create_user(message.from_user)
-    language_code = get_language_code(user.language_code) if user else "ru"
+    try:
+        # Extract deep link payload (e.g., from t.me/bot?start=reddit_campaign)
+        deep_link_payload: Optional[str] = command.args if command else None
 
-    if not user.onboarding_completed:
-        # New user - send welcome image first
-        await send_welcome_image(message)
-
-        # Get localized welcome text based on user's language
-        welcome_text = get_localized_welcome_text(user.first_name, language_code)
-
-        await message.answer(
-            welcome_text,
-            reply_markup=get_onboarding_keyboard(language_code)
+        logger.info(
+            f"Start command received from user {message.from_user.id} "
+            f"(@{message.from_user.username}), payload={deep_link_payload}"
         )
-    else:
-        # Existing user - welcome back
-        welcome_back_text = get_localized_welcome_back_text(user.first_name, language_code)
 
-        await message.answer(
-            welcome_back_text,
-            reply_markup=get_main_menu_keyboard(language_code)
-        )
+        user_service = UserService()
+        user = await user_service.get_or_create_user(message.from_user)
+        logger.info(f"User {message.from_user.id}: onboarding_completed={user.onboarding_completed}, language={user.language_code}")
+
+        # Record attribution (always, for both new and returning users)
+        try:
+            attribution_service = AttributionService()
+            await attribution_service.record_start_event(
+                user_id=user.id,
+                telegram_id=message.from_user.id,
+                payload=deep_link_payload,
+            )
+        except Exception as attr_error:
+            # Attribution tracking should never block the main flow
+            logger.warning(f"Attribution tracking failed: {attr_error}")
+
+        language_code = get_language_code(user.language_code) if user else "ru"
+
+        if not user.onboarding_completed:
+            logger.info(f"Starting onboarding for new user {message.from_user.id}")
+
+            # New user - send welcome image first
+            image_sent = await send_welcome_image(message)
+            logger.info(f"Welcome image sent: {image_sent}")
+
+            # Get localized welcome text based on user's language
+            welcome_text = get_localized_welcome_text(user.first_name, language_code)
+            logger.info(f"Sending welcome text with onboarding keyboard for user {message.from_user.id}")
+
+            await message.answer(
+                welcome_text,
+                reply_markup=get_onboarding_keyboard(language_code)
+            )
+            logger.info(f"Onboarding message sent successfully to user {message.from_user.id}")
+        else:
+            logger.info(f"Welcome back existing user {message.from_user.id}")
+
+            # Existing user - welcome back
+            welcome_back_text = get_localized_welcome_back_text(user.first_name, language_code)
+
+            await message.answer(
+                welcome_back_text,
+                reply_markup=get_main_menu_keyboard(language_code)
+            )
+            logger.info(f"Welcome back message sent successfully to user {message.from_user.id}")
+    except Exception as e:
+        logger.error(f"Error in /start command for user {message.from_user.id}: {e}", exc_info=True)
+        try:
+            await message.answer(
+                "❌ An error occurred. Please try again later or contact support.",
+                reply_markup=get_main_menu_keyboard("en")
+            )
+        except Exception as fallback_error:
+            logger.error(f"Failed to send error message: {fallback_error}", exc_info=True)
 
 
 @router.message(Command("help"))
@@ -149,8 +200,6 @@ async def cmd_help(message: Message) -> None:
     user_service = UserService()
     user = await user_service.get_user_by_telegram_id(message.from_user.id)
     language_code = user.language_code if user else "ru"
-    formal = user.formal_address if user else False
-
     # Build help text from localized messages
     help_title = get_system_message("help_title", language_code)
     help_start = get_system_message("help_start", language_code)
@@ -264,7 +313,7 @@ async def cmd_moments(message: Message) -> None:
 
     moments_text = "📖 <b>Твои хорошие моменты</b>\n\n"
     for moment in moments:
-        date_str = moment.created_at.strftime("%d.%m.%Y")
+        date_str = _format_moment_date(moment.created_at, user.timezone if user else None)
         content_preview = moment.content[:100] + "..." if len(moment.content) > 100 else moment.content
         moments_text += f"🌟 <i>{date_str}</i>\n{content_preview}\n\n"
 
@@ -319,7 +368,7 @@ async def cmd_talk(message: Message) -> None:
         "но помни — все решения принимаешь ты сам. 💝\n\n"
         "Чтобы выйти из режима диалога, нажми кнопку ниже."
     )
-    DialogService.get_instance().start_dialog(message.from_user.id)
+    await DialogService.get_instance().start_dialog(message.from_user.id)
     await message.answer(dialog_intro, reply_markup=get_dialog_keyboard(language_code))
 
 

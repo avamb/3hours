@@ -79,8 +79,6 @@ def test_get_language_code_normalize() -> None:
 @pytest.mark.parametrize("lang", SUPPORTED_LANGUAGES)
 def test_address_buttons_differ_from_ru_when_not_ru(lang: str) -> None:
     """If we have explicit onboarding for lang, address buttons are localized (not ru)."""
-    ru_informal = get_onboarding_text("address_informal_button", "ru")
-    ru_formal = get_onboarding_text("address_formal_button", "ru")
     lang_informal = get_onboarding_text("address_informal_button", lang)
     lang_formal = get_onboarding_text("address_formal_button", lang)
     if lang == "ru":
@@ -88,7 +86,6 @@ def test_address_buttons_differ_from_ru_when_not_ru(lang: str) -> None:
     # Fallback to ru means same as ru. We want at least one of informal/formal
     # to differ when we have proper onboarding for that lang.
     # If both equal to ru, we're fallback-only (no onboarding for lang).
-    same_as_ru = (lang_informal == ru_informal) and (lang_formal == ru_formal)
     # Currently es, de, fr, pt, it, zh, ja lack ONBOARDING_TEXTS -> same_as_ru True.
     # After we add them, same_as_ru should be False for those.
     assert isinstance(lang_informal, str) and isinstance(lang_formal, str)

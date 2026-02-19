@@ -15,9 +15,9 @@ import hashlib
 import re
 import time
 import json
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Optional, Dict, Tuple
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 
 from openai import AsyncOpenAI
 from sqlalchemy import select, and_, text
@@ -529,7 +529,7 @@ If message is just greeting/pleasantry/question with no personal facts, return:
         """
         async with get_session() as session:
             result = await session.execute(
-                select(User).where(User.onboarding_completed == True)
+                select(User).where(User.onboarding_completed)
             )
             users = result.scalars().all()
 
@@ -698,11 +698,11 @@ If message is just greeting/pleasantry/question with no personal facts, return:
             rows = result.fetchall()
 
             if not rows:
-                return [], datetime.utcnow()
+                return [], datetime.now(timezone.utc)
 
             # Map to ConversationMemory objects
             memories = []
-            oldest_time = datetime.utcnow()
+            oldest_time = datetime.now(timezone.utc)
 
             for row in rows:
                 mem = ConversationMemory(
@@ -742,7 +742,7 @@ If message is just greeting/pleasantry/question with no personal facts, return:
             return True, memories[:SUMMARY_BATCH_SIZE]
 
         # Check if oldest message is old enough
-        age_hours = (datetime.utcnow() - oldest_time).total_seconds() / 3600
+        age_hours = (datetime.now(timezone.utc) - oldest_time).total_seconds() / 3600
         if age_hours >= SUMMARY_MAX_AGE_HOURS:
             return True, memories
 
@@ -898,7 +898,7 @@ OUTPUT: A single paragraph summarizing the user's messages."""
         # Create embedding for summary
         embedding = await self.embedding_service.create_embedding(summary_text)
         if not embedding:
-            logger.error(f"Failed to create embedding for summary")
+            logger.error("Failed to create embedding for summary")
             return None
 
         # Store summary
@@ -921,7 +921,7 @@ OUTPUT: A single paragraph summarizing the user's messages."""
         """
         async with get_session() as session:
             result = await session.execute(
-                select(User).where(User.onboarding_completed == True)
+                select(User).where(User.onboarding_completed)
             )
             users = result.scalars().all()
 

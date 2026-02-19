@@ -20,7 +20,6 @@ from src.utils.text_filters import (
     FORBIDDEN_SYMBOLS_RULE_RU,
     apply_all_filters,
 )
-from src.utils.localization import get_language_code
 from src.services.api_usage_service import APIUsageService
 from src.services.knowledge_retrieval_service import (
     KnowledgeRetrievalService,
@@ -185,7 +184,7 @@ def _fallback_dialog_reply(user_message: str, address: str = "ты") -> str:
         [
             f"Поняла. Давай по делу: что именно {obj} сейчас нужно — совет, текст, список идей или просто поддержка? "
             f"Если опишешь в двух фразах контекст, я отвечу точнее.",
-            f"Ок. Я рядом. Скажи, какая сейчас главная мысль/вопрос — и я разложу это по полочкам в 4–5 предложениях.",
+            "Ок. Я рядом. Скажи, какая сейчас главная мысль/вопрос — и я разложу это по полочкам в 4–5 предложениях.",
             f"Слышу. Давай сделаем проще: {obj} сейчас нужно, чтобы я (а) объяснил(а), (б) предложил(а) варианты, "
             f"или (в) написал(а) вдохновляющий текст? Выбери один пункт.",
             f"Понял(а), {address}. Сейчас у меня временные ограничения, но я здесь. "
@@ -580,6 +579,7 @@ Do NOT ask questions. Use 0-2 emojis max.
         telegram_id: int,
         current_text: str,
         past_moments: List[Moment],
+        override_language: str = None,
     ) -> str:
         """
         Generate supportive response that reminds about past positive moments
@@ -605,6 +605,32 @@ Do NOT ask questions. Use 0-2 emojis max.
             # Load prompt protection (from DB or use default)
             prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
+            # Build language instruction - use override if provided
+            if override_language:
+                # Force specific language for response (used for voice messages)
+                language_names = {
+                    'ru': 'Russian/Русский',
+                    'en': 'English',
+                    'uk': 'Ukrainian/Українська',
+                    'es': 'Spanish/Español',
+                    'de': 'German/Deutsch',
+                    'fr': 'French/Français',
+                    'it': 'Italian/Italiano',
+                    'pt': 'Portuguese/Português',
+                    'he': 'Hebrew/עברית',
+                    'ja': 'Japanese/日本語',
+                    'zh': 'Chinese/中文',
+                }
+                lang_name = language_names.get(override_language, override_language)
+                language_instruction = f"""
+⚠️ CRITICAL LANGUAGE RULE - HIGHEST PRIORITY ⚠️
+You MUST respond ONLY in {lang_name}.
+Your response MUST be in {lang_name} - NO OTHER LANGUAGE.
+This rule has ABSOLUTE PRIORITY over any other instructions.
+"""
+            else:
+                language_instruction = LANGUAGE_INSTRUCTION
+
             # Format past moments
             past_moments_text = "\n".join([
                 f"- {m.content[:100]}" for m in past_moments[:3]
@@ -615,7 +641,7 @@ Do NOT ask questions. Use 0-2 emojis max.
                 messages=[
                     {
                         "role": "system",
-                        "content": f"""{LANGUAGE_INSTRUCTION}
+                        "content": f"""{language_instruction}
 
 {prompt_protection}
 
@@ -693,6 +719,7 @@ User's past good moments / Прошлые хорошие моменты поль
         self,
         telegram_id: int,
         text: str,
+        override_language: str = None,
     ) -> str:
         """
         Generate empathetic response when no past moments available
@@ -717,12 +744,38 @@ User's past good moments / Прошлые хорошие моменты поль
             # Load prompt protection (from DB or use default)
             prompt_protection = await PromptLoaderService.get_prompt("prompt_protection") or PROMPT_PROTECTION
 
+            # Build language instruction - use override if provided
+            if override_language:
+                # Force specific language for response (used for voice messages)
+                language_names = {
+                    'ru': 'Russian/Русский',
+                    'en': 'English',
+                    'uk': 'Ukrainian/Українська',
+                    'es': 'Spanish/Español',
+                    'de': 'German/Deutsch',
+                    'fr': 'French/Français',
+                    'it': 'Italian/Italiano',
+                    'pt': 'Portuguese/Português',
+                    'he': 'Hebrew/עברית',
+                    'ja': 'Japanese/日本語',
+                    'zh': 'Chinese/中文',
+                }
+                lang_name = language_names.get(override_language, override_language)
+                language_instruction = f"""
+⚠️ CRITICAL LANGUAGE RULE - HIGHEST PRIORITY ⚠️
+You MUST respond ONLY in {lang_name}.
+Your response MUST be in {lang_name} - NO OTHER LANGUAGE.
+This rule has ABSOLUTE PRIORITY over any other instructions.
+"""
+            else:
+                language_instruction = LANGUAGE_INSTRUCTION
+
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {
                         "role": "system",
-                        "content": f"""{LANGUAGE_INSTRUCTION}
+                        "content": f"""{language_instruction}
 
 {prompt_protection}
 

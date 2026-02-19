@@ -4,9 +4,8 @@ Handles data export and deletion for GDPR compliance
 """
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
-import io
 
 from aiogram.types import BufferedInputFile
 from sqlalchemy import select, delete
@@ -39,7 +38,7 @@ class GDPRService:
 
             # Collect all data
             export_data = {
-                "export_date": datetime.utcnow().isoformat(),
+                "export_date": datetime.now(timezone.utc).isoformat(),
                 "user": {
                     "telegram_id": user.telegram_id,
                     "username": user.username,
@@ -108,7 +107,7 @@ class GDPRService:
             json_data = json.dumps(export_data, ensure_ascii=False, indent=2)
             file_bytes = json_data.encode("utf-8")
 
-            filename = f"mindsethappybot_data_{telegram_id}_{datetime.utcnow().strftime('%Y%m%d')}.json"
+            filename = f"mindsethappybot_data_{telegram_id}_{datetime.now(timezone.utc).strftime('%Y%m%d')}.json"
 
             return BufferedInputFile(file_bytes, filename=filename)
 
@@ -119,6 +118,7 @@ class GDPRService:
         Returns:
             True if deletion was successful, False if user not found
         """
+        logger.info(f"Starting GDPR data deletion for telegram_id={telegram_id}")
         async with get_session() as session:
             # Get user
             result = await session.execute(
@@ -127,15 +127,17 @@ class GDPRService:
             user = result.scalar_one_or_none()
 
             if not user:
+                logger.warning(f"User {telegram_id} not found for deletion")
                 return False
 
             user_id = user.id
+            logger.info(f"Found user with id={user_id} for telegram_id={telegram_id}")
 
             # Delete in order (respecting foreign keys)
             # Note: With ON DELETE CASCADE, we only need to delete the user
 
             # But let's be explicit for logging purposes
-            logger.info(f"Deleting all data for user {telegram_id}")
+            logger.info(f"Deleting all data for user {telegram_id} (user_id={user_id})")
 
             # Delete scheduled notifications
             await session.execute(
