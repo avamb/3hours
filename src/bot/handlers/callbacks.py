@@ -59,6 +59,18 @@ def _system_message_or_fallback(
     return fallback if not value or value == key else value
 
 
+def _period_label(period: str, language_code: str) -> str:
+    """Human period label for moments filter text."""
+    lang = get_language_code(language_code)
+    if period == "today":
+        return _system_message_or_fallback("period_today", language_code, "сегодня")
+    if period == "week":
+        return "last 7 days" if lang == "en" else "за последние 7 дней"
+    if period == "month":
+        return "last 30 days" if lang == "en" else "за последние 30 дней"
+    return period
+
+
 async def _complete_onboarding_flow(callback: CallbackQuery, language_code: str) -> None:
     """Complete onboarding and send first question"""
     user_service = UserService()
@@ -1003,7 +1015,7 @@ async def callback_filter_today(callback: CallbackQuery) -> None:
         limit=10
     )
     
-    period_name = _system_message_or_fallback("period_today", language_code, "сегодня")
+    period_name = _period_label("today", language_code)
     if not moments:
         empty_text = _system_message_or_fallback(
             "no_moments_period",
@@ -1049,7 +1061,7 @@ async def callback_filter_week(callback: CallbackQuery) -> None:
         limit=15
     )
     
-    period_name = _system_message_or_fallback("period_week", language_code, "за неделю")
+    period_name = _period_label("week", language_code)
     if not moments:
         empty_text = _system_message_or_fallback(
             "no_moments_period",
@@ -1095,7 +1107,7 @@ async def callback_filter_month(callback: CallbackQuery) -> None:
         limit=20
     )
     
-    period_name = _system_message_or_fallback("period_month", language_code, "за месяц")
+    period_name = _period_label("month", language_code)
     if not moments:
         empty_text = _system_message_or_fallback(
             "no_moments_period",
