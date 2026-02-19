@@ -4,7 +4,7 @@ Business logic for managing positive moments
 """
 import logging
 from typing import List, Optional
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import random
 
 from sqlalchemy import select, func
@@ -12,6 +12,7 @@ from sqlalchemy import select, func
 from src.db.database import get_session
 from src.db.models import Moment, User
 from src.services.embedding_service import EmbeddingService
+from src.utils.date_ranges import get_month_range, get_today_range, get_week_range
 
 logger = logging.getLogger(__name__)
 
@@ -98,18 +99,25 @@ class MomentService:
             # Build query
             query = select(Moment).where(Moment.user_id == user.id)
 
-            # Apply period filter
-            # Use timezone-naive datetime for database compatibility
-            now = datetime.now(timezone.utc)
+            # Apply period filter (calendar-based in user's timezone)
             if period == "today":
-                start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-                query = query.where(Moment.created_at >= start)
+                date_range = get_today_range(user.timezone)
+                query = query.where(
+                    Moment.created_at >= date_range.start_utc,
+                    Moment.created_at <= date_range.end_utc,
+                )
             elif period == "week":
-                start = now - timedelta(days=7)
-                query = query.where(Moment.created_at >= start)
+                date_range = get_week_range(user.timezone)
+                query = query.where(
+                    Moment.created_at >= date_range.start_utc,
+                    Moment.created_at <= date_range.end_utc,
+                )
             elif period == "month":
-                start = now - timedelta(days=30)
-                query = query.where(Moment.created_at >= start)
+                date_range = get_month_range(user.timezone)
+                query = query.where(
+                    Moment.created_at >= date_range.start_utc,
+                    Moment.created_at <= date_range.end_utc,
+                )
 
             # Order and paginate
             query = query.order_by(Moment.created_at.desc()).offset(offset).limit(limit)
