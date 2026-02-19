@@ -48,6 +48,17 @@ def _to_user_datetime(value: datetime, user_timezone: str) -> datetime:
     return dt.astimezone(parse_timezone(user_timezone))
 
 
+def _system_message_or_fallback(
+    key: str,
+    language_code: str,
+    fallback: str,
+    **kwargs,
+) -> str:
+    """Return localized system message, or fallback when key is missing."""
+    value = get_system_message(key, language_code, **kwargs)
+    return fallback if not value or value == key else value
+
+
 async def _complete_onboarding_flow(callback: CallbackQuery, language_code: str) -> None:
     """Complete onboarding and send first question"""
     user_service = UserService()
@@ -992,15 +1003,26 @@ async def callback_filter_today(callback: CallbackQuery) -> None:
         limit=10
     )
     
+    period_name = _system_message_or_fallback("period_today", language_code, "сегодня")
     if not moments:
-        empty_text = get_system_message("moments_empty_today", language_code) or "У тебя пока нет моментов за сегодня."
+        empty_text = _system_message_or_fallback(
+            "no_moments_period",
+            language_code,
+            f"📖 Нет моментов {period_name}.",
+            period=period_name,
+        )
         await callback.message.edit_text(
             empty_text,
             reply_markup=get_moments_keyboard(language_code=language_code)
         )
     else:
-        title = "📖 <b>Моменты за сегодня</b>\n\n"
-        moments_text = title
+        title = _system_message_or_fallback(
+            "moments_period_title",
+            language_code,
+            f"📖 <b>Моменты {period_name}</b>",
+            period=period_name,
+        )
+        moments_text = f"{title}\n\n"
         for moment in moments:
             local_dt = _to_user_datetime(moment.created_at, user.timezone if user else "UTC")
             date_str = local_dt.strftime("%H:%M")
@@ -1027,15 +1049,26 @@ async def callback_filter_week(callback: CallbackQuery) -> None:
         limit=15
     )
     
+    period_name = _system_message_or_fallback("period_week", language_code, "за неделю")
     if not moments:
-        empty_text = get_system_message("moments_empty_week", language_code) or "У тебя пока нет моментов за неделю."
+        empty_text = _system_message_or_fallback(
+            "no_moments_period",
+            language_code,
+            f"📖 Нет моментов {period_name}.",
+            period=period_name,
+        )
         await callback.message.edit_text(
             empty_text,
             reply_markup=get_moments_keyboard(language_code=language_code)
         )
     else:
-        title = "📖 <b>Моменты за неделю</b>\n\n"
-        moments_text = title
+        title = _system_message_or_fallback(
+            "moments_period_title",
+            language_code,
+            f"📖 <b>Моменты {period_name}</b>",
+            period=period_name,
+        )
+        moments_text = f"{title}\n\n"
         for moment in moments:
             local_dt = _to_user_datetime(moment.created_at, user.timezone if user else "UTC")
             date_str = local_dt.strftime("%d.%m %H:%M")
@@ -1062,15 +1095,26 @@ async def callback_filter_month(callback: CallbackQuery) -> None:
         limit=20
     )
     
+    period_name = _system_message_or_fallback("period_month", language_code, "за месяц")
     if not moments:
-        empty_text = get_system_message("moments_empty_month", language_code) or "У тебя пока нет моментов за месяц."
+        empty_text = _system_message_or_fallback(
+            "no_moments_period",
+            language_code,
+            f"📖 Нет моментов {period_name}.",
+            period=period_name,
+        )
         await callback.message.edit_text(
             empty_text,
             reply_markup=get_moments_keyboard(language_code=language_code)
         )
     else:
-        title = "📖 <b>Моменты за месяц</b>\n\n"
-        moments_text = title
+        title = _system_message_or_fallback(
+            "moments_period_title",
+            language_code,
+            f"📖 <b>Моменты {period_name}</b>",
+            period=period_name,
+        )
+        moments_text = f"{title}\n\n"
         for moment in moments:
             local_dt = _to_user_datetime(moment.created_at, user.timezone if user else "UTC")
             date_str = local_dt.strftime("%d.%m")
