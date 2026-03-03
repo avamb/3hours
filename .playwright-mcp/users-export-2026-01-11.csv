@@ -1,0 +1,11 @@
+ID,Telegram ID,Username,First Name,Language,Timezone,Notifications Enabled,Notification Interval (hours),Active Hours Start,Active Hours End,Formal Address,Onboarding Completed,Is Blocked,Total Moments,Current Streak,Longest Streak,Questions Sent,Questions Answered,Created At,Last Active At
+10,629060528,"","Георгий",ru,UTC,true,3,09:00:00,21:00:00,false,false,false,0,0,0,0,0,2026-01-07T20:41:21.204Z,
+9,1853573619,"llTeIegramll","А",ru,UTC,true,3,09:00:00,21:00:00,false,true,false,2,1,1,1,2,2026-01-07T20:03:46.956Z,
+8,887860,"vskulikova","Valeria",en,UTC,true,3,09:00:00,21:00:00,false,true,false,0,0,0,1,0,2026-01-07T18:36:40.099Z,
+7,398266049,"MarinaBakanova","M",ru,UTC,true,1,09:00:00,21:00:00,false,true,false,5,1,1,1,5,2026-01-07T18:07:24.932Z,
+6,1212890204,"transformation_code","Svetlana",uk,UTC,true,3,09:00:00,21:00:00,false,true,false,0,0,0,2,0,2026-01-07T17:07:00.795Z,
+5,32846370,"natkirsh","N_",en,UTC,true,3,09:00:00,21:00:00,false,true,false,0,0,0,1,0,2026-01-07T16:51:15.952Z,
+4,2143220578,"","Tatlana",ru,UTC,true,3,09:00:00,21:00:00,false,true,false,0,0,0,2,0,2026-01-07T15:57:08.035Z,
+3,855376647,"YatzikT","Yitzhak",en,UTC,true,3,09:00:00,21:00:00,false,true,false,0,0,0,2,0,2026-01-07T15:31:15.925Z,
+2,789549,"codegeek","Anthony",en,UTC,false,3,09:00:00,21:00:00,false,true,false,0,0,0,1,0,2026-01-07T13:32:01.376Z,
+1,446002546,"andreiandreev62","Andrei",ru,UTC,true,1,08:00:00,23:00:00,false,true,false,15,1,1,40,15,2026-01-07T09:27:33.091Z,2026-01-11T16:49:55.464Z
